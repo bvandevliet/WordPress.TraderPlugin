@@ -1,0 +1,8 @@
+.reference
+/node_modules
+/vendor
+package-lock.json
+composer.lock
+style.css.map
+config.php
+.DS_Store

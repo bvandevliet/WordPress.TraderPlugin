@@ -1,0 +1,11 @@
+php_value max_input_time 299
+php_value max_execution_time 299
+
+## Directory protection
+Options -Indexes
+
+## Protect sensitive files
+<Files "config.php">
+	Order Allow,Deny
+	Deny from all
+</Files>

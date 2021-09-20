@@ -1,0 +1,6 @@
+{
+	"require": {
+		"lupecode/php-trader-native": "^1.2.1",
+		"bitvavo/php-bitvavo-api": "^1.2"
+	}
+}
