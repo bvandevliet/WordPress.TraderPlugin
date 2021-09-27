@@ -37,9 +37,17 @@ ini_set( 'precision', 24 );
 
 
 /**
- * Load configuration file.
+ * Define plugin root.
  */
-require __DIR__ . '/config.php';
+define( 'TRADER_ABSPATH', __DIR__ );
+
+
+/**
+ * Load configuration file if exists.
+ */
+if ( file_exists( __DIR__ . '/config.php' ) ) {
+  require __DIR__ . '/config.php';
+}
 
 /**
  * Composer autoload.
@@ -52,6 +60,12 @@ require __DIR__ . '/vendor/autoload.php';
 require __DIR__ . '/inc/hooks-security.php';
 require __DIR__ . '/inc/functions-core.php';
 require __DIR__ . '/inc/functions-math.php';
+
+/**
+ * Load core classes, these may rely on core functions.
+ */
+require __DIR__ . '/inc/class-file-editor.php';
+require __DIR__ . '/inc/class-config-editor.php';
 
 /**
  * Load metric resources.
@@ -76,3 +90,12 @@ require __DIR__ . '/trader/functions-trader.php';
  * Load blocks.
  */
 require __DIR__ . '/blocks/portfolio.php';
+
+
+/**
+ * Register activation/deactivation/uninstall hooks.
+ */
+require __DIR__ . '/inc/class-trader-setup.php';
+register_activation_hook( __FILE__, array( 'Trader_Setup', 'on_activation' ) );
+register_deactivation_hook( __FILE__, array( 'Trader_Setup', 'on_deactivation' ) );
+register_uninstall_hook( __FILE__, array( 'Trader_Setup', 'on_uninstall' ) );
