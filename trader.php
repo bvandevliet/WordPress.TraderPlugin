@@ -91,6 +91,7 @@ require __DIR__ . '/trader/functions-trader.php';
  * Load blocks.
  */
 require __DIR__ . '/blocks/portfolio.php';
+require __DIR__ . '/blocks/_register-blocks.php';
 
 
 /**
