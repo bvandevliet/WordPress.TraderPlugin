@@ -16,6 +16,7 @@ class Trader_Setup
       return;
     }
 
+    self::add_roles_caps();
     self::verify_secret_key();
   }
 
@@ -40,7 +41,7 @@ class Trader_Setup
       return;
     }
 
-    // do something ..
+    self::remove_roles_caps();
   }
 
   /**
@@ -83,5 +84,56 @@ class Trader_Setup
     }
 
     return true;
+  }
+
+  /**
+   * Add custom user roles and capabilities.
+   */
+  public static function add_roles_caps()
+  {
+    $wp_roles = wp_roles();
+
+    $wp_roles->add_cap( 'administrator', 'trader_manage_options' );
+    $wp_roles->add_cap( 'administrator', 'trader_manage_users' );
+
+    foreach ( array_keys( $wp_roles->roles ) as $role ) {
+      $wp_roles->add_cap( $role, 'trader_manage_portfolio' );
+    }
+
+    add_role(
+      'trader_user',
+      'Trader User',
+      array(
+        'trader_manage_portfolio' => true,
+      )
+    );
+  }
+
+  /**
+   * Remove custom user roles and capabilities.
+   */
+  protected static function remove_roles_caps()
+  {
+    $wp_roles = wp_roles();
+
+    $roles = array(
+      'trader_user',
+    );
+
+    $caps = array(
+      'trader_manage_options',
+      'trader_manage_users',
+      'trader_manage_portfolio',
+    );
+
+    foreach ( $roles as $role ) {
+      remove_role( $role );
+    }
+
+    foreach ( array_keys( $wp_roles->roles ) as $role ) {
+      foreach ( $caps as $cap ) {
+        $wp_roles->remove_cap( $role, $cap );
+      }
+    }
   }
 }

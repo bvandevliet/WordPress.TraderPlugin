@@ -17,6 +17,71 @@ function trader_trim( $string, string $delim = ' ' ) : string
 }
 
 /**
+ * Sanitizes and encrypts a string key.
+ *
+ * @param string|string[] $key The plain string key(s).
+ *
+ * @return string|string[]|null The encrypted string key(s).
+ */
+function trader_encrypt_key( $key )
+{
+  if ( is_array( $key ) ) {
+    return array_map( 'trader_encrypt_key', $key );
+  }
+
+  $key = sanitize_key( $key );
+
+  try {
+    $secret_key = \Defuse\Crypto\Key::loadFromAsciiSafeString( TRADER_SECRET_KEY );
+  } catch ( \Defuse\Crypto\Exception\BadFormatException $ex ) {
+    return null;
+  } catch ( Exception $ex ) {
+    /**
+     * ERROR HANDLING !!
+     */
+    return null;
+  }
+
+  return \Defuse\Crypto\Crypto::encrypt( $key, $secret_key );
+}
+
+/**
+ * Decrypts an encrypted string key.
+ *
+ * @param string|string[] $encrypted_key The encrypted string key(s).
+ *
+ * @return string|string[]|null The original string key(s).
+ */
+function trader_decrypt_key( $encrypted_key )
+{
+  if ( is_array( $encrypted_key ) ) {
+    return array_map( 'trader_decrypt_key', $encrypted_key );
+  }
+
+  $encrypted_key = sanitize_key( $encrypted_key );
+
+  try {
+    $secret_key = \Defuse\Crypto\Key::loadFromAsciiSafeString( TRADER_SECRET_KEY );
+  } catch ( \Defuse\Crypto\Exception\BadFormatException $ex ) {
+    return null;
+  } catch ( Exception $ex ) {
+    /**
+     * ERROR HANDLING !!
+     */
+    return null;
+  }
+
+  try {
+    return \Defuse\Crypto\Crypto::decrypt( $encrypted_key, $secret_key );
+  } catch ( \Defuse\Crypto\Exception\WrongKeyOrModifiedCiphertextException $ex ) {
+    /**
+     * ERROR HANDLING !!
+     */
+    return null;
+  }
+}
+
+/**
  * Transpose an array.
  *
  * @param array $arr The array to transpose.

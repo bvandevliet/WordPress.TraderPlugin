@@ -46,7 +46,7 @@ defined( 'ABSPATH' ) || exit;
  *   @type string $amount_quote_total
  * }
  */
-function merge_balance( array $balance, array $balance_exchange ) : array
+function merge_balance( array $balance, array $balance_exchange = null ) : array
 {
   /**
    * Get current allocations.
@@ -56,14 +56,16 @@ function merge_balance( array $balance, array $balance_exchange ) : array
     $asset->amount_quote       = 0;
     $asset->allocation_current = 0;
 
-    foreach ( $balance_exchange['assets'] as $asset_exchange ) {
-      if ( $asset_exchange->symbol === $asset->symbol ) {
-        // we cannot use wp_parse_args() as we have to re-assign $asset which breaks the reference to the original object
-        // $asset = (object) wp_parse_args( $asset_exchange, (array) $asset );
-        foreach ( (array) $asset_exchange as $key => $data ) {
-          $asset->$key = $data;
+    if ( ! empty( $balance_exchange['assets'] ) ) {
+      foreach ( $balance_exchange['assets'] as $asset_exchange ) {
+        if ( $asset_exchange->symbol === $asset->symbol ) {
+          // we cannot use wp_parse_args() as we have to re-assign $asset which breaks the reference to the original object
+          // $asset = (object) wp_parse_args( $asset_exchange, (array) $asset );
+          foreach ( (array) $asset_exchange as $key => $data ) {
+            $asset->$key = $data;
+          }
+          break;
         }
-        break;
       }
     }
   }
@@ -71,15 +73,17 @@ function merge_balance( array $balance, array $balance_exchange ) : array
   /**
    * Append missing allocations.
    */
-  foreach ( $balance_exchange['assets'] as $asset_exchange ) {
-    foreach ( $balance['assets'] as $asset ) {
-      if ( $asset_exchange->symbol === $asset->symbol ) {
-        continue 2;
+  if ( ! empty( $balance_exchange['assets'] ) ) {
+    foreach ( $balance_exchange['assets'] as $asset_exchange ) {
+      foreach ( $balance['assets'] as $asset ) {
+        if ( $asset_exchange->symbol === $asset->symbol ) {
+          continue 2;
+        }
       }
-    }
 
-    $asset_exchange->allocation_rebl = array( 0 );
-    $balance['assets'][]             = $asset_exchange;
+      $asset_exchange->allocation_rebl = array( 0 );
+      $balance['assets'][]             = $asset_exchange;
+    }
   }
 
   /**
@@ -98,7 +102,7 @@ function merge_balance( array $balance, array $balance_exchange ) : array
   /**
    * Set total amount of quote currency and return $balance.
    */
-  $balance['amount_quote_total'] = $balance_exchange['amount_quote_total'];
+  $balance['amount_quote_total'] = $balance_exchange['amount_quote_total'] ?? 0;
   return $balance;
 }
 

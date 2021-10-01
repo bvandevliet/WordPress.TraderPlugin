@@ -66,6 +66,7 @@ require __DIR__ . '/inc/functions-math.php';
  */
 require __DIR__ . '/inc/class-file-editor.php';
 require __DIR__ . '/inc/class-config-editor.php';
+require __DIR__ . '/inc/class-api-keys.php';
 
 /**
  * Load metric resources.
@@ -91,6 +92,14 @@ require __DIR__ . '/trader/functions-trader.php';
  */
 require __DIR__ . '/blocks/portfolio.php';
 
+
+/**
+ * Load WordPress admin pages.
+ */
+require __DIR__ . '/inc/class-admin-pages.php';
+if ( is_admin() ) {
+  \Trader\Admin_Pages::init();
+}
 
 /**
  * Register activation/deactivation/uninstall hooks.

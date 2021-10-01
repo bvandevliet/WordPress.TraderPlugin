@@ -4,6 +4,23 @@ defined( 'ABSPATH' ) || exit;
 
 
 /**
+ * Hide the admin bar for non-admin users.
+ */
+add_action(
+  'after_setup_theme',
+  /**
+   * Fires after the theme is loaded.
+   */
+  function ()
+  {
+    if ( ! is_admin() && ! current_user_can( 'manage_options' ) ) {
+      show_admin_bar( false );
+    }
+  }
+);
+
+
+/**
  * Enhanced security for sensitive AJAX requests.
  */
 add_action(

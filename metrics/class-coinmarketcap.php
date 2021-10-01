@@ -29,7 +29,7 @@ class CoinMarketCap
   private static function get_api_key() : string
   {
     if ( null === self::$key ) {
-      self::$key = CMC_APIKEY; // MOVE TO DATABASE !!
+      self::$key = \Trader\API_Keys::get_api_key( 'coinmarketcap' );
     }
 
     return self::$key;

@@ -14,6 +14,13 @@ defined( 'ABSPATH' ) || exit;
 function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
 {
   /**
+   * Check user capabilities.
+   */
+  if ( ! current_user_can( 'trader_manage_portfolio' ) ) {
+    return;
+  }
+
+  /**
    * Define alternative portfolio allocation weighting for specific coins.
    * Default is 1, set to 0 to skip the coin.
    *
@@ -43,7 +50,8 @@ function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
   ob_start();
   echo '<pre><code>';
 
-  $balance = \Trader\merge_balance( \Trader\get_asset_allocations( $asset_weightings ), \Trader\Exchanges\Bitvavo::get_balance() );
+  $balance_exchange = /*current_user_can( 'trader_manage_portfolio' ) ? */\Trader\Exchanges\Bitvavo::get_balance();
+  $balance          = \Trader\merge_balance( \Trader\get_asset_allocations( $asset_weightings ), $balance_exchange );
 
   $deposit_total    = 0;
   $withdrawal_total = 0;
