@@ -15,24 +15,13 @@ class CoinMarketCap
   public const URL = 'https://pro-api.coinmarketcap.com/v1/';
 
   /**
-   * Holds the API key.
-   *
-   * @var string
-   */
-  private static ?string $key = null;
-
-  /**
    * Retrieve API key.
    *
    * @return string The API key.
    */
   private static function get_api_key() : string
   {
-    if ( null === self::$key ) {
-      self::$key = \Trader\API_Keys::get_api_key( 'coinmarketcap' );
-    }
-
-    return self::$key;
+    return \Trader\API_Keys::get_api_key( 'coinmarketcap' );
   }
 
   /**

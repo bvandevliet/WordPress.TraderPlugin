@@ -90,7 +90,6 @@ require __DIR__ . '/trader/functions-trader.php';
 /**
  * Load blocks.
  */
-require __DIR__ . '/blocks/portfolio.php';
 require __DIR__ . '/blocks/_register-blocks.php';
 
 
@@ -109,3 +108,15 @@ require __DIR__ . '/inc/class-trader-setup.php';
 register_activation_hook( __FILE__, array( 'Trader_Setup', 'on_activation' ) );
 register_deactivation_hook( __FILE__, array( 'Trader_Setup', 'on_deactivation' ) );
 register_uninstall_hook( __FILE__, array( 'Trader_Setup', 'on_uninstall' ) );
+
+/**
+ * Enqueue styles and scripts
+ */
+add_action(
+  'wp_enqueue_scripts',
+  function ()
+  {
+    wp_enqueue_style( 'trader-plugin-styles', plugin_dir_url( __FILE__ ) . 'assets/css/style.css' );
+  },
+  100
+);

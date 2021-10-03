@@ -1,0 +1,22 @@
+form .form-row {
+  display: inline-block;
+  clear: both;
+}
+
+form .form-row-first,
+form .form-row-last {
+  width: calc(50% - 10px);
+  overflow: visible;
+}
+
+form .form-row-first {
+  /* float: left; */
+}
+
+form .form-row-last {
+  float: right;
+}
+
+form .form-row-wide {
+  width: 100%;
+}

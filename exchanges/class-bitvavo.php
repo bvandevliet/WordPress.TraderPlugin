@@ -53,12 +53,8 @@ class Bitvavo implements Exchange
    */
   private static function get_authentication() : array
   {
-    /**
-     * FETCH FROM DATABASE !!
-     * USE HMAC SHA-256 ENCRYPTION IN SOME WAY !!
-     */
-    $api_key    = BITVAVO_APIKEY;
-    $api_secret = BITVAVO_APISECRET;
+    $api_key    = \Trader\API_Keys::get_api_key( 'bitvavo_key' );
+    $api_secret = \Trader\API_Keys::get_api_key( 'bitvavo_secret' );
 
     return compact( 'api_key', 'api_secret' );
   }

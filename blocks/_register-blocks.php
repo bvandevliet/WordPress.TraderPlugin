@@ -37,10 +37,20 @@ add_action(
      * Dynamic blocks to be registered.
      */
     $blocks = array(
-      'trader/portfolio' => array(
+      'trader/portfolio'     => array(
         'title'       => 'Portfolio',
         'description' => 'Shows current portfolio asset allocations.',
         'icon'        => 'editor-ol',
+      ),
+      'trader/edit-account'  => array(
+        'title'       => 'Edit account',
+        'description' => 'Prints a form to edit account details.',
+        'icon'        => 'admin-users',
+      ),
+      'trader/exchange-apis' => array(
+        'title'       => 'Exchange API keys',
+        'description' => 'Prints a form to edit API keys for the current user\'s exchanges.',
+        'icon'        => 'admin-network',
       ),
     );
 
@@ -64,6 +74,10 @@ add_action(
      * Register dynamic blocks.
      */
     foreach ( $blocks as $block_type => $args ) {
+      $block_name = explode( '/', $block_type )[1];
+
+      require_once __DIR__ . '/' . $block_name . '.php';
+
       wp_add_inline_script(
         'trader-dynamic-blocks-editor-js',
         'window.trader_dynamic_blocks.push(\'' . esc_js( $block_type ) . '\');',
@@ -79,7 +93,7 @@ add_action(
             'editor_script'   => 'trader-dynamic-blocks-editor-js',
             // 'script'          => 'trader-dynamic-block-' . $block_type . '-js',
             // 'style'           => 'trader-dynamic-block-' . $block_type . '-css',
-            'render_callback' => 'trader_dynamic_block_' . explode( '/', $block_type )[1] . '_cb',
+            'render_callback' => 'trader_dynamic_block_' . str_replace( '-', '_', $block_name ) . '_cb',
           )
         )
       );
