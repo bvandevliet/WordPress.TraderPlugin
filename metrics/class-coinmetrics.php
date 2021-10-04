@@ -43,7 +43,7 @@ class CoinMetrics
    *
    * @param string $symbol Asset symbol.
    *
-   * @return array[]|false [time, PriceUSD, CapMrktFFUSD, CapMrktCurUSD, CapRealUSD][]
+   * @return array[] [time, PriceUSD, CapMrktFFUSD, CapMrktCurUSD, CapRealUSD][]
    */
   public static function market_cap( string $symbol )
   {
@@ -59,7 +59,15 @@ class CoinMetrics
     );
 
     if ( ! is_object( $result ) || empty( $result->data ) || ! is_array( $result->data ) ) {
-      return false;
+      return array(
+        array(
+          'time'          => false, // indicates an error occured
+          'PriceUSD'      => 0,
+          'CapMrktFFUSD'  => 0,
+          'CapMrktCurUSD' => 0,
+          'CapRealUSD'    => 0,
+        ),
+      );
     }
 
     return array_map(

@@ -13,12 +13,10 @@ defined( 'ABSPATH' ) || exit;
  *   @type object[] $assets {
  *     First entry is quote currency.
  *     @type string   $symbol
- *     @type string   $price
- *     @type string   $amount
- *     @type string   $amount_quote
- *     @type string   $allocation_current
+ *     @type array[]  $allocation_rebl {
+ *       @type string => string  $mode => $allocation
+ *     }
  *   }
- *   @type string? $amount_quote_total
  * }
  * @param array $balance_exchange {
  *   Updated balance.
@@ -31,6 +29,10 @@ defined( 'ABSPATH' ) || exit;
  *     @type string   $allocation_current
  *   }
  *   @type string $amount_quote_total
+ * }
+ * @param array $args {
+ *   .
+ *   @type float|string $takeout Amount in quote currency to keep out / not re-invest. Default is 0.
  * }
  *
  * @return array $balance_merged {
@@ -46,8 +48,26 @@ defined( 'ABSPATH' ) || exit;
  *   @type string $amount_quote_total
  * }
  */
-function merge_balance( array $balance, array $balance_exchange = null ) : array
+function merge_balance( array $balance, array $balance_exchange = null, array $args = array() ) : array
 {
+  $args['takeout'] = ! empty( $balance_exchange['amount_quote_total'] ) && ! empty( $args['takeout'] )
+    ? trader_max( 0, trader_min( $balance_exchange['amount_quote_total'], $args['takeout'] ) ) : 0;
+  $takeout_alloc   = $args['takeout'] > 0
+    ? trader_get_allocation( $args['takeout'], $balance_exchange['amount_quote_total'] ) : 0;
+
+  /**
+   * Find quote currency entry, move it to the beginning of the array.
+   *
+   * ONLY BITVAVO EXCHANGE IS SUPPORTED YET !!
+   */
+  for ( $i = 0, $length = count( $balance['assets'] ); $i < $length; $i++ ) {
+    if ( $balance['assets'][ $i ]->symbol === \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY ) {
+      $asset_quote = array_splice( $balance['assets'], $i, 1 )[0];
+      array_unshift( $balance['assets'], $asset_quote );
+      break;
+    }
+  }
+
   /**
    * Get current allocations.
    */
@@ -63,6 +83,15 @@ function merge_balance( array $balance, array $balance_exchange = null ) : array
           // $asset = (object) wp_parse_args( $asset_exchange, (array) $asset );
           foreach ( (array) $asset_exchange as $key => $data ) {
             $asset->$key = $data;
+          }
+          // only modify rebalance allocations if a takeout value is set
+          if ( $takeout_alloc > 0 ) {
+            foreach ( $asset->allocation_rebl as $mode => $allocation ) {
+              $asset->allocation_rebl[ $mode ] = bcmul( $allocation, bcsub( 1, $takeout_alloc ) );
+              if ( $asset->symbol === \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY ) {
+                $asset->allocation_rebl[ $mode ] = bcadd( $asset->allocation_rebl[ $mode ], $takeout_alloc );
+              }
+            }
           }
           break;
         }
@@ -87,19 +116,6 @@ function merge_balance( array $balance, array $balance_exchange = null ) : array
   }
 
   /**
-   * Find quote currency entry, move it to the beginning of the array.
-   *
-   * ONLY BITVAVO EXCHANGE IS SUPPORTED YET !!
-   */
-  for ( $i = 0, $length = count( $balance['assets'] ); $i < $length; $i++ ) {
-    if ( $balance['assets'][ $i ]->symbol === \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY ) {
-      $asset_quote = array_splice( $balance['assets'], $i, 1 )[0];
-      array_unshift( $balance['assets'], $asset_quote );
-      break;
-    }
-  }
-
-  /**
    * Set total amount of quote currency and return $balance.
    */
   $balance['amount_quote_total'] = $balance_exchange['amount_quote_total'] ?? 0;
@@ -112,17 +128,22 @@ function merge_balance( array $balance, array $balance_exchange = null ) : array
  *
  * Subject to change: more indicators may be added in later versions.
  *
- * @param string        $symbol        Asset symbol.
- * @param float         $interval_days Rebalance period.
- * @param array[]|false $market_cap    Out. Historical price, free-float, current and realized market cap data.
+ * @param string       $symbol        Asset symbol.
+ * @param float        $interval_days Rebalance period.
+ * @param array[]|null $market_cap    Out. Historical price, free-float, current and realized market cap data.
  */
 function retrieve_allocation_indicators(
   string $symbol,
   float $interval_days = 7,
   &$market_cap = null )
 {
-  // Market Cap.
-  $market_cap = Metrics\CoinMetrics::market_cap( $symbol );
+  /**
+   * Market Cap.
+   *
+   * DISABLED FOR NOW TO SPEED UP PAGE LOAD,
+   * BECAUSE HISTORICAL MARKET CAP DATA IS NOT USED AT THE MOMENT.
+   */
+  // $market_cap = Metrics\CoinMetrics::market_cap( $symbol );
 }
 
 
@@ -152,16 +173,18 @@ function set_asset_allocations(
 /**
  * Construct a ranked $balance with rebalanced allocation data.
  *
- * @param array         $asset_weightings User defined adjusted weighting factors per asset.
- * @param float         $interval_days    Rebalance period.
- * @param integer       $top_count        Amount of assets from the top market cap ranking.
- * @param integer       $max_limit        Max amount of assets in portfolio.
- * @param object[]|null $cmc_latest       Provide a custom set of ranked assets. Optional.
+ * @param array   $asset_weightings User defined adjusted weighting factors per asset.
+ * @param array   $args {
+ *   .
+ *   @type float|string $alloc_quote Allocation to keep in quote currency. Default is 0.
+ * }
+ * @param float   $interval_days    Rebalance period.
+ * @param integer $top_count        Amount of assets from the top market cap ranking.
+ * @param integer $max_limit        Max amount of assets in portfolio.
  *
  * @return array $balance {
  *   @type object[] $assets {
  *     @type string   $symbol
- *     @type string   $price
  *     @type array[]  $allocation_rebl {
  *       @type string => string  $mode => $allocation
  *     }
@@ -170,20 +193,25 @@ function set_asset_allocations(
  */
 function get_asset_allocations(
   array $asset_weightings = array(),
+  array $args = array(),
   float $interval_days = 7,
   int $top_count = 30,
-  int $max_limit = 20,
-  $cmc_latest = null ) : array
+  int $max_limit = 20 ) : array
 {
+  $args['alloc_quote'] = ! empty( $args['alloc_quote'] ) ? trader_max( 0, trader_min( 1, $args['alloc_quote'] ) ) : '0';
+
   /**
    * Initiate object[] $assets.
    */
-  $assets = array();
+  $asset_quote                  = new \stdClass();
+  $assets                       = array();
+  $asset_quote->symbol          = \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY;
+  $asset_quote->allocation_rebl = array();
 
   /**
    * List latest based on market cap.
    */
-  $cmc_latest = $cmc_latest ?? Metrics\CoinMarketCap::list_latest(
+  $cmc_latest = Metrics\CoinMarketCap::list_latest(
     array(
       'limit'   => $top_count,
       'convert' => Exchanges\Bitvavo::QUOTE_CURRENCY,
@@ -240,11 +268,6 @@ function get_asset_allocations(
     }
 
     /**
-     * Set current ticker price.
-     */
-    $asset->price = Exchanges\Bitvavo::get_instance()->tickerPrice( array( 'market' => $market ) )['price'];
-
-    /**
      * Store indicator data.
      */
     $asset->indicators = new \stdClass();
@@ -295,6 +318,14 @@ function get_asset_allocations(
   }
 
   /**
+   * Scale for quote allocation.
+   */
+  foreach ( $total_allocations as $mode => $total_allocation ) {
+    $asset_quote->allocation_rebl[ $mode ] = $args['alloc_quote'];
+    $total_allocations[ $mode ]            = bcmul( bcdiv( '1', bcsub( 1, $args['alloc_quote'] ) ), $total_allocation );
+  }
+
+  /**
    * Loop to calculate relative asset allocations.
    */
   foreach ( $assets as $asset ) { // pass by ref not required since var is object
@@ -313,6 +344,8 @@ function get_asset_allocations(
       return reset( $b->allocation_rebl ) <=> reset( $a->allocation_rebl );
     }
   );
+
+  array_unshift( $assets, $asset_quote );
 
   /**
    * Finally, return $balance.
@@ -340,7 +373,8 @@ function get_asset_allocations(
  * }
  * @param string $mode Rebalance mode as defined by allocation in $balance['assets'][$i]->allocation_rebl[$mode]
  * @param array  $args {
- *   @type int $args['dust_limit'] [optional] Minimum required allocation difference in quote currency.
+ *   .
+ *   @type int $dust_limit [OPTIONAL] Minimum required allocation difference in quote currency.
  * }
  *
  * @return array Order details.
@@ -446,18 +480,21 @@ function rebalance( array &$balance, string $mode = null, array $args = array() 
 
   /**
    * Portfolio rebalancing: third loop adding amounts to scale to available balance.
+   * No need to pass takeout value as it is already applied to the passed $balance.
    */
   $balance      = merge_balance( $balance, Exchanges\Bitvavo::get_balance() );
   $to_buy_total = 0;
   foreach ( $balance['assets'] as $asset ) {
-    /**
-     * Skip if is quote currency.
-     */
-    if ( $asset->symbol === \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY ) {
-      continue;
-    }
 
     $amount_quote = bcmul( $balance['amount_quote_total'], $asset->allocation_rebl[ $mode ] ?? 0 );
+
+    /**
+     * Only append absolute allocation to total buy value if is quote currency.
+     */
+    if ( $asset->symbol === \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY ) {
+      $to_buy_total = bcadd( $to_buy_total, $amount_quote );
+      continue;
+    }
 
     $asset->amount_quote_to_buy = bcsub( $amount_quote, $asset->amount_quote );
 
@@ -474,7 +511,7 @@ function rebalance( array &$balance, string $mode = null, array $args = array() 
    */
   foreach ( $balance['assets'] as $asset ) {
     /**
-     * Skip if is quote currency.
+     * Skip if is quote currency as it is the currency we buy with, not we can buy.
      */
     if ( $asset->symbol === \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY ) {
       continue;
