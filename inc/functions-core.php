@@ -163,14 +163,7 @@ function trader_request( string $url, array $query = array(), array $args = arra
    * Set default arguments.
    */
   $args['sslverify'] = true;
-  $args['headers']   = wp_parse_args(
-    $args['headers'],
-    array(
-      'Cache-Control' => 'no-cache, no-store, must-revalidate',
-      'Pragma'        => 'no-cache',
-      'Expires'       => '0',
-    )
-  );
+  $args['headers']   = wp_parse_args( $args['headers'], wp_get_nocache_headers() );
 
   /**
    * Do the request.

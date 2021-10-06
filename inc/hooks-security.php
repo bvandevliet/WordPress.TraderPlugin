@@ -54,3 +54,50 @@ add_action(
   PHP_INT_MAX,
   2
 );
+
+
+/**
+ * Re-define nocache headers.
+ */
+add_filter(
+  'nocache_headers',
+  /**
+   * Filters the cache-controlling headers.
+   *
+   * @param array $headers {
+   *   Header names and field values.
+   *   @type string $Expires       Expires header.
+   *   @type string $Cache-Control Cache-Control header.
+   * }
+   *
+   * @link https://developer.wordpress.org/reference/functions/wp_get_nocache_headers/
+   */
+  function( $headers )
+  {
+    return wp_parse_args(
+      array(
+        'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+        'Pragma'        => 'no-cache',
+        'Expires'       => gmdate( DateTime::RFC7231, time() ),
+      ),
+      $headers
+    );
+  }
+);
+
+/**
+ * Always apply nocache headers.
+ */
+add_filter(
+  'wp_headers',
+  /**
+   * Filters the HTTP headers before they're sent to the browser.
+   *
+   * @param string[] $headers Associative array of headers to be sent.
+   * @param WP       $wp      Current WordPress environment instance.
+   */
+  function( $headers/*, $wp*/ )
+  {
+    return wp_parse_args( wp_get_nocache_headers(), $headers );
+  }
+);

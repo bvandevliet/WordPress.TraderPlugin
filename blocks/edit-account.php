@@ -19,8 +19,6 @@ function trader_dynamic_block_edit_account_cb( $block_attributes, $content )
     return;
   }
 
-  @nocache_headers();
-
   if ( isset( $_SERVER['REQUEST_METHOD'] ) && 'POST' === $_SERVER['REQUEST_METHOD'] ) {
     /**
      * Process form data ..
