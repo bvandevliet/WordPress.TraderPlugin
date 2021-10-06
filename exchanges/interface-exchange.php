@@ -78,6 +78,40 @@ interface Exchange
   public static function retrieve_ohlcv( array $candles, array &$open_arr, array &$high_arr, array &$low_arr, array &$close_arr, array &$vol_arr );
 
   /**
+   * Returns the deposit history.
+   *
+   * @param string $symbol
+   *
+   * @return array $history {
+   *   .
+   *   @type array   $deposits {
+   *     .
+   *     @type string  $symbol
+   *     @type string  $amount
+   *   }
+   *   @type string  $total
+   * }
+   */
+  public static function deposit_history( string $symbol/* = self::QUOTE_CURRENCY*/ ) : array;
+
+  /**
+   * Returns the withdrawal history.
+   *
+   * @param string $symbol
+   *
+   * @return array $history {
+   *   .
+   *   @type array   $withdrawals {
+   *     .
+   *     @type string  $symbol
+   *     @type string  $amount
+   *   }
+   *   @type string  $total
+   * }
+   */
+  public static function withdrawal_history( string $symbol/* = self::QUOTE_CURRENCY*/ ) : array;
+
+  /**
    * Get balance. First entry of $assets is quote currency.
    *
    * @return array $balance {

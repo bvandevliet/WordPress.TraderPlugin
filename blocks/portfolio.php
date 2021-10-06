@@ -53,25 +53,18 @@ function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
   $balance_exchange = /*current_user_can( 'trader_manage_portfolio' ) ? */\Trader\Exchanges\Bitvavo::get_balance();
   $balance          = \Trader\merge_balance( \Trader\get_asset_allocations( $asset_weightings ), $balance_exchange );
 
-  $deposit_total    = 0;
-  $withdrawal_total = 0;
+  $deposit_history    = \Trader\Exchanges\Bitvavo::deposit_history();
+  $withdrawal_history = \Trader\Exchanges\Bitvavo::withdrawal_history();
 
-  foreach ( \Trader\Exchanges\Bitvavo::get_instance()->depositHistory( array( 'symbol' => 'EUR' ) ) as $deposit ) {
-    $deposit_total = bcadd( $deposit_total, $deposit['amount'] );
-  }
-  foreach ( \Trader\Exchanges\Bitvavo::get_instance()->withdrawalHistory( array( 'symbol' => 'EUR' ) ) as $withdrawal ) {
-    $withdrawal_total = bcadd( $withdrawal_total, $withdrawal['amount'] );
-  }
-
-  $moneyflow_now = bcadd( $balance['amount_quote_total'], $withdrawal_total );
+  $moneyflow_now = bcadd( $balance['amount_quote_total'], $withdrawal_history['total'] );
 
   echo ''
-     . '    DEPOSIT TOTAL (i)         : €' . str_pad( number_format( $deposit_total, 2 ), 10, ' ', STR_PAD_LEFT ) . '<br>'
-     . ' WITHDRAWAL TOTAL (o)         : €' . str_pad( number_format( $withdrawal_total, 2 ), 10, ' ', STR_PAD_LEFT ) . '<br>'
+     . '    DEPOSIT TOTAL (i)         : €' . str_pad( number_format( $deposit_history['total'], 2 ), 10, ' ', STR_PAD_LEFT ) . '<br>'
+     . ' WITHDRAWAL TOTAL (o)         : €' . str_pad( number_format( $withdrawal_history['total'], 2 ), 10, ' ', STR_PAD_LEFT ) . '<br>'
      . '      BALANCE NOW (b)         : €' . str_pad( number_format( $balance['amount_quote_total'], 2 ), 10, ' ', STR_PAD_LEFT ) . '<br>'
      . '    MONEYFLOW NOW (B=o+b)     : €' . str_pad( number_format( $moneyflow_now, 2 ), 10, ' ', STR_PAD_LEFT ) . '<br>'
-     . '       GAIN TOTAL (B-i)       : €' . str_pad( number_format( bcsub( $moneyflow_now, $deposit_total ), 2 ), 10, ' ', STR_PAD_LEFT ) . '<br>'
-     . '       GAIN TOTAL (B/i-1)     :  ' . str_pad( trader_get_gain_perc( $moneyflow_now, $deposit_total ), 10, ' ', STR_PAD_LEFT ) . '%' . '<br>';
+     . '       GAIN TOTAL (B-i)       : €' . str_pad( number_format( bcsub( $moneyflow_now, $deposit_history['total'] ), 2 ), 10, ' ', STR_PAD_LEFT ) . '<br>'
+     . '       GAIN TOTAL (B/i-1)     :  ' . str_pad( trader_get_gain_perc( $moneyflow_now, $deposit_history['total'] ), 10, ' ', STR_PAD_LEFT ) . '%' . '<br>';
 
   $market_cap = \Trader\Metrics\CoinMetrics::market_cap( 'BTC' );
   if ( false !== $market_cap[0]['time'] ) {

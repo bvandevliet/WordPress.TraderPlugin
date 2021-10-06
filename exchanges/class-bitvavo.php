@@ -123,6 +123,38 @@ class Bitvavo implements Exchange
   /**
    * {@inheritDoc}
    */
+  public static function deposit_history( string $symbol = self::QUOTE_CURRENCY ) : array
+  {
+    $deposits = self::get_instance()->depositHistory( array( 'symbol' => $symbol ) );
+    $total    = 0;
+
+    foreach ( $deposits as $deposit ) {
+      $total = bcadd( $total, $deposit['amount'] );
+    }
+
+    return compact( 'deposits', 'total' );
+  }
+
+
+  /**
+   * {@inheritDoc}
+   */
+  public static function withdrawal_history( string $symbol = self::QUOTE_CURRENCY ) : array
+  {
+    $withdrawals = self::get_instance()->withdrawalHistory( array( 'symbol' => $symbol ) );
+    $total       = 0;
+
+    foreach ( $withdrawals as $withdrawal ) {
+      $total = bcadd( $total, $withdrawal['amount'] );
+    }
+
+    return compact( 'withdrawals', 'total' );
+  }
+
+
+  /**
+   * {@inheritDoc}
+   */
   public static function get_balance() : array
   {
     $balance_exchange = self::get_instance()->balance( array() );
