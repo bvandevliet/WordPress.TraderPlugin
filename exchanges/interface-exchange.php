@@ -82,10 +82,8 @@ interface Exchange
    *
    * @param string $symbol
    *
-   * @return array $history {
-   *   .
-   *   @type array   $deposits {
-   *     .
+   * @return array $history {.
+   *   @type array   $deposits {.
    *     @type string  $symbol
    *     @type string  $amount
    *   }
@@ -99,10 +97,8 @@ interface Exchange
    *
    * @param string $symbol
    *
-   * @return array $history {
-   *   .
-   *   @type array   $withdrawals {
-   *     .
+   * @return array $history {.
+   *   @type array   $withdrawals {.
    *     @type string  $symbol
    *     @type string  $amount
    *   }
@@ -114,20 +110,9 @@ interface Exchange
   /**
    * Get balance. First entry of $assets is quote currency.
    *
-   * @return array $balance {
-   *   Portfolio.
-   *   @type object[] $assets {
-   *     First entry is quote currency.
-   *     @type string   $symbol
-   *     @type string   $price
-   *     @type string   $amount
-   *     @type string   $amount_quote
-   *     @type string   $allocation_current
-   *   }
-   *   @type string $amount_quote_total
-   * }
+   * @return Balance
    */
-  public static function get_balance() : array;
+  public static function get_balance() : Balance;
 
   /**
    * Cancel all existing open orders.

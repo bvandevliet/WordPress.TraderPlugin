@@ -6,8 +6,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Register settings, sections and fields (admin_init).
  *
- * @param array $page {
- *   .
+ * @param array $page {.
  *   @type string $slug
  *   @type string $page_title
  *   @type string $menu_title

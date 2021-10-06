@@ -155,45 +155,37 @@ class Bitvavo implements Exchange
   /**
    * {@inheritDoc}
    */
-  public static function get_balance() : array
+  public static function get_balance() : Balance
   {
     $balance_exchange = self::get_instance()->balance( array() );
-
-    $balance = array(
-      'assets'             => array(),
-      'amount_quote_total' => 0,
-    );
+    $balance          = new Balance();
 
     for ( $i = 0, $length = count( $balance_exchange ); $i < $length; $i++ ) {
-      $symbol             = self::QUOTE_CURRENCY;
-      $price              = 1;
-      $amount             = floatstr( bcadd( $balance_exchange[ $i ]['available'], $balance_exchange[ $i ]['inOrder'] ) );
-      $amount_quote       = $amount;
-      $allocation_current = 0;
+      $asset = new Asset();
+
+      $asset->symbol       = self::QUOTE_CURRENCY;
+      $asset->price        = '1';
+      $asset->available    = $balance_exchange[ $i ]['available'];
+      $asset->amount       = floatstr( bcadd( $asset->available, $balance_exchange[ $i ]['inOrder'] ) );
+      $asset->amount_quote = $asset->amount;
 
       if ( $i > 0 ) { // $balance_exchange[$i]['symbol'] !== self::QUOTE_CURRENCY )
-        $symbol = $balance_exchange[ $i ]['symbol'];
-        $market = $symbol . '-' . self::QUOTE_CURRENCY;
+        $asset->symbol = $balance_exchange[ $i ]['symbol'];
+        $market        = $asset->symbol . '-' . self::QUOTE_CURRENCY;
 
-        $price        = self::get_instance()->tickerPrice( array( 'market' => $market ) )['price'];
-        $amount_quote = floatstr( bcmul( $amount, $price ) );
+        $asset->price        = self::get_instance()->tickerPrice( array( 'market' => $market ) )['price'];
+        $asset->amount_quote = floatstr( bcmul( $asset->amount, $asset->price ) );
       }
 
-      $balance['amount_quote_total'] = bcadd( $balance['amount_quote_total'], $amount_quote );
+      $balance->amount_quote_total = bcadd( $balance->amount_quote_total, $asset->amount_quote );
 
-      if ( $i === 0 || $amount_quote != 0 ) {
-        $balance['assets'][] = (object) compact(
-          'symbol',
-          'price',
-          'amount',
-          'amount_quote',
-          'allocation_current'
-        );
+      if ( $i === 0 || $asset->amount_quote != 0 ) {
+        $balance->assets[] = $asset;
       }
     }
 
-    for ( $i = 0, $length = count( $balance['assets'] ); $i < $length; $i++ ) {
-      $balance['assets'][ $i ]->allocation_current = trader_get_allocation( $balance['assets'][ $i ]->amount_quote, $balance['amount_quote_total'] );
+    for ( $i = 0, $length = count( $balance->assets ); $i < $length; $i++ ) {
+      $balance->assets[ $i ]->allocation_current = trader_get_allocation( $balance->assets[ $i ]->amount_quote, $balance->amount_quote_total );
     }
 
     return $balance;

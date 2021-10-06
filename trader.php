@@ -76,6 +76,12 @@ require __DIR__ . '/metrics/class-coinmetrics.php';
 require __DIR__ . '/metrics/class-alternative-me.php';
 
 /**
+ * Load trader objects.
+ */
+require __DIR__ . '/trader/class-asset.php';
+require __DIR__ . '/trader/class-balance.php';
+
+/**
  * Load exchange functions.
  */
 require __DIR__ . '/exchanges/interface-exchange.php';

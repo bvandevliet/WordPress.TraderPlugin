@@ -56,12 +56,12 @@ function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
   $deposit_history    = \Trader\Exchanges\Bitvavo::deposit_history();
   $withdrawal_history = \Trader\Exchanges\Bitvavo::withdrawal_history();
 
-  $moneyflow_now = bcadd( $balance['amount_quote_total'], $withdrawal_history['total'] );
+  $moneyflow_now = bcadd( $balance->amount_quote_total, $withdrawal_history['total'] );
 
   echo ''
      . '    DEPOSIT TOTAL (i)         : €' . str_pad( number_format( $deposit_history['total'], 2 ), 10, ' ', STR_PAD_LEFT ) . '<br>'
      . ' WITHDRAWAL TOTAL (o)         : €' . str_pad( number_format( $withdrawal_history['total'], 2 ), 10, ' ', STR_PAD_LEFT ) . '<br>'
-     . '      BALANCE NOW (b)         : €' . str_pad( number_format( $balance['amount_quote_total'], 2 ), 10, ' ', STR_PAD_LEFT ) . '<br>'
+     . '      BALANCE NOW (b)         : €' . str_pad( number_format( $balance->amount_quote_total, 2 ), 10, ' ', STR_PAD_LEFT ) . '<br>'
      . '    MONEYFLOW NOW (B=o+b)     : €' . str_pad( number_format( $moneyflow_now, 2 ), 10, ' ', STR_PAD_LEFT ) . '<br>'
      . '       GAIN TOTAL (B-i)       : €' . str_pad( number_format( bcsub( $moneyflow_now, $deposit_history['total'] ), 2 ), 10, ' ', STR_PAD_LEFT ) . '<br>'
      . '       GAIN TOTAL (B/i-1)     :  ' . str_pad( trader_get_gain_perc( $moneyflow_now, $deposit_history['total'] ), 10, ' ', STR_PAD_LEFT ) . '%' . '<br>';
@@ -88,12 +88,12 @@ function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
   }
 
   echo '<br> ASSET   NOW           NOW  REBL         REBL';
-  foreach ( $balance['assets'] as $asset ) {
+  foreach ( $balance->assets as $asset ) {
     echo '<br>'
        . str_pad( $asset->symbol, 6, ' ', STR_PAD_LEFT ) . ':'
        . '  €' . str_pad( number_format( $asset->amount_quote, 2 ), 8, ' ', STR_PAD_LEFT )
        . str_pad( number_format( 100 * $asset->allocation_current, 2 ), 7, ' ', STR_PAD_LEFT ) . '%'
-       . '  €' . str_pad( number_format( bcmul( reset( $asset->allocation_rebl ), $balance['amount_quote_total'] ), 2 ), 8, ' ', STR_PAD_LEFT )
+       . '  €' . str_pad( number_format( bcmul( reset( $asset->allocation_rebl ), $balance->amount_quote_total ), 2 ), 8, ' ', STR_PAD_LEFT )
        . str_pad( number_format( 100 * reset( $asset->allocation_rebl ), 2 ), 7, ' ', STR_PAD_LEFT ) . '%';
   }
   echo '<br>';
