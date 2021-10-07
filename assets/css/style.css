@@ -20,3 +20,30 @@ form .form-row-last {
 form .form-row-wide {
   width: 100%;
 }
+
+button.trader-danger-zone,
+html input[type="button"].trader-danger-zone,
+input[type="reset"].trader-danger-zone,
+input[type="submit"].trader-danger-zone,
+a.button.trader-danger-zone,
+a.wp-block-button__link.trader-danger-zone {
+  color: #cc2900;
+  border-color: #cc2900 !important;
+}
+
+button.trader-danger-zone:hover,
+button.trader-danger-zone:focus,
+html input[type="button"].trader-danger-zone:hover,
+html input[type="button"].trader-danger-zone:focus,
+input[type="reset"].trader-danger-zone:hover,
+input[type="reset"].trader-danger-zone:focus,
+input[type="submit"].trader-danger-zone:hover,
+input[type="submit"].trader-danger-zone:focus,
+a.button.trader-danger-zone:hover,
+a.button.trader-danger-zone:focus,
+a.wp-block-button__link.trader-danger-zone:hover,
+a.wp-block-button__link.trader-danger-zone:focus,
+a.wp-block-button__link.trader-danger-zone:active {
+  color: #fff;
+  background-color: #cc2900;
+}

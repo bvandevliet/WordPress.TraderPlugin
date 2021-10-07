@@ -141,7 +141,7 @@ function get_asset_allocations(
   int $top_count = 30,
   int $max_limit = 20 ) : \Trader\Exchanges\Balance
 {
-  $args['alloc_quote'] = ! empty( $args['alloc_quote'] ) ? trader_max( 0, trader_min( 1, $args['alloc_quote'] ) ) : '0';
+  $args['alloc_quote'] = ! empty( $args['alloc_quote'] ) ? bcdiv( trader_max( 0, trader_min( 100, $args['alloc_quote'] ) ), 100 ) : '0';
 
   /**
    * Initiate balance object and quote asset.
@@ -306,7 +306,7 @@ function get_asset_allocations(
  *
  * @return array Order details.
  */
-function rebalance( \Trader\Exchanges\Balance $balance, string $mode = null, array $args = array() ) : array
+function rebalance( \Trader\Exchanges\Balance $balance, string $mode = 'default', array $args = array() ) : array
 {
   $args = wp_parse_args(
     $args,
