@@ -155,10 +155,17 @@ class Bitvavo implements Exchange
   /**
    * {@inheritDoc}
    */
-  public static function get_balance() : Balance
+  public static function get_balance()
   {
     $balance_exchange = self::get_instance()->balance( array() );
-    $balance          = new Balance();
+
+    if ( ! is_array( $balance_exchange ) || ! empty( $balance_exchange['errorCode'] ) ) {
+      $errors = new \WP_Error();
+      $errors->add( $balance_exchange['errorCode'] ?? 0, $balance_exchange['error'] ?? __( 'An unknown error occured.', 'trader' ) );
+      return $errors;
+    }
+
+    $balance = new Balance();
 
     for ( $i = 0, $length = count( $balance_exchange ); $i < $length; $i++ ) {
       $asset = new Asset();

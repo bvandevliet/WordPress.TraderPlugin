@@ -110,9 +110,9 @@ interface Exchange
   /**
    * Get balance. First entry of $assets is quote currency.
    *
-   * @return Balance
+   * @return Balance|WP_Error
    */
-  public static function get_balance() : Balance;
+  public static function get_balance();
 
   /**
    * Cancel all existing open orders.

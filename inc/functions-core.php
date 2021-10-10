@@ -169,5 +169,5 @@ function trader_request( string $url, array $query = array(), array $args = arra
    * Do the request.
    */
   $response = wp_remote_request( $url, $args );
-  return is_wp_error( $response ) || $response['response']['code'] !== 200 ? false : $response['body'];
+  return '' === wp_remote_retrieve_response_code( $response ) ? false : $response['body'];
 }

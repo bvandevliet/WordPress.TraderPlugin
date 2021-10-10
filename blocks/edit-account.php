@@ -52,6 +52,7 @@ function trader_dynamic_block_edit_account_cb( $block_attributes, $content )
 
       foreach ( $required_fields as $field_key => $field_name ) {
         if ( empty( $_POST[ $field_key ] ) ) {
+          // INCORRECT add() CALL ? !!
           /* translators: %s: Field name. */
           $errors->add( sprintf( __( '%s is a required field.', 'trader' ), '<strong>' . esc_html( $field_name ) . '</strong>' ), array( 'form-field' => $field_key ) );
         }
