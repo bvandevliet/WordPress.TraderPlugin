@@ -123,6 +123,7 @@ add_action(
   function ()
   {
     wp_enqueue_style( 'trader-plugin-styles', plugin_dir_url( __FILE__ ) . 'assets/css/style.css' );
+    wp_enqueue_script( 'trader-plugin-script-forms', plugin_dir_url( __FILE__ ) . 'assets/js/forms.js', array( 'jquery' ), false, true );
   },
   100
 );

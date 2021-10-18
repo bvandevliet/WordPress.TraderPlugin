@@ -21,32 +21,8 @@ function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
     return;
   }
 
-  /**
-   * Define alternative portfolio allocation weighting for specific coins.
-   * Default is 1, set to 0 to skip the coin.
-   *
-   * TEMPORARY, MOVE TO DATABASE !!
-   */
-  $asset_weightings = array(
-    'BTC'   => '.9',
-    'ETH'   => '.95',
-    'BNB'   => 0,
-    'MATIC' => 0,
-    'IOTA'  => 0,
-    'MIOTA' => 0,
-    'TRX'   => 0,
-    'XRP'   => 0,
-    'XLM'   => 0,
-    'AVAX'  => 0,
-    'CAKE'  => 0,
-    'SHIB'  => 0,
-    'BCH'   => 0,
-    'BSV'   => 0,
-    'WBTC'  => 0,
-    'BTCB'  => 0,
-    'ETC'   => 0,
-    'DOGE'  => 0,
-  );
+  $assets_weightings = get_user_meta( $current_user->ID, 'asset_weightings', true );
+  $assets_weightings = is_array( $assets_weightings ) ? $assets_weightings : array();
 
   $interval_days = isset( $_GET['interval_days'] ) ? trader_max( 1, floatstr( intval( $_GET['interval_days'] ) ) ) : 7;
   $top_count     = isset( $_GET['top_count'] ) ? trader_max( 1, floatstr( intval( $_GET['top_count'] ) ) ) : 30;
@@ -66,7 +42,7 @@ function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
 
         case 'do-portfolio-rebalance':
           $balance_exchange  = \Trader\Exchanges\Bitvavo::get_balance();
-          $balance_allocated = \Trader\get_asset_allocations( $asset_weightings, $args, $interval_days, $top_count, $max_limit );
+          $balance_allocated = \Trader\get_asset_allocations( $assets_weightings, $args, $interval_days, $top_count, $max_limit );
           $balance           = \Trader\merge_balance( $balance_allocated, $balance_exchange, $args );
 
           foreach ( \Trader\rebalance( $balance ) as $index => $order ) {
@@ -96,7 +72,7 @@ function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
 
   $balance_exchange = \Trader\Exchanges\Bitvavo::get_balance();
   if ( ! is_wp_error( $balance_exchange ) ) {
-    $balance_allocated = \Trader\get_asset_allocations( $asset_weightings, $args, $interval_days, $top_count, $max_limit );
+    $balance_allocated = \Trader\get_asset_allocations( $assets_weightings, $args, $interval_days, $top_count, $max_limit );
     $balance           = \Trader\merge_balance( $balance_allocated, $balance_exchange, $args );
 
     $deposit_history    = \Trader\Exchanges\Bitvavo::deposit_history();

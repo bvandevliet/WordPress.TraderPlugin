@@ -124,7 +124,7 @@ function set_asset_allocations(
 /**
  * Construct a ranked $balance with rebalanced allocation data.
  *
- * @param array   $asset_weightings  User defined adjusted weighting factors per asset.
+ * @param array   $assets_weightings User defined adjusted weighting factors per asset.
  * @param array   $args {.
  *   @type float|string $alloc_quote Allocation to keep in quote currency. Default is 0.
  * }
@@ -135,7 +135,7 @@ function set_asset_allocations(
  * @return \Trader\Exchanges\Balance
  */
 function get_asset_allocations(
-  array $asset_weightings = array(),
+  array $assets_weightings = array(),
   array $args = array(),
   float $interval_days = 7,
   int $top_count = 30,
@@ -176,7 +176,7 @@ function get_asset_allocations(
     /**
      * Skip if is stablecoin or weighting is set to zero.
      */
-    if ( in_array( 'stablecoin', $asset_cmc->tags, true ) || ( array_key_exists( $asset_cmc->symbol, $asset_weightings ) && $asset_weightings[ $asset_cmc->symbol ] == 0 ) ) {
+    if ( in_array( 'stablecoin', $asset_cmc->tags, true ) || ( array_key_exists( $asset_cmc->symbol, $assets_weightings ) && $assets_weightings[ $asset_cmc->symbol ] == 0 ) ) {
       continue;
     }
 
@@ -234,7 +234,7 @@ function get_asset_allocations(
      * Retrieve weighted asset allocation.
      */
     set_asset_allocations(
-      $asset_weightings[ $asset->symbol ] ?? 1,
+      $assets_weightings[ $asset->symbol ] ?? 1,
       $asset,
       array( 0 => array( 'CapMrktFFUSD' => ( (array) $asset->quote )[ \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY ]->market_cap ) )
     );

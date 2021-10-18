@@ -37,10 +37,6 @@ function trader_dynamic_block_exchange_apis_cb( $block_attributes, $content )
 
       if ( ! $errors->has_errors() ) {
         update_user_meta( $current_user->ID, 'api_keys', array_map( 'trader_encrypt_key', $keys ) );
-
-        // headers already sent ..
-        // wp_safe_redirect( add_query_arg( 'account_updated', true, get_permalink() ) );
-        // exit;
       }
     }
   }

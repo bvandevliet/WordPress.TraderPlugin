@@ -42,14 +42,19 @@ add_action(
         'description' => 'Shows current portfolio asset allocations.',
         'icon'        => 'editor-ol',
       ),
+      'trader/configuration'     => array(
+        'title'       => 'Configuration',
+        'description' => 'A form to configure trading parameters.',
+        'icon'        => 'admin-generic',
+      ),
       'trader/edit-account'  => array(
         'title'       => 'Edit account',
-        'description' => 'Prints a form to edit account details.',
+        'description' => 'A form to edit account details.',
         'icon'        => 'admin-users',
       ),
       'trader/exchange-apis' => array(
         'title'       => 'Exchange API keys',
-        'description' => 'Prints a form to edit API keys for the current user\'s exchanges.',
+        'description' => 'A form to edit API keys for the current user\'s exchanges.',
         'icon'        => 'admin-network',
       ),
     );

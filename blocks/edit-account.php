@@ -89,10 +89,6 @@ function trader_dynamic_block_edit_account_cb( $block_attributes, $content )
 
       if ( ! $errors->has_errors() ) {
         wp_update_user( $user );
-
-        // headers already sent ..
-        // wp_safe_redirect( add_query_arg( 'account_updated', true, get_permalink() ) );
-        // exit;
       }
     }
   }
@@ -103,7 +99,6 @@ function trader_dynamic_block_edit_account_cb( $block_attributes, $content )
   <form action="<?php echo esc_attr( get_permalink() ); ?>" method="post">
     <?php wp_nonce_field( 'update-user_' . $current_user->ID, 'save-account-details-nonce' ); ?>
 
-    <?php // if ( isset( $_GET['account_updated'] ) ) : // headers already sent .. ?>
     <?php if ( isset( $errors ) && is_wp_error( $errors ) && ! $errors->has_errors() ) : ?>
       <div class="updated notice is-dismissible"><p><?php esc_html_e( 'Account updated.', 'trader' ); ?></p></div>
     <?php endif; ?>
