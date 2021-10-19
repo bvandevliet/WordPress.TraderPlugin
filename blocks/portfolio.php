@@ -24,13 +24,14 @@ function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
   $assets_weightings = get_user_meta( $current_user->ID, 'asset_weightings', true );
   $assets_weightings = is_array( $assets_weightings ) ? $assets_weightings : array();
 
-  $interval_days = isset( $_GET['interval_days'] ) ? trader_max( 1, floatstr( intval( $_GET['interval_days'] ) ) ) : 7;
-  $top_count     = isset( $_GET['top_count'] ) ? trader_max( 1, floatstr( intval( $_GET['top_count'] ) ) ) : 30;
-  $max_limit     = isset( $_GET['max_limit'] ) ? trader_max( 1, floatstr( intval( $_GET['max_limit'] ) ) ) : 20;
-  $args          = array(
-    'alloc_quote' => isset( $_GET['alloc_quote'] ) ? trader_max( 0, floatstr( floatval( $_GET['alloc_quote'] ) ) ) : '0',
-    'takeout'     => isset( $_GET['takeout'] ) ? trader_max( 0, floatstr( floatval( $_GET['takeout'] ) ) ) : '0',
+  $args = array(
+    'top_count'   => isset( $_GET['top_count'] ) && is_numeric( $_GET['top_count'] ) ? trader_max( 1, intval( $_GET['top_count'] ) ) : 30,
+    'sqrt'        => isset( $_GET['sqrt'] ) && is_numeric( $_GET['sqrt'] ) ? trader_max( 1, intval( $_GET['sqrt'] ) ) : 5,
+    'alloc_quote' => isset( $_GET['alloc_quote'] ) && is_numeric( $_GET['alloc_quote'] ) ? trader_max( 0, floatstr( floatval( $_GET['alloc_quote'] ) ) ) : '0',
+    'takeout'     => isset( $_GET['takeout'] ) && is_numeric( $_GET['takeout'] ) ? trader_max( 0, floatstr( floatval( $_GET['takeout'] ) ) ) : '0',
   );
+
+  $balance_allocated = \Trader\get_asset_allocations( $assets_weightings, $args );
 
   $errors = new WP_Error();
 
@@ -41,9 +42,8 @@ function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
       switch ( $_POST['action'] ) {
 
         case 'do-portfolio-rebalance':
-          $balance_exchange  = \Trader\Exchanges\Bitvavo::get_balance();
-          $balance_allocated = \Trader\get_asset_allocations( $assets_weightings, $args, $interval_days, $top_count, $max_limit );
-          $balance           = \Trader\merge_balance( $balance_allocated, $balance_exchange, $args );
+          $balance_exchange = \Trader\Exchanges\Bitvavo::get_balance();
+          $balance          = \Trader\merge_balance( $balance_allocated, $balance_exchange, $args );
 
           foreach ( \Trader\rebalance( $balance ) as $index => $order ) {
             if ( ! empty( $order['errorCode'] ) ) {
@@ -72,8 +72,7 @@ function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
 
   $balance_exchange = \Trader\Exchanges\Bitvavo::get_balance();
   if ( ! is_wp_error( $balance_exchange ) ) {
-    $balance_allocated = \Trader\get_asset_allocations( $assets_weightings, $args, $interval_days, $top_count, $max_limit );
-    $balance           = \Trader\merge_balance( $balance_allocated, $balance_exchange, $args );
+    $balance = \Trader\merge_balance( $balance_allocated, $balance_exchange, $args );
 
     $deposit_history    = \Trader\Exchanges\Bitvavo::deposit_history();
     $withdrawal_history = \Trader\Exchanges\Bitvavo::withdrawal_history();
@@ -143,33 +142,32 @@ function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
     /**
      * WIP, WILL BE FURTHER IMPROVED FOR UX !!
      */
-    $rebl_query = array_merge( compact( /*'interval_days', */'top_count', 'max_limit' ), $args );
     ?>
     <form action="<?php echo esc_attr( get_permalink() ); ?>" method="get">
       <!-- <p class="form-row">
         <label><?php esc_html_e( 'Interval days', 'trader' ); ?> [n] <span class="required">*</span>
-        <input type="number" min="1" class="input-number" name="interval_days" value="<?php echo esc_attr( $rebl_query['interval_days'] ); ?>" />
+        <input type="number" min="1" class="input-number" name="interval_days" value="<?php echo esc_attr( $args['interval_days'] ); ?>" />
         </label>
       </p> -->
       <p class="form-row form-row-first">
         <label><?php esc_html_e( 'Top count', 'trader' ); ?> [n] <span class="required">*</span>
-        <input type="number" min="1" class="input-number" name="top_count" value="<?php echo esc_attr( $rebl_query['top_count'] ); ?>" />
+        <input type="number" min="1" class="input-number" name="top_count" value="<?php echo esc_attr( $args['top_count'] ); ?>" />
         </label>
       </p>
       <p class="form-row form-row-last">
-        <label><?php esc_html_e( 'Max limit', 'trader' ); ?> [n] <span class="required">*</span>
-        <input type="number" min="1" class="input-number" name="max_limit" value="<?php echo esc_attr( $rebl_query['max_limit'] ); ?>" />
+        <label><?php esc_html_e( 'Market cap ^(1/[n])', 'trader' ); ?>&nbsp;<span class="required">*</span>
+        <input type="number" min="1" class="input-number" name="sqrt" value="<?php echo esc_attr( $args['sqrt'] ); ?>" />
         </label>
       </p>
       <div class="clear"></div>
       <p class="form-row form-row-first">
-        <label><?php esc_html_e( 'Allocation quote', 'trader' ); ?> [%] <span class="required">*</span>
-        <input type="number" min="0" class="input-number" name="alloc_quote" value="<?php echo esc_attr( intval( $rebl_query['alloc_quote'] ) ); ?>" />
+        <label><?php esc_html_e( 'Quote allocation', 'trader' ); ?> [%] <span class="required">*</span>
+        <input type="number" min="0" class="input-number" name="alloc_quote" value="<?php echo esc_attr( intval( $args['alloc_quote'] ) ); ?>" />
         </label>
       </p>
       <p class="form-row form-row-last">
         <label><?php esc_html_e( 'Quote takeout', 'trader' ); ?> [€] <span class="required">*</span>
-        <input type="number" min="0" class="input-number" name="takeout" value="<?php echo esc_attr( $rebl_query['takeout'] ); ?>" />
+        <input type="number" min="0" class="input-number" name="takeout" value="<?php echo esc_attr( $args['takeout'] ); ?>" />
         </label>
       </p>
       <div class="clear"></div>
@@ -177,7 +175,7 @@ function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
         <button type="submit" class="button" value="<?php esc_attr_e( 'Refresh', 'trader' ); ?>"><?php esc_html_e( 'Refresh', 'trader' ); ?></button>
       </p>
     </form>
-    <form style="display:inline-block;" action="<?php echo esc_attr( get_permalink() ) . '?' . urldecode( http_build_query( $rebl_query ) ); ?>" method="post">
+    <form style="display:inline-block;" action="<?php echo esc_attr( get_permalink() ) . '?' . urldecode( http_build_query( $args ) ); ?>" method="post">
       <?php wp_nonce_field( 'portfolio-rebalance-user_' . $current_user->ID, 'do-portfolio-rebalance-nonce' ); ?>
       <p>
         <input type="hidden" name="action" value="do-portfolio-rebalance" />
@@ -185,7 +183,7 @@ function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
         onclick="return confirm('<?php echo esc_attr__( 'This will perform a portfolio rebalance.\nAre you sure?', 'trader' ); ?>');"><?php esc_html_e( 'Rebalance now', 'trader' ); ?></button>
       </p>
     </form>
-    <form style="display:inline-block;" action="<?php echo esc_attr( get_permalink() ) . '?' . urldecode( http_build_query( $rebl_query ) ); ?>" method="post">
+    <form style="display:inline-block;" action="<?php echo esc_attr( get_permalink() ) . '?' . urldecode( http_build_query( $args ) ); ?>" method="post">
       <?php wp_nonce_field( 'portfolio-rebalance-user_' . $current_user->ID, 'do-portfolio-rebalance-nonce' ); ?>
       <p>
         <input type="hidden" name="action" value="sell-whole-portfolio" />

@@ -108,15 +108,17 @@ function retrieve_allocation_indicators(
  * @param mixed                   $weighting  User defined adjusted weighting factor, usually 1.
  * @param \Trader\Exchanges\Asset $asset      The asset object.
  * @param array                   $market_cap Historical price, free-float, current and realized market cap data.
+ * @param int                     $sqrt       The square root of market cap to use.
  */
 function set_asset_allocations(
   $weighting,
   \Trader\Exchanges\Asset $asset, // pass by ref not required since var is object
-  array $market_cap )
+  array $market_cap,
+  int $sqrt = 5 )
 {
   $cap_ff = $market_cap[0]['CapMrktFFUSD'] ?? 0;
 
-  $asset->allocation_rebl['default']  = trader_max( 0, bcmul( $weighting, pow( $cap_ff, 1 / 5 ) ) );
+  $asset->allocation_rebl['default']  = trader_max( 0, bcmul( $weighting, pow( $cap_ff, 1 / $sqrt ) ) );
   $asset->allocation_rebl['absolute'] = trader_max( 0, $weighting );
 }
 
@@ -124,24 +126,30 @@ function set_asset_allocations(
 /**
  * Construct a ranked $balance with rebalanced allocation data.
  *
- * @param array   $assets_weightings User defined adjusted weighting factors per asset.
- * @param array   $args {.
- *   @type float|string $alloc_quote Allocation to keep in quote currency. Default is 0.
+ * @param array $assets_weightings     User defined adjusted weighting factors per asset.
+ * @param array $args {.
+ *   @type float        $interval_days Rebalance period.
+ *   @type int          $top_count     Amount of assets from the top market cap ranking.
+ *   @type int          $sqrt          The square root of market cap to use in allocation calculation.
+ *   @type float|string $alloc_quote   Allocation to keep in quote currency. Default is 0.
  * }
- * @param float   $interval_days     Rebalance period.
- * @param integer $top_count         Amount of assets from the top market cap ranking.
- * @param integer $max_limit         Max amount of assets in portfolio.
  *
  * @return \Trader\Exchanges\Balance
  */
 function get_asset_allocations(
   array $assets_weightings = array(),
-  array $args = array(),
-  float $interval_days = 7,
-  int $top_count = 30,
-  int $max_limit = 20 ) : \Trader\Exchanges\Balance
+  array $args = array() ) : \Trader\Exchanges\Balance
 {
-  $args['alloc_quote'] = ! empty( $args['alloc_quote'] ) ? bcdiv( trader_max( 0, trader_min( 100, $args['alloc_quote'] ) ), 100 ) : '0';
+  $args = wp_parse_args(
+    $args,
+    array(
+      'interval_days' => 7,
+      'top_count'     => 30,
+      'sqrt'          => 5,
+    )
+  );
+
+  $alloc_quote = ! empty( $args['alloc_quote'] ) ? bcdiv( trader_max( 0, trader_min( 100, $args['alloc_quote'] ) ), 100 ) : '0';
 
   /**
    * Initiate balance object and quote asset.
@@ -155,7 +163,7 @@ function get_asset_allocations(
    */
   $cmc_latest = Metrics\CoinMarketCap::list_latest(
     array(
-      'limit'   => $top_count,
+      'limit'   => $args['top_count'],
       'convert' => \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY,
     )
   );
@@ -215,7 +223,7 @@ function get_asset_allocations(
     $asset_cmc->indicators = new \stdClass();
     retrieve_allocation_indicators(
       $asset_cmc->symbol,
-      $interval_days,
+      $args['interval_days'],
       $asset_cmc->indicators->market_cap
     );
 
@@ -236,7 +244,8 @@ function get_asset_allocations(
     set_asset_allocations(
       $assets_weightings[ $asset->symbol ] ?? 1,
       $asset,
-      array( 0 => array( 'CapMrktFFUSD' => ( (array) $asset->quote )[ \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY ]->market_cap ) )
+      array( 0 => array( 'CapMrktFFUSD' => ( (array) $asset->quote )[ \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY ]->market_cap ) ),
+      $args['sqrt']
     );
 
     /**
@@ -248,23 +257,14 @@ function get_asset_allocations(
       }
       $total_allocations[ $mode ] = bcadd( $total_allocations[ $mode ], $allocation );
     }
-
-    /**
-     * Break if maximum allowed asset amount for portfolio is reached.
-     */
-    $max_limit--;
-    if ( $max_limit === 0 ) {
-      $balance->assets = array_slice( $balance->assets, 0, $index + 1 );
-      break;
-    }
   }
 
   /**
    * Scale for quote allocation.
    */
   foreach ( $total_allocations as $mode => $total_allocation ) {
-    $asset_quote->allocation_rebl[ $mode ] = $args['alloc_quote'];
-    $total_allocations[ $mode ]            = bcmul( bcdiv( '1', bcsub( 1, $args['alloc_quote'] ) ), $total_allocation );
+    $asset_quote->allocation_rebl[ $mode ] = $alloc_quote;
+    $total_allocations[ $mode ]            = bcmul( bcdiv( '1', bcsub( 1, $alloc_quote ) ), $total_allocation );
   }
 
   /**
