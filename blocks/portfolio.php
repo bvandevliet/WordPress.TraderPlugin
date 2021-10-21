@@ -85,7 +85,6 @@ function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
   }
 
   ob_start();
-  echo '<pre><code>';
 
   $balance_exchange = \Trader\Exchanges\Bitvavo::get_balance();
   $balance          = \Trader\merge_balance( $balance_allocated, $balance_exchange, $args );
@@ -108,13 +107,14 @@ function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
 
     $moneyflow_now = bcadd( $balance->amount_quote_total, $withdrawal_history['total'] );
 
-    echo ''
+    echo '<p class="monospace">'
        . '    DEPOSIT TOTAL (i)         : €' . str_pad( number_format( $deposit_history['total'], 2 ), 10, ' ', STR_PAD_LEFT ) . '<br>'
        . ' WITHDRAWAL TOTAL (o)         : €' . str_pad( number_format( $withdrawal_history['total'], 2 ), 10, ' ', STR_PAD_LEFT ) . '<br>'
        . '      BALANCE NOW (b)         : €' . str_pad( number_format( $balance->amount_quote_total, 2 ), 10, ' ', STR_PAD_LEFT ) . '<br>'
        . '    MONEYFLOW NOW (B=o+b)     : €' . str_pad( number_format( $moneyflow_now, 2 ), 10, ' ', STR_PAD_LEFT ) . '<br>'
        . '       GAIN TOTAL (B-i)       : €' . str_pad( number_format( bcsub( $moneyflow_now, $deposit_history['total'] ), 2 ), 10, ' ', STR_PAD_LEFT ) . '<br>'
-       . '       GAIN TOTAL (B/i-1)     :  ' . str_pad( trader_get_gain_perc( $moneyflow_now, $deposit_history['total'] ), 10, ' ', STR_PAD_LEFT ) . '%' . '<br>';
+       . '       GAIN TOTAL (B/i-1)     :  ' . str_pad( trader_get_gain_perc( $moneyflow_now, $deposit_history['total'] ), 10, ' ', STR_PAD_LEFT ) . '%' . '<br>'
+       . '</p>';
   }
 
   $market_cap = \Trader\Metrics\CoinMetrics::market_cap( 'BTC' );
@@ -122,7 +122,7 @@ function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
     $nupl_mvrvz = \Trader\Metrics\CoinMetrics::nupl_mvrvz( $market_cap );
     $fag_index  = \Trader\Metrics\Alternative_Me::fag_index()[0]->value;
 
-    echo '<br>'
+    echo '<p class="monospace">'
        . 'BTC top is reached when ..<br>';
     echo '<a href="https://www.lookintobitcoin.com/charts/relative-unrealized-profit--loss/"'
        . 'target="_blank" rel="noopener noreferrer"'
@@ -133,23 +133,39 @@ function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
     echo '<a href="https://alternative.me/crypto/fear-and-greed-index/"'
        . 'target="_blank" rel="noopener noreferrer"'
        . '>fag_index</a>    : ' . number_format( $fag_index, 0 ) . '    >= 80    and falling<br>';
+    echo '</p>';
   } else {
-    echo '<br>'
-       . 'Something went wrong while fetching onchain indicators ..<br>';
+    echo '<p>Something went wrong while fetching onchain indicators ..</p>';
   }
 
-  echo '<br> ASSET   NOW           NOW  REBL         REBL';
-  foreach ( $balance->assets as $asset ) {
-    echo '<br>'
-      . str_pad( $asset->symbol, 6, ' ', STR_PAD_LEFT ) . ':'
-      . '  €' . str_pad( number_format( $asset->amount_quote, 2 ), 8, ' ', STR_PAD_LEFT )
-      . str_pad( number_format( 100 * $asset->allocation_current, 2 ), 7, ' ', STR_PAD_LEFT ) . '%'
-      . '  €' . str_pad( number_format( bcmul( reset( $asset->allocation_rebl ), $balance->amount_quote_total ), 2 ), 8, ' ', STR_PAD_LEFT )
-      . str_pad( number_format( 100 * reset( $asset->allocation_rebl ), 2 ), 7, ' ', STR_PAD_LEFT ) . '%';
-  }
-  echo '<br>';
-
-  echo '</code></pre>';
+  ?>
+  <figure class="wp-block-table">
+    <table class="trader-portfolio" style="width:auto;">
+      <thead>
+        <tr>
+          <th>Asset</th><th></th><th colspan="4">Current balance</th><th></th><th colspan="4">Rebalanced situation</th>
+        </tr>
+      </thead>
+      <tbody>
+        <?php foreach ( $balance->assets as $asset ) : ?>
+          <tr>
+            <td><?php echo esc_html( $asset->symbol ); ?></td>
+            <td></td>
+            <td class="min-width">€</td>
+            <td class="trader-number"><?php echo esc_html( number_format( $asset->amount_quote, 2 ) ); ?></td>
+            <td class="trader-number"><?php echo esc_html( number_format( 100 * $asset->allocation_current, 2 ) ); ?></td>
+            <td>%</td>
+            <td></td>
+            <td class="min-width">€</td>
+            <td class="trader-number"><?php echo esc_html( number_format( bcmul( reset( $asset->allocation_rebl ), $balance->amount_quote_total ), 2 ) ); ?></td>
+            <td class="trader-number"><?php echo esc_html( number_format( 100 * reset( $asset->allocation_rebl ), 2 ) ); ?></td>
+            <td>%</td>
+          </tr>
+        <?php endforeach; ?>
+      </tbody>
+    </table>
+  </figure>
+  <?php
 
   if ( ! is_wp_error( $balance_allocated ) && ! is_wp_error( $balance_exchange ) ) :
 

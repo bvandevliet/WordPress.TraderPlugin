@@ -1,3 +1,40 @@
+.no-wrap {
+  white-space: pre;
+}
+
+.min-width {
+  /* width: min-content; */
+  width: .1ch;
+}
+
+pre,
+code,
+p.monospace {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+pre,
+code,
+kbd,
+tt,
+var,
+.monospace,
+.trader-number {
+  font-family: 'Lucida Console', Monaco, Consolas, "Andale Mono", "DejaVu Sans Mono", monospace;
+  white-space: pre;
+}
+
+.trader-number {
+  text-align: right;
+}
+
+table th.trader-number,
+table td.trader-number {
+  width: .1ch;
+}
+
 form .form-row {
   display: inline-block;
   clear: both;
