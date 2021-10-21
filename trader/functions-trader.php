@@ -16,12 +16,17 @@ defined( 'ABSPATH' ) || exit;
  *
  * @return \Trader\Exchanges\Balance $balance_merged Merged balance.
  */
-function merge_balance( \Trader\Exchanges\Balance $balance, ?\Trader\Exchanges\Balance $balance_exchange = null, array $args = array() ) : \Trader\Exchanges\Balance
+function merge_balance( $balance, $balance_exchange = null, array $args = array() ) : \Trader\Exchanges\Balance
 {
-  $args['takeout'] = ! empty( $balance_exchange->amount_quote_total ) && ! empty( $args['takeout'] )
-    ? trader_max( 0, trader_min( $balance_exchange->amount_quote_total, $args['takeout'] ) ) : 0;
-  $takeout_alloc   = $args['takeout'] > 0
-    ? trader_get_allocation( $args['takeout'], $balance_exchange->amount_quote_total ) : 0;
+  if ( is_wp_error( $balance ) || ! $balance instanceof \Trader\Exchanges\Balance ) {
+    $balance = new \Trader\Exchanges\Balance();
+  }
+  if ( is_wp_error( $balance_exchange ) || ! $balance_exchange instanceof \Trader\Exchanges\Balance ) {
+    $balance_exchange = new \Trader\Exchanges\Balance();
+  }
+
+  $args['takeout'] = ! empty( $args['takeout'] ) ? trader_max( 0, trader_min( $balance_exchange->amount_quote_total, $args['takeout'] ) ) : 0;
+  $takeout_alloc   = $args['takeout'] > 0 ? trader_get_allocation( $args['takeout'], $balance_exchange->amount_quote_total ) : 0;
 
   /**
    * Get current allocations.
@@ -134,11 +139,11 @@ function set_asset_allocations(
  *   @type float|string $alloc_quote   Allocation to keep in quote currency. Default is 0.
  * }
  *
- * @return \Trader\Exchanges\Balance
+ * @return \Trader\Exchanges\Balance|WP_Error
  */
 function get_asset_allocations(
   array $assets_weightings = array(),
-  array $args = array() ) : \Trader\Exchanges\Balance
+  array $args = array() )
 {
   $args = wp_parse_args(
     $args,
@@ -170,17 +175,15 @@ function get_asset_allocations(
 
   /**
    * Bail if the API request may have failed.
-   *
-   * ERROR HANDLING !!
    */
-  if ( empty( $cmc_latest ) || ! is_array( $cmc_latest->data ) ) {
-    return $balance;
+  if ( is_wp_error( $cmc_latest ) ) {
+    return $cmc_latest;
   }
 
   /**
    * Loop through the asset ranking and retrieve candlesticks and indicators.
    */
-  foreach ( $cmc_latest->data as $asset_cmc ) {
+  foreach ( $cmc_latest as $asset_cmc ) {
     /**
      * Skip if is stablecoin or weighting is set to zero.
      */

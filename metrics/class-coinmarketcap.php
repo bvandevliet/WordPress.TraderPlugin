@@ -54,7 +54,7 @@ class CoinMarketCap
    *
    * @param array $query https://coinmarketcap.com/api/documentation/v1/#operation/getV1CryptocurrencyListingsLatest
    *
-   * @return object[]|false
+   * @return object[]|WP_Error
    */
   public static function list_latest( $query = array() )
   {
@@ -68,6 +68,17 @@ class CoinMarketCap
       )
     );
 
-    return self::request( $endpoint, $query );
+    $response = self::request( $endpoint, $query );
+
+    if ( empty( $response ) || empty( $response->data ) || ! is_array( $response->data ) ) {
+      $errors = new \WP_Error();
+      $errors->add(
+        'market_cap_listings_latest-' . ( $response['error_code'] ?? 0 ),
+        __( 'CoinMarketCap error: ', 'trader' ) . ( $response['error_message'] ?? __( 'An unknown error occured.', 'trader' ) )
+      );
+      return $errors;
+    }
+
+    return $response->data;
   }
 }

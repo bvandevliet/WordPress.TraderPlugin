@@ -45,9 +45,23 @@ function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
           $balance_exchange = \Trader\Exchanges\Bitvavo::get_balance();
           $balance          = \Trader\merge_balance( $balance_allocated, $balance_exchange, $args );
 
+          if ( is_wp_error( $balance_allocated ) ) {
+            $errors->merge_from( $balance_allocated );
+          }
+          if ( is_wp_error( $balance_exchange ) ) {
+            $errors->merge_from( $balance_exchange );
+          }
+
+          if ( is_wp_error( $balance_allocated ) || is_wp_error( $balance_exchange ) ) {
+            break;
+          }
+
           foreach ( \Trader\rebalance( $balance ) as $index => $order ) {
             if ( ! empty( $order['errorCode'] ) ) {
-              $errors->add( $order['errorCode'] . '-' . $index, $order['error'] ?? __( 'An unknown error occured.', 'trader' ) );
+              $errors->add(
+                $order['errorCode'] . '-' . $index,
+                sprintf( __( 'Exchange error %1$s %2$s: ', 'trader' ), $order['side'], $order['market'] ) . ( $order['error'] ?? __( 'An unknown error occured.', 'trader' ) )
+              );
             }
           }
 
@@ -56,7 +70,10 @@ function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
         case 'sell-whole-portfolio':
           foreach ( \Trader\Exchanges\Bitvavo::sell_whole_portfolio() as $index => $order ) {
             if ( ! empty( $order['errorCode'] ) ) {
-              $errors->add( $order['errorCode'] . '-' . $index, $order['error'] ?? __( 'An unknown error occured.', 'trader' ) );
+              $errors->add(
+                $order['errorCode'] . '-' . $index,
+                sprintf( __( 'Exchange error %1$s %2$s: ', 'trader' ), $order['side'], $order['market'] ) . ( $order['error'] ?? __( 'An unknown error occured.', 'trader' ) )
+              );
             }
           }
 
@@ -71,9 +88,21 @@ function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
   echo '<pre><code>';
 
   $balance_exchange = \Trader\Exchanges\Bitvavo::get_balance();
-  if ( ! is_wp_error( $balance_exchange ) ) {
-    $balance = \Trader\merge_balance( $balance_allocated, $balance_exchange, $args );
+  $balance          = \Trader\merge_balance( $balance_allocated, $balance_exchange, $args );
 
+  if ( is_wp_error( $balance_allocated ) ) {
+    $errors->merge_from( $balance_allocated );
+  }
+  if ( is_wp_error( $balance_exchange ) ) {
+    $errors->merge_from( $balance_exchange );
+  }
+
+  if ( $errors->has_errors() ) :
+    ?><div class="error"><p><?php echo implode( "</p>\n<p>", $errors->get_error_messages() ); ?></p></div>
+    <?php
+  endif;
+
+  if ( ! is_wp_error( $balance_exchange ) ) {
     $deposit_history    = \Trader\Exchanges\Bitvavo::deposit_history();
     $withdrawal_history = \Trader\Exchanges\Bitvavo::withdrawal_history();
 
@@ -86,19 +115,7 @@ function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
        . '    MONEYFLOW NOW (B=o+b)     : €' . str_pad( number_format( $moneyflow_now, 2 ), 10, ' ', STR_PAD_LEFT ) . '<br>'
        . '       GAIN TOTAL (B-i)       : €' . str_pad( number_format( bcsub( $moneyflow_now, $deposit_history['total'] ), 2 ), 10, ' ', STR_PAD_LEFT ) . '<br>'
        . '       GAIN TOTAL (B/i-1)     :  ' . str_pad( trader_get_gain_perc( $moneyflow_now, $deposit_history['total'] ), 10, ' ', STR_PAD_LEFT ) . '%' . '<br>';
-  } else {
-    // $errors->merge_from( $balance_exchange );
-    foreach ( $balance_exchange->get_error_codes() as $code ) {
-      foreach ( $balance_exchange->get_error_messages( $code ) as $error_message ) {
-        $errors->add( 'exchange-' . $code, __( 'Exchange error: ', 'trader' ) . $error_message );
-      }
-    }
   }
-
-  if ( isset( $errors ) && is_wp_error( $errors ) && $errors->has_errors() ) :
-    ?><div class="error"><p><?php echo implode( "</p>\n<p>", $errors->get_error_messages() ); ?></p></div>
-    <?php
-  endif;
 
   $market_cap = \Trader\Metrics\CoinMetrics::market_cap( 'BTC' );
   if ( false !== $market_cap[0]['time'] ) {
@@ -121,23 +138,20 @@ function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
        . 'Something went wrong while fetching onchain indicators ..<br>';
   }
 
-  if ( ! is_wp_error( $balance_exchange ) ) :
+  echo '<br> ASSET   NOW           NOW  REBL         REBL';
+  foreach ( $balance->assets as $asset ) {
+    echo '<br>'
+      . str_pad( $asset->symbol, 6, ' ', STR_PAD_LEFT ) . ':'
+      . '  €' . str_pad( number_format( $asset->amount_quote, 2 ), 8, ' ', STR_PAD_LEFT )
+      . str_pad( number_format( 100 * $asset->allocation_current, 2 ), 7, ' ', STR_PAD_LEFT ) . '%'
+      . '  €' . str_pad( number_format( bcmul( reset( $asset->allocation_rebl ), $balance->amount_quote_total ), 2 ), 8, ' ', STR_PAD_LEFT )
+      . str_pad( number_format( 100 * reset( $asset->allocation_rebl ), 2 ), 7, ' ', STR_PAD_LEFT ) . '%';
+  }
+  echo '<br>';
 
-    echo '<br> ASSET   NOW           NOW  REBL         REBL';
-    foreach ( $balance->assets as $asset ) {
-      echo '<br>'
-        . str_pad( $asset->symbol, 6, ' ', STR_PAD_LEFT ) . ':'
-        . '  €' . str_pad( number_format( $asset->amount_quote, 2 ), 8, ' ', STR_PAD_LEFT )
-        . str_pad( number_format( 100 * $asset->allocation_current, 2 ), 7, ' ', STR_PAD_LEFT ) . '%'
-        . '  €' . str_pad( number_format( bcmul( reset( $asset->allocation_rebl ), $balance->amount_quote_total ), 2 ), 8, ' ', STR_PAD_LEFT )
-        . str_pad( number_format( 100 * reset( $asset->allocation_rebl ), 2 ), 7, ' ', STR_PAD_LEFT ) . '%';
-    }
-    echo '<br>';
-
-  endif;
   echo '</code></pre>';
 
-  if ( ! is_wp_error( $balance_exchange ) ) :
+  if ( ! is_wp_error( $balance_allocated ) && ! is_wp_error( $balance_exchange ) ) :
 
     /**
      * WIP, WILL BE FURTHER IMPROVED FOR UX !!
