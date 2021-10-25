@@ -19,7 +19,10 @@ defined( 'ABSPATH' ) || exit;
 function merge_balance( $balance, $balance_exchange = null, array $args = array() ) : \Trader\Exchanges\Balance
 {
   if ( is_wp_error( $balance ) || ! $balance instanceof \Trader\Exchanges\Balance ) {
-    $balance = new \Trader\Exchanges\Balance();
+    $balance_merged = new \Trader\Exchanges\Balance();
+  } else {
+    // Clone the object to prevent making changes to the original.
+    $balance_merged = clone $balance;
   }
   if ( is_wp_error( $balance_exchange ) || ! $balance_exchange instanceof \Trader\Exchanges\Balance ) {
     $balance_exchange = new \Trader\Exchanges\Balance();
@@ -31,7 +34,7 @@ function merge_balance( $balance, $balance_exchange = null, array $args = array(
   /**
    * Get current allocations.
    */
-  foreach ( $balance->assets as $asset ) { // pass by ref not required since var is object
+  foreach ( $balance_merged->assets as $asset ) { // pass by ref not required since var is object
     if ( ! empty( $balance_exchange->assets ) ) {
       foreach ( $balance_exchange->assets as $asset_exchange ) {
         if ( $asset_exchange->symbol === $asset->symbol ) {
@@ -63,21 +66,21 @@ function merge_balance( $balance, $balance_exchange = null, array $args = array(
    */
   if ( ! empty( $balance_exchange->assets ) ) {
     foreach ( $balance_exchange->assets as $asset_exchange ) {
-      foreach ( $balance->assets as $asset ) {
+      foreach ( $balance_merged->assets as $asset ) {
         if ( $asset_exchange->symbol === $asset->symbol ) {
           continue 2;
         }
       }
 
-      $balance->assets[] = $asset_exchange;
+      $balance_merged->assets[] = clone $asset_exchange;
     }
   }
 
   /**
-   * Set total amount of quote currency and return $balance.
+   * Set total amount of quote currency and return $balance_merged.
    */
-  $balance->amount_quote_total = $balance_exchange->amount_quote_total ?? 0;
-  return $balance;
+  $balance_merged->amount_quote_total = $balance_exchange->amount_quote_total ?? 0;
+  return $balance_merged;
 }
 
 
