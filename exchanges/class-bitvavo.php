@@ -262,11 +262,13 @@ class Bitvavo implements Exchange
   /**
    * {@inheritDoc}
    */
-  public static function buy_asset( string $symbol, $amount_quote ) : array
+  public static function buy_asset( string $symbol, $amount_quote, bool $simulate = false ) : array
   {
+    $market = $symbol . '-' . self::QUOTE_CURRENCY;
+
     $response = array(
       'orderId'           => null,
-      'market'            => null,
+      'market'            => $market,
       'side'              => 'buy',
       'status'            => 'rejected',
       'amountQuote'       => &$amount_quote,
@@ -278,9 +280,6 @@ class Bitvavo implements Exchange
     if ( $symbol === self::QUOTE_CURRENCY ) {
       return $response;
     }
-
-    $market             = $symbol . '-' . self::QUOTE_CURRENCY;
-    $response['market'] = $market;
 
     if ( floatval( $amount_quote ) <= 0 ) {
       return $response;
@@ -301,16 +300,20 @@ class Bitvavo implements Exchange
     // $amount       = trader_floor( bcdiv( $amount_quote, $price ), $asset_info['decimals'] );
 
     return wp_parse_args(
-      self::get_instance()->placeOrder(
-        $market,
-        'buy',
-        'market',
-        array(
-          'amountQuote'      => $amount_quote,
-          // 'disableMarketProtection' => true,
-          'responseRequired' => false,
+      $simulate
+        ? array(
+          'feePaid' => floatstr( bcmul( $amount_quote, self::TAKER_FEE ) ),
         )
-      ),
+        : self::get_instance()->placeOrder(
+          $market,
+          'buy',
+          'market',
+          array(
+            'amountQuote'             => $amount_quote,
+            'disableMarketProtection' => true,
+            'responseRequired'        => false,
+          )
+        ),
       $response
     );
   }
@@ -319,11 +322,13 @@ class Bitvavo implements Exchange
   /**
    * {@inheritDoc}
    */
-  public static function sell_asset( string $symbol, $amount_quote ) : array
+  public static function sell_asset( string $symbol, $amount_quote, bool $simulate = false ) : array
   {
+    $market = $symbol . '-' . self::QUOTE_CURRENCY;
+
     $response = array(
       'orderId'           => null,
-      'market'            => null,
+      'market'            => $market,
       'side'              => 'sell',
       'status'            => 'rejected',
       'amountQuote'       => &$amount_quote,
@@ -335,9 +340,6 @@ class Bitvavo implements Exchange
     if ( $symbol === self::QUOTE_CURRENCY ) {
       return $response;
     }
-
-    $market             = $symbol . '-' . self::QUOTE_CURRENCY;
-    $response['market'] = $market;
 
     if ( floatval( $amount_quote ) <= 0 ) {
       return $response;
@@ -370,33 +372,43 @@ class Bitvavo implements Exchange
     if ( floatval( bcmul( bcsub( $asset['available'], $amount ), $price ) ) <= 2 ) {
       $amount             = $asset['available'];
       $response['amount'] = $amount;
+      $amount_quote       = bcmul( $amount, $price );
 
       return wp_parse_args(
-        self::get_instance()->placeOrder(
-          $market,
-          'sell',
-          'market',
-          array(
-            'amount'           => $amount,
-            // 'disableMarketProtection' => true,
-            'responseRequired' => false,
+        $simulate
+          ? array(
+            'amountQuote' => floatstr( $amount_quote ),
+            'feePaid'     => floatstr( bcmul( $amount_quote, self::TAKER_FEE ) ),
           )
-        ),
+          : self::get_instance()->placeOrder(
+            $market,
+            'sell',
+            'market',
+            array(
+              'amount'                  => $amount,
+              'disableMarketProtection' => true,
+              'responseRequired'        => false,
+            )
+          ),
         $response
       );
     }
 
     return wp_parse_args(
-      self::get_instance()->placeOrder(
-        $market,
-        'sell',
-        'market',
-        array(
-          'amountQuote'      => $amount_quote,
-          // 'disableMarketProtection' => true,
-          'responseRequired' => false,
+      $simulate
+        ? array(
+          'feePaid' => floatstr( bcmul( $amount_quote, self::TAKER_FEE ) ),
         )
-      ),
+        : self::get_instance()->placeOrder(
+          $market,
+          'sell',
+          'market',
+          array(
+            'amountQuote'             => $amount_quote,
+            'disableMarketProtection' => true,
+            'responseRequired'        => false,
+          )
+        ),
       $response
     );
   }

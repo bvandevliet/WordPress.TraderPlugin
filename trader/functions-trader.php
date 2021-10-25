@@ -307,10 +307,11 @@ function get_asset_allocations(
  * @param array                     $args {.
  *   @type int                        $dust_limit Minimum required allocation difference in quote currency. Default is 2.
  * }
+ * @param bool                      $simulate     Perform a fake rebalance, e.g. to determine expected fee amount.
  *
  * @return array Order details.
  */
-function rebalance( \Trader\Exchanges\Balance $balance, string $mode = 'default', array $args = array() ) : array
+function rebalance( \Trader\Exchanges\Balance $balance, string $mode = 'default', array $args = array(), bool $simulate = false ) : array
 {
   $args = wp_parse_args(
     $args,
@@ -324,7 +325,7 @@ function rebalance( \Trader\Exchanges\Balance $balance, string $mode = 'default'
    *
    * ONLY BITVAVO EXCHANGE IS SUPPORTED YET !!
    */
-  $result = \Trader\Exchanges\Bitvavo::cancel_all_orders();
+  $result = ! $simulate ? \Trader\Exchanges\Bitvavo::cancel_all_orders() : array();
 
   /**
    * Portfolio rebalancing: first loop placing sell orders.
@@ -372,7 +373,7 @@ function rebalance( \Trader\Exchanges\Balance $balance, string $mode = 'default'
     // else // ONLY BUYING MAY BE REQUIRED ..
 
     if ( floatval( $amount_quote_to_sell ) > 0 ) {
-      $result[] = $asset->rebl_sell_order = \Trader\Exchanges\Bitvavo::sell_asset( $asset->symbol, $amount_quote_to_sell );
+      $result[] = $asset->rebl_sell_order = \Trader\Exchanges\Bitvavo::sell_asset( $asset->symbol, $amount_quote_to_sell, $simulate );
     }
   }
 
@@ -382,7 +383,7 @@ function rebalance( \Trader\Exchanges\Balance $balance, string $mode = 'default'
    */
   $all_filled  = false;
   $fill_checks = 60; // multiply by sleep seconds ..
-  while ( ! $all_filled && $fill_checks > 0 ) {
+  while ( ! $simulate && ! $all_filled && $fill_checks > 0 ) {
     sleep( 1 ); // multiply by $fill_checks ..
 
     $all_filled = true;
@@ -413,7 +414,7 @@ function rebalance( \Trader\Exchanges\Balance $balance, string $mode = 'default'
    * Portfolio rebalancing: third loop adding amounts to scale to available balance.
    * No need to pass takeout value as it is already applied to the passed $balance.
    */
-  $balance      = merge_balance( $balance, \Trader\Exchanges\Bitvavo::get_balance() );
+  $balance      = ! $simulate ? merge_balance( $balance, \Trader\Exchanges\Bitvavo::get_balance() ) : $balance;
   $to_buy_total = 0;
   foreach ( $balance->assets as $asset ) {
 
@@ -427,7 +428,7 @@ function rebalance( \Trader\Exchanges\Balance $balance, string $mode = 'default'
       continue;
     }
 
-    $asset->amount_quote_to_buy = bcsub( $amount_quote, $asset->amount_quote );
+    $asset->amount_quote_to_buy = bcsub( $amount_quote, ! $simulate ? $asset->amount_quote : bcsub( $asset->amount_quote, $asset->rebl_sell_order->amountQuote ?? 0 ) );
 
     /**
      * Skip if amount is below dust threshold.
@@ -455,10 +456,10 @@ function rebalance( \Trader\Exchanges\Balance $balance, string $mode = 'default'
       continue;
     }
 
-    $amount_quote_to_buy = bcmul( $balance->assets[0]->available, trader_get_allocation( $asset->amount_quote_to_buy, $to_buy_total ) );
+    $amount_quote_to_buy = ! $simulate ? bcmul( $balance->assets[0]->available, trader_get_allocation( $asset->amount_quote_to_buy, $to_buy_total ) ) : $asset->amount_quote_to_buy;
 
     if ( floatval( $amount_quote_to_buy ) >= \Trader\Exchanges\Bitvavo::MIN_QUOTE ) {
-      $result[] = $asset->rebl_buy_order = \Trader\Exchanges\Bitvavo::buy_asset( $asset->symbol, $amount_quote_to_buy );
+      $result[] = $asset->rebl_buy_order = \Trader\Exchanges\Bitvavo::buy_asset( $asset->symbol, $amount_quote_to_buy, $simulate );
     }
   }
 

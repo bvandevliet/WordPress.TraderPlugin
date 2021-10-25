@@ -137,20 +137,22 @@ interface Exchange
    *
    * @param string $symbol       Symbol of asset to buy.
    * @param mixed  $amount_quote Amount to buy in quote currency.
+   * @param bool   $simulate     Perform a fake order, e.g. to determine expected fee amount.
    *
    * @return array List of order data.
    */
-  public static function buy_asset( string $symbol, $amount_quote ) : array;
+  public static function buy_asset( string $symbol, $amount_quote, bool $simulate = false ) : array;
 
   /**
    * Sell asset.
    *
    * @param string $symbol       Symbol of asset to sell.
    * @param mixed  $amount_quote Amount to sell in quote currency.
+   * @param bool   $simulate     Perform a fake order, e.g. to determine expected fee amount.
    *
    * @return array List of order data.
    */
-  public static function sell_asset( string $symbol, $amount_quote ) : array;
+  public static function sell_asset( string $symbol, $amount_quote, bool $simulate = false ) : array;
 
   /**
    * Get order data.

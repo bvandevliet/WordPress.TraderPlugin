@@ -168,6 +168,11 @@ function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
   <?php
 
   if ( ! is_wp_error( $balance_allocated ) && ! is_wp_error( $balance_exchange ) ) :
+    $expected_fee = 0;
+    foreach ( \Trader\rebalance( $balance, 'default', array(), true ) as $fake_order ) {
+      $expected_fee = bcadd( $expected_fee, trader_ceil( $fake_order['feePaid'] ?? 0, 2 ) );
+    }
+    $expected_fee = number_format( trader_ceil( $expected_fee, 2 ), 2 );
 
     /**
      * WIP, WILL BE FURTHER IMPROVED FOR UX !!
@@ -209,8 +214,8 @@ function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
       <?php wp_nonce_field( 'portfolio-rebalance-user_' . $current_user->ID, 'do-portfolio-rebalance-nonce' ); ?>
       <p>
         <input type="hidden" name="action" value="do-portfolio-rebalance" />
-        <button type="submit" class="button trader-action-zone" value="<?php esc_attr_e( 'Rebalance now', 'trader' ); ?>"
-        onclick="return confirm('<?php echo esc_attr__( 'This will perform a portfolio rebalance.\nAre you sure?', 'trader' ); ?>');"><?php esc_html_e( 'Rebalance now', 'trader' ); ?></button>
+        <button type="submit" class="button trader-action-zone" value="<?php echo esc_attr( sprintf( __( 'Rebalance now (fee ≈ € %s)', 'trader' ), $expected_fee ) ); ?>"
+        onclick="return confirm('<?php esc_attr_e( 'This will perform a portfolio rebalance.\nAre you sure?', 'trader' ); ?>');"><?php echo esc_html( sprintf( __( 'Rebalance now (fee ≈ € %s)', 'trader' ), $expected_fee ) ); ?></button>
       </p>
     </form>
     <form style="display:inline-block;" action="<?php echo esc_attr( get_permalink() ) . '?' . urldecode( http_build_query( $args ) ); ?>" method="post">
@@ -218,7 +223,7 @@ function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
       <p>
         <input type="hidden" name="action" value="sell-whole-portfolio" />
         <button type="submit" class="button trader-danger-zone" value="<?php esc_attr_e( 'Sell whole portfolio', 'trader' ); ?>"
-        onclick="return confirm('<?php echo esc_attr__( 'This will sell all your assets.\nAre you sure?', 'trader' ); ?>');"><?php esc_html_e( 'Sell whole portfolio', 'trader' ); ?></button>
+        onclick="return confirm('<?php esc_attr_e( 'This will sell all your assets.\nAre you sure?', 'trader' ); ?>');"><?php esc_html_e( 'Sell whole portfolio', 'trader' ); ?></button>
       </p>
     </form>
 
