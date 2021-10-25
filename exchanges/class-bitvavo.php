@@ -189,6 +189,7 @@ class Bitvavo implements Exchange
 
       $balance->amount_quote_total = bcadd( $balance->amount_quote_total, $asset->amount_quote );
 
+      // phpcs:ignore WordPress.PHP.StrictComparisons
       if ( $i === 0 || $asset->amount_quote != 0 ) {
         $balance->assets[] = $asset;
       }
@@ -233,6 +234,7 @@ class Bitvavo implements Exchange
         continue;
       }
 
+      // phpcs:ignore WordPress.PHP.StrictComparisons
       if ( $asset['available'] == 0 || in_array( $asset['symbol'], $ignore, true ) ) {
         continue;
       }
@@ -343,6 +345,7 @@ class Bitvavo implements Exchange
 
     $asset = self::get_instance()->balance( array( 'symbol' => $symbol ) )[0];
 
+    // phpcs:ignore WordPress.PHP.StrictComparisons
     if ( $asset['available'] == 0 ) {
       return $response;
     }

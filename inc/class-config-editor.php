@@ -71,6 +71,7 @@ class Config_Editor extends File_Editor
         strtolower( $value ) === 'on'
       )
     ) {
+      // phpcs:ignore WordPress.PHP.StrictComparisons
       $content_value = json_encode( $value == true );
     }
 

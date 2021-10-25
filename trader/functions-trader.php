@@ -187,6 +187,7 @@ function get_asset_allocations(
     /**
      * Skip if is stablecoin or weighting is set to zero.
      */
+    // phpcs:ignore WordPress.PHP.StrictComparisons
     if ( in_array( 'stablecoin', $asset_cmc->tags, true ) || ( array_key_exists( $asset_cmc->symbol, $assets_weightings ) && $assets_weightings[ $asset_cmc->symbol ] == 0 ) ) {
       continue;
     }

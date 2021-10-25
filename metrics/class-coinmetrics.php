@@ -95,7 +95,9 @@ class CoinMetrics
 
     $st_dev = trader_st_dev( $cap_cur );
 
+    // phpcs:ignore WordPress.PHP.StrictComparisons
     $nupl  = 0 == $cap_cur[0] ? '0' : $diff / $cap_cur[0];
+    // phpcs:ignore WordPress.PHP.StrictComparisons
     $mvrvz = 0 == $st_dev ? '0' : $diff / $st_dev;
 
     return compact( 'nupl', 'mvrvz' );
@@ -125,7 +127,9 @@ class CoinMetrics
       $diff   = $cap_cur[ $index ] - $cap_real[ $index ];
       $st_dev = trader_st_dev( array_slice( $cap_cur, $index ) );
 
+      // phpcs:ignore WordPress.PHP.StrictComparisons
       $nupl[]  = 0 == $cap_cur[ $index ] ? '0' : floatstr( $diff / $cap_cur[ $index ] );
+      // phpcs:ignore WordPress.PHP.StrictComparisons
       $mvrvz[] = 0 == $st_dev ? '0' : floatstr( $diff / $st_dev );
     }
 

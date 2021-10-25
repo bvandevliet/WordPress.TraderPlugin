@@ -156,6 +156,7 @@ function trader_set_precision( $number, int $precision ) : string
  */
 function trader_get_allocation( $portion, $total ) : string
 {
+  // phpcs:ignore WordPress.PHP.StrictComparisons
   return $total == 0 ? '0' : floatstr( bcdiv( floatstr( $portion ), floatstr( $total ) ) );
 }
 
@@ -170,6 +171,7 @@ function trader_get_allocation( $portion, $total ) : string
  */
 function trader_get_percentage( $portion, $total, int $decimals = 2 ) : string
 {
+  // phpcs:ignore WordPress.PHP.StrictComparisons
   return number_format( $total == 0 ? '0' : bcmul( 100, bcdiv( floatstr( $portion ), floatstr( $total ) ) ), $decimals );
 }
 
@@ -184,6 +186,7 @@ function trader_get_percentage( $portion, $total, int $decimals = 2 ) : string
  */
 function trader_get_gain_perc( $result, $original, int $decimals = 2 ) : string
 {
+  // phpcs:ignore WordPress.PHP.StrictComparisons
   return number_format( $original == 0 ? '0' : bcmul( 100, bcadd( bcdiv( floatstr( $result ), floatstr( $original ) ), -1 ) ), $decimals );
 }
 
