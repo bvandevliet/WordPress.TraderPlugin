@@ -1,4 +1,6 @@
-.no-wrap {
+.no-wrap,
+table.no-wrap th,
+table.no-wrap td {
   white-space: pre;
 }
 
@@ -28,8 +30,11 @@ var,
 
 .trader-number {
   text-align: right;
+  white-space: pre;
 }
 
+table tr.trader-number th,
+table tr.trader-number td,
 table th.trader-number,
 table td.trader-number {
   width: .1ch;

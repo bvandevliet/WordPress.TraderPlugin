@@ -94,6 +94,11 @@ require __DIR__ . '/trader/class-indicator.php';
 require __DIR__ . '/trader/functions-trader.php';
 
 /**
+ * Load html element functions.
+ */
+require __DIR__ . '/inc/html-output.php';
+
+/**
  * Load blocks.
  */
 require __DIR__ . '/blocks/_register-blocks.php';

@@ -21,9 +21,6 @@ function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
     return;
   }
 
-  $assets_weightings = get_user_meta( $current_user->ID, 'asset_weightings', true );
-  $assets_weightings = is_array( $assets_weightings ) ? $assets_weightings : array();
-
   $args = array(
     'top_count'   => isset( $_GET['top_count'] ) && is_numeric( $_GET['top_count'] ) ? trader_max( 1, intval( $_GET['top_count'] ) ) : 30,
     'sqrt'        => isset( $_GET['sqrt'] ) && is_numeric( $_GET['sqrt'] ) ? trader_max( 1, intval( $_GET['sqrt'] ) ) : 5,
@@ -31,9 +28,12 @@ function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
     'takeout'     => isset( $_GET['takeout'] ) && is_numeric( $_GET['takeout'] ) ? trader_max( 0, floatstr( floatval( $_GET['takeout'] ) ) ) : '0',
   );
 
-  $balance_allocated = \Trader\get_asset_allocations( $assets_weightings, $args );
-
   $errors = new WP_Error();
+
+  $assets_weightings = get_user_meta( $current_user->ID, 'asset_weightings', true );
+  $assets_weightings = is_array( $assets_weightings ) ? $assets_weightings : array();
+
+  $balance_allocated = \Trader\get_asset_allocations( $assets_weightings, $args );
 
   if ( isset( $_SERVER['REQUEST_METHOD'] ) && 'POST' === $_SERVER['REQUEST_METHOD'] ) {
     if ( isset( $_POST['action'] )
@@ -84,8 +84,6 @@ function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
     }
   }
 
-  ob_start();
-
   $balance_exchange = \Trader\Exchanges\Bitvavo::get_balance();
   $balance          = \Trader\merge_balance( $balance_allocated, $balance_exchange, $args );
 
@@ -96,76 +94,18 @@ function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
     $errors->merge_from( $balance_exchange );
   }
 
+  ob_start();
+
   if ( $errors->has_errors() ) :
     ?><div class="error"><p><?php echo implode( "</p>\n<p>", $errors->get_error_messages() ); ?></p></div>
     <?php
   endif;
 
-  if ( ! is_wp_error( $balance_exchange ) ) {
-    $deposit_history    = \Trader\Exchanges\Bitvavo::deposit_history();
-    $withdrawal_history = \Trader\Exchanges\Bitvavo::withdrawal_history();
+  trader_echo_balance_summary( $balance_exchange );
 
-    $moneyflow_now = bcadd( $balance->amount_quote_total, $withdrawal_history['total'] );
+  trader_echo_portfolio( $balance );
 
-    echo '<p class="monospace">'
-       . '    DEPOSIT TOTAL (i)         : €' . str_pad( number_format( $deposit_history['total'], 2 ), 10, ' ', STR_PAD_LEFT ) . '<br>'
-       . ' WITHDRAWAL TOTAL (o)         : €' . str_pad( number_format( $withdrawal_history['total'], 2 ), 10, ' ', STR_PAD_LEFT ) . '<br>'
-       . '      BALANCE NOW (b)         : €' . str_pad( number_format( $balance->amount_quote_total, 2 ), 10, ' ', STR_PAD_LEFT ) . '<br>'
-       . '    MONEYFLOW NOW (B=o+b)     : €' . str_pad( number_format( $moneyflow_now, 2 ), 10, ' ', STR_PAD_LEFT ) . '<br>'
-       . '       GAIN TOTAL (B-i)       : €' . str_pad( number_format( bcsub( $moneyflow_now, $deposit_history['total'] ), 2 ), 10, ' ', STR_PAD_LEFT ) . '<br>'
-       . '       GAIN TOTAL (B/i-1)     :  ' . str_pad( trader_get_gain_perc( $moneyflow_now, $deposit_history['total'] ), 10, ' ', STR_PAD_LEFT ) . '%' . '<br>'
-       . '</p>';
-  }
-
-  $market_cap = \Trader\Metrics\CoinMetrics::market_cap( 'BTC' );
-  if ( false !== $market_cap[0]['time'] ) {
-    $nupl_mvrvz = \Trader\Metrics\CoinMetrics::nupl_mvrvz( $market_cap );
-    $fag_index  = \Trader\Metrics\Alternative_Me::fag_index()[0]->value;
-
-    echo '<p class="monospace">'
-       . 'BTC top is reached when ..<br>';
-    echo '<a href="https://www.lookintobitcoin.com/charts/relative-unrealized-profit--loss/"'
-       . 'target="_blank" rel="noopener noreferrer"'
-       . '>nupl</a>         :  ' . number_format( $nupl_mvrvz['nupl'], 2 ) . ' >=  0.75 and falling<br>';
-    echo '<a href="https://www.lookintobitcoin.com/charts/mvrv-zscore/"'
-       . 'target="_blank" rel="noopener noreferrer"'
-       . '>mvrv_z_score</a> :  ' . number_format( $nupl_mvrvz['mvrvz'], 2 ) . ' >=  9.00 and falling<br>';
-    echo '<a href="https://alternative.me/crypto/fear-and-greed-index/"'
-       . 'target="_blank" rel="noopener noreferrer"'
-       . '>fag_index</a>    : ' . number_format( $fag_index, 0 ) . '    >= 80    and falling<br>';
-    echo '</p>';
-  } else {
-    echo '<p>Something went wrong while fetching onchain indicators ..</p>';
-  }
-
-  ?>
-  <figure class="wp-block-table">
-    <table class="trader-portfolio" style="width:auto;">
-      <thead>
-        <tr>
-          <th>Asset</th><th></th><th colspan="4">Current balance</th><th></th><th colspan="4">Rebalanced situation</th>
-        </tr>
-      </thead>
-      <tbody>
-        <?php foreach ( $balance->assets as $asset ) : ?>
-          <tr>
-            <td><?php echo esc_html( $asset->symbol ); ?></td>
-            <td></td>
-            <td class="min-width">€</td>
-            <td class="trader-number"><?php echo esc_html( number_format( $asset->amount_quote, 2 ) ); ?></td>
-            <td class="trader-number"><?php echo esc_html( number_format( 100 * $asset->allocation_current, 2 ) ); ?></td>
-            <td>%</td>
-            <td></td>
-            <td class="min-width">€</td>
-            <td class="trader-number"><?php echo esc_html( number_format( bcmul( reset( $asset->allocation_rebl ), $balance->amount_quote_total ), 2 ) ); ?></td>
-            <td class="trader-number"><?php echo esc_html( number_format( 100 * reset( $asset->allocation_rebl ), 2 ) ); ?></td>
-            <td>%</td>
-          </tr>
-        <?php endforeach; ?>
-      </tbody>
-    </table>
-  </figure>
-  <?php
+  trader_echo_onchain_summary();
 
   if ( ! is_wp_error( $balance_allocated ) && ! is_wp_error( $balance_exchange ) ) :
     $expected_fee = 0;
@@ -229,5 +169,6 @@ function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
 
     <?php
   endif;
+
   return ob_get_clean();
 }
