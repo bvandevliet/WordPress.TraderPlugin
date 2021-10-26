@@ -24,7 +24,7 @@ function trader_dynamic_block_configuration_cb( $block_attributes, $content )
      * Process form data ..
      */
     if ( isset( $_POST['save-trader-configuration-nonce'] ) && wp_verify_nonce( $_POST['save-trader-configuration-nonce'], 'update-user_' . $current_user->ID ) ) {
-      $errors = new WP_Error();
+      $errors = get_error_obj();
 
       if (
         isset( $_POST['assets'] ) && is_array( $_POST['assets'] ) &&

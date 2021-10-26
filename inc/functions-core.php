@@ -101,6 +101,25 @@ function trader_array_transpose( array $arr ) : array
   return $out;
 }
 
+if ( ! function_exists( 'get_error_obj' ) ) {
+  /**
+   * Get the global Error object.
+   *
+   * @global \WP_Error|null The global WP_Error object if any.
+   *
+   * @return \WP_Error $errors
+   */
+  function get_error_obj() : \WP_Error
+  {
+    global $errors;
+
+    /**
+     * @var \WP_Error
+     */
+    return is_wp_error( $errors ) ? $errors : new \WP_Error();
+  }
+}
+
 if ( ! function_exists( 'array_some' ) ) {
   /**
    * Determines whether the specified callback function returns true for any element of an array.

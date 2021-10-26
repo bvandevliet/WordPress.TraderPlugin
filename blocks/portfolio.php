@@ -21,14 +21,9 @@ function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
     return;
   }
 
-  $args = array(
-    'top_count'   => isset( $_GET['top_count'] ) && is_numeric( $_GET['top_count'] ) ? trader_max( 1, intval( $_GET['top_count'] ) ) : 30,
-    'sqrt'        => isset( $_GET['sqrt'] ) && is_numeric( $_GET['sqrt'] ) ? trader_max( 1, intval( $_GET['sqrt'] ) ) : 5,
-    'alloc_quote' => isset( $_GET['alloc_quote'] ) && is_numeric( $_GET['alloc_quote'] ) ? trader_max( 0, floatstr( floatval( $_GET['alloc_quote'] ) ) ) : '0',
-    'takeout'     => isset( $_GET['takeout'] ) && is_numeric( $_GET['takeout'] ) ? trader_max( 0, floatstr( floatval( $_GET['takeout'] ) ) ) : '0',
-  );
+  $args = \Trader\get_args_from_get_params();
 
-  $errors = new WP_Error();
+  $errors = get_error_obj();
 
   $assets_weightings = get_user_meta( $current_user->ID, 'asset_weightings', true );
   $assets_weightings = is_array( $assets_weightings ) ? $assets_weightings : array();

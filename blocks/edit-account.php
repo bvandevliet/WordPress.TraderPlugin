@@ -24,7 +24,7 @@ function trader_dynamic_block_edit_account_cb( $block_attributes, $content )
      * Process form data ..
      */
     if ( isset( $_POST['save-account-details-nonce'] ) && wp_verify_nonce( $_POST['save-account-details-nonce'], 'update-user_' . $current_user->ID ) ) {
-      $errors = new WP_Error();
+      $errors = get_error_obj();
 
       // $_POST user data.
       $first_name   = ! empty( $_POST['account_first_name'] ) ? sanitize_text_field( wp_unslash( $_POST['account_first_name'] ) ) : '';

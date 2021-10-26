@@ -6,6 +6,21 @@ defined( 'ABSPATH' ) || exit;
 
 
 /**
+ * Get rebalance parameters from GET parameters.
+ *
+ * @return array
+ */
+function get_args_from_get_params() : array
+{
+  return array(
+    'top_count'   => isset( $_GET['top_count'] ) && is_numeric( $_GET['top_count'] ) ? trader_max( 1, intval( $_GET['top_count'] ) ) : 30,
+    'sqrt'        => isset( $_GET['sqrt'] ) && is_numeric( $_GET['sqrt'] ) ? trader_max( 1, intval( $_GET['sqrt'] ) ) : 5,
+    'alloc_quote' => isset( $_GET['alloc_quote'] ) && is_numeric( $_GET['alloc_quote'] ) ? trader_max( 0, floatstr( floatval( $_GET['alloc_quote'] ) ) ) : '0',
+    'takeout'     => isset( $_GET['takeout'] ) && is_numeric( $_GET['takeout'] ) ? trader_max( 0, floatstr( floatval( $_GET['takeout'] ) ) ) : '0',
+  );
+}
+
+/**
  * Update an existing balance with actual values from an exchange balance.
  *
  * @param \Trader\Exchanges\Balance $balance          Existing balance.
