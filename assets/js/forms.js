@@ -7,6 +7,19 @@
     return !$input.val() || $input.val() == $input.attr('default');
   }
 
+  /**
+   * Cross-update input values that share the same "name" attribute value.
+   */
+  $('form input').on({
+    input: e =>
+    {
+      let $this = $(e.target);
+
+      $("form input[name='" + $this.attr('name') + "']").not(e.target)
+        .filter((i, input) => !/\[\]$/.test($(input).attr('name'))).val($this.val());
+    }
+  });
+
   const empty_sibling_row_exists = this_row =>
   {
     let $this_row = $(this_row);
@@ -21,8 +34,8 @@
   $('.form-row-cloneable input').on({
     input: e =>
     {
-      const $this = $(e.target);
-      const $cloneable = $this.parents('.form-row-cloneable').first();
+      let $this = $(e.target);
+      let $cloneable = $this.parents('.form-row-cloneable').first();
 
       if (
         !empty_sibling_row_exists($cloneable) && $this.val()
@@ -41,8 +54,8 @@
     },
     blur: e =>
     {
-      const $this = $(e.target);
-      const $cloneable = $this.parents('.form-row-cloneable').first();
+      let $this = $(e.target);
+      let $cloneable = $this.parents('.form-row-cloneable').first();
 
       if (
         empty_sibling_row_exists($cloneable) && $cloneable.siblings('.form-row-cloneable').length > 0

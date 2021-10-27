@@ -43,9 +43,9 @@ class Alternative_Me
    *
    * @param array $query https://alternative.me/crypto/fear-and-greed-index/#api
    *
-   * @return mixed|false
+   * @return array
    */
-  public static function fag_index( $query = array() )
+  public static function fag_index( $query = array() ) : array
   {
     $endpoint = 'fng';
 
@@ -55,6 +55,6 @@ class Alternative_Me
     );
 
     $response = self::request( $endpoint, $query );
-    return is_object( $response ) ? $response->data : null;
+    return is_object( $response ) ? $response->data : array( (object) array( 'value' => -1 ) );
   }
 }

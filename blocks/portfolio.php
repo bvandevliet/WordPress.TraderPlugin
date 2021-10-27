@@ -21,7 +21,7 @@ function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
     return;
   }
 
-  $args = \Trader\get_args_from_get_params();
+  $args = \Trader\get_args_from_request_params();
 
   $errors = get_error_obj();
 
@@ -51,7 +51,7 @@ function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
             break;
           }
 
-          foreach ( \Trader\rebalance( $balance ) as $index => $order ) {
+          foreach ( \Trader\rebalance( $balance, 'default' ) as $index => $order ) {
             if ( ! empty( $order['errorCode'] ) ) {
               $errors->add(
                 $order['errorCode'] . '-' . $index,
@@ -115,29 +115,39 @@ function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
     ?>
     <form action="<?php echo esc_attr( get_permalink() ); ?>" method="get">
       <!-- <p class="form-row">
-        <label><?php esc_html_e( 'Interval days', 'trader' ); ?> [n] <span class="required">*</span>
-        <input type="number" min="1" class="input-number" name="interval_days" value="<?php echo esc_attr( $args['interval_days'] ); ?>" />
+        <label>
+          <?php esc_html_e( 'Interval days', 'trader' ); ?> [n]&nbsp;
+          <span style="display:inline-block;"><?php echo esc_html( sprintf( __( '(current = %s)', 'trader' ), $args['interval_days'] ) ); ?></span>
+          <input type="number" min="1" class="input-number" name="interval_days" value="<?php echo esc_attr( $args['interval_days'] ); ?>" />
         </label>
       </p> -->
       <p class="form-row form-row-first">
-        <label><?php esc_html_e( 'Top count', 'trader' ); ?> [n] <span class="required">*</span>
-        <input type="number" min="1" class="input-number" name="top_count" value="<?php echo esc_attr( $args['top_count'] ); ?>" />
+        <label>
+          <?php esc_html_e( 'Top count', 'trader' ); ?> [n]&nbsp;
+          <span style="display:inline-block;"><?php echo esc_html( sprintf( __( '(current = %s)', 'trader' ), $args['top_count'] ) ); ?></span>
+          <input type="number" min="1" class="input-number" name="top_count" value="<?php echo esc_attr( $args['top_count'] ); ?>" />
         </label>
       </p>
       <p class="form-row form-row-last">
-        <label><?php esc_html_e( 'Market cap ^(1/[n])', 'trader' ); ?>&nbsp;<span class="required">*</span>
-        <input type="number" min="1" class="input-number" name="sqrt" value="<?php echo esc_attr( $args['sqrt'] ); ?>" />
+        <label>
+          <?php esc_html_e( 'Market cap ^(1/[n])', 'trader' ); ?>&nbsp;
+          <span style="display:inline-block;"><?php echo esc_html( sprintf( __( '(current = %s)', 'trader' ), $args['sqrt'] ) ); ?></span>
+          <input type="number" min="1" class="input-number" name="sqrt" value="<?php echo esc_attr( $args['sqrt'] ); ?>" />
         </label>
       </p>
       <div class="clear"></div>
       <p class="form-row form-row-first">
-        <label><?php esc_html_e( 'Quote allocation', 'trader' ); ?> [%] <span class="required">*</span>
-        <input type="number" min="0" class="input-number" name="alloc_quote" value="<?php echo esc_attr( intval( $args['alloc_quote'] ) ); ?>" />
+        <label>
+          <?php esc_html_e( 'Quote allocation', 'trader' ); ?> [%]&nbsp;
+          <span style="display:inline-block;"><?php echo esc_html( sprintf( __( '(current = %s)', 'trader' ), $args['alloc_quote'] ) ); ?></span>
+          <input type="number" min="0" class="input-number" name="alloc_quote" value="<?php echo esc_attr( $args['alloc_quote'] ); ?>" />
         </label>
       </p>
       <p class="form-row form-row-last">
-        <label><?php esc_html_e( 'Quote takeout', 'trader' ); ?> [€] <span class="required">*</span>
-        <input type="number" min="0" class="input-number" name="takeout" value="<?php echo esc_attr( $args['takeout'] ); ?>" />
+        <label>
+          <?php esc_html_e( 'Quote takeout', 'trader' ); ?> [€]&nbsp;
+          <span style="display:inline-block;"><?php echo esc_html( sprintf( __( '(current = %s)', 'trader' ), $args['takeout'] ) ); ?></span>
+          <input type="number" min="0" class="input-number" name="takeout" value="<?php echo esc_attr( $args['takeout'] ); ?>" />
         </label>
       </p>
       <div class="clear"></div>
@@ -145,18 +155,26 @@ function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
         <button type="submit" class="button" value="<?php esc_attr_e( 'Refresh', 'trader' ); ?>"><?php esc_html_e( 'Refresh', 'trader' ); ?></button>
       </p>
     </form>
-    <form style="display:inline-block;" action="<?php echo esc_attr( get_permalink() ) . '?' . urldecode( http_build_query( $args ) ); ?>" method="post">
+    <form style="display:inline-block;" action="<?php echo esc_attr( get_permalink() ); ?>" method="post">
       <?php wp_nonce_field( 'portfolio-rebalance-user_' . $current_user->ID, 'do-portfolio-rebalance-nonce' ); ?>
       <p>
         <input type="hidden" name="action" value="do-portfolio-rebalance" />
+        <input type="hidden" name="top_count" value="<?php echo esc_attr( $args['top_count'] ); ?>" />
+        <input type="hidden" name="sqrt" value="<?php echo esc_attr( $args['sqrt'] ); ?>" />
+        <input type="hidden" name="alloc_quote" value="<?php echo esc_attr( $args['alloc_quote'] ); ?>" />
+        <input type="hidden" name="takeout" value="<?php echo esc_attr( $args['takeout'] ); ?>" />
         <button type="submit" class="button trader-action-zone" value="<?php echo esc_attr( sprintf( __( 'Rebalance now (fee ≈ € %s)', 'trader' ), $expected_fee ) ); ?>"
         onclick="return confirm('<?php esc_attr_e( 'This will perform a portfolio rebalance.\nAre you sure?', 'trader' ); ?>');"><?php echo esc_html( sprintf( __( 'Rebalance now (fee ≈ € %s)', 'trader' ), $expected_fee ) ); ?></button>
       </p>
     </form>
-    <form style="display:inline-block;" action="<?php echo esc_attr( get_permalink() ) . '?' . urldecode( http_build_query( $args ) ); ?>" method="post">
+    <form style="display:inline-block;" action="<?php echo esc_attr( get_permalink() ); ?>" method="post">
       <?php wp_nonce_field( 'portfolio-rebalance-user_' . $current_user->ID, 'do-portfolio-rebalance-nonce' ); ?>
       <p>
         <input type="hidden" name="action" value="sell-whole-portfolio" />
+        <input type="hidden" name="top_count" value="<?php echo esc_attr( $args['top_count'] ); ?>" />
+        <input type="hidden" name="sqrt" value="<?php echo esc_attr( $args['sqrt'] ); ?>" />
+        <input type="hidden" name="alloc_quote" value="<?php echo esc_attr( $args['alloc_quote'] ); ?>" />
+        <input type="hidden" name="takeout" value="<?php echo esc_attr( $args['takeout'] ); ?>" />
         <button type="submit" class="button trader-danger-zone" value="<?php esc_attr_e( 'Sell whole portfolio', 'trader' ); ?>"
         onclick="return confirm('<?php esc_attr_e( 'This will sell all your assets.\nAre you sure?', 'trader' ); ?>');"><?php esc_html_e( 'Sell whole portfolio', 'trader' ); ?></button>
       </p>

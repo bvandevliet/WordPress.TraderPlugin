@@ -7,7 +7,7 @@
  *
  * @wordpress-plugin
  * Plugin Name:       Trader
- * Version:           xxxx.xx.xx
+ * Version:           2021.10.27
  * Requires at least: 5.7
  * Requires PHP:      7.4
  * Description:       Connects to exchange API's and provides blocks for rendering exchange data.
@@ -21,6 +21,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
+define( 'TRADER_PLUGIN_VERSION', '2021.10.27' );
 
 /**
  * Increase execution times allowing some headroom to wait for order fills.
@@ -127,8 +128,8 @@ add_action(
   'wp_enqueue_scripts',
   function ()
   {
-    wp_enqueue_style( 'trader-plugin-styles', plugin_dir_url( __FILE__ ) . 'assets/css/style.css' );
-    wp_enqueue_script( 'trader-plugin-script-forms', plugin_dir_url( __FILE__ ) . 'assets/js/forms.js', array( 'jquery' ), false, true );
+    wp_enqueue_style( 'trader-plugin-styles', plugin_dir_url( __FILE__ ) . 'assets/css/style.css', array(), TRADER_PLUGIN_VERSION );
+    wp_enqueue_script( 'trader-plugin-script-forms', plugin_dir_url( __FILE__ ) . 'assets/js/forms.js', array( 'jquery' ), TRADER_PLUGIN_VERSION, true );
   },
   100
 );

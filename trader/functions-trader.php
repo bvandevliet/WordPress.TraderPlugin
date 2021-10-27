@@ -6,18 +6,43 @@ defined( 'ABSPATH' ) || exit;
 
 
 /**
- * Get rebalance parameters from GET parameters.
+ * Get rebalance parameters from request parameters.
  *
  * @return array
  */
-function get_args_from_get_params() : array
+function get_args_from_request_params() : array
 {
-  return array(
-    'top_count'   => isset( $_GET['top_count'] ) && is_numeric( $_GET['top_count'] ) ? trader_max( 1, intval( $_GET['top_count'] ) ) : 30,
-    'sqrt'        => isset( $_GET['sqrt'] ) && is_numeric( $_GET['sqrt'] ) ? trader_max( 1, intval( $_GET['sqrt'] ) ) : 5,
-    'alloc_quote' => isset( $_GET['alloc_quote'] ) && is_numeric( $_GET['alloc_quote'] ) ? trader_max( 0, floatstr( floatval( $_GET['alloc_quote'] ) ) ) : '0',
-    'takeout'     => isset( $_GET['takeout'] ) && is_numeric( $_GET['takeout'] ) ? trader_max( 0, floatstr( floatval( $_GET['takeout'] ) ) ) : '0',
+  $defaults = array(
+    'top_count'   => 30,
+    'sqrt'        => 5,
+    'alloc_quote' => 0,
+    'takeout'     => 0,
   );
+
+  $args = array();
+  foreach ( $defaults as $param => $default ) {
+    // phpcs:ignore WordPress.Security
+    $req_value = $_POST[ $param ] ?? $_GET[ $param ] ?? null;
+    $req_value = null !== $req_value ? wp_unslash( $req_value ) : null;
+    switch ( $param ) {
+      case 'top_count':
+        $args[ $param ] = is_numeric( $req_value ) ? trader_max( 1, intval( $req_value ) ) : $default;
+        break;
+      case 'sqrt':
+        $args[ $param ] = is_numeric( $req_value ) ? trader_max( 1, intval( $req_value ) ) : $default;
+        break;
+      case 'alloc_quote':
+        $args[ $param ] = is_numeric( $req_value ) ? trader_max( 0, floatstr( floatval( $req_value ) ) ) : $default;
+        break;
+      case 'takeout':
+        $args[ $param ] = is_numeric( $req_value ) ? trader_max( 0, floatstr( floatval( $req_value ) ) ) : $default;
+        break;
+      default:
+        $args[ $param ] = is_numeric( $req_value ) ? floatstr( floatval( $req_value ) ) : $default;
+    }
+  }
+
+  return $args;
 }
 
 /**
