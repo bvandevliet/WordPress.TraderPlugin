@@ -16,6 +16,7 @@ class Trader_Setup
       return;
     }
 
+    self::create_db_tables();
     self::add_roles_caps();
     self::verify_secret_key();
   }
@@ -42,6 +43,7 @@ class Trader_Setup
     }
 
     self::remove_roles_caps();
+    self::drop_db_tables();
   }
 
   /**
@@ -135,5 +137,45 @@ class Trader_Setup
         $wp_roles->remove_cap( $role, $cap );
       }
     }
+  }
+
+  /**
+   * Create database tables.
+   *
+   * @global wpdb $wpdb
+   *
+   * @return bool
+   */
+  public static function create_db_tables() : bool
+  {
+    global $wpdb;
+
+    $collate = $wpdb->has_cap( 'collation' ) ? $wpdb->get_charset_collate() : '';
+
+    return true === $wpdb->query(
+      "CREATE TABLE IF NOT EXISTS {$wpdb->prefix}trader_market_cap (
+        id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+        symbol VARCHAR(24) NOT NULL,
+        circulating_supply BIGINT UNSIGNED,
+        total_supply BIGINT UNSIGNED,
+        last_updated DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        quote LONGTEXT
+      ) $collate;"
+    );
+  }
+
+  /**
+   * Drop database tables.
+   *
+   * @global wpdb $wpdb
+   */
+  private static function drop_db_tables()
+  {
+    global $wpdb;
+
+    $collate = $wpdb->has_cap( 'collation' ) ? $wpdb->get_charset_collate() : '';
+
+    // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+    $wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}trader_market_cap" );
   }
 }

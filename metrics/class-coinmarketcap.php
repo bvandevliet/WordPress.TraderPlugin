@@ -15,6 +15,20 @@ class CoinMarketCap
   public const URL = 'https://pro-api.coinmarketcap.com/v1/';
 
   /**
+   * Database columns names vs. CoinMarketCap data names.
+   *
+   * @var array
+   */
+  private const COLUMNS = array(
+    // $column_name      => $format_and_cmc_name
+    'symbol'             => array( '%s', 'symbol' ),
+    'circulating_supply' => array( '%d', 'circulating_supply' ),
+    'total_supply'       => array( '%d', 'total_supply' ),
+    'last_updated'       => array( '%s', 'last_updated' ),
+    'quote'              => array( '%s', 'quote' ),
+  );
+
+  /**
    * Retrieve API key.
    *
    * @return string The API key.
@@ -48,6 +62,124 @@ class CoinMarketCap
     return false !== $response ? json_decode( $response ) : null;
   }
 
+  /**
+   * Serialize a cmc asset into a database record.
+   *
+   * @param object     $asset_cmc The cmc asset.
+   * @param array|null $format    Array of formats to use in $wpdb's update() and insert() methods.
+   *
+   * @return object $record
+   */
+  private static function serialize_record( object $asset_cmc, ?array &$format = array() ) : object
+  {
+    $record = new \stdClass();
+
+    $format = array_column( self::COLUMNS, 0 );
+
+    $index = 0;
+    foreach ( self::COLUMNS as $column_name => $format_and_cmc_name ) {
+      $cmc_name = $format_and_cmc_name[1];
+      switch ( $column_name ) {
+        case 'last_updated':
+          // '2021-11-02T11:55:27.000Z' is not exactly the ISO8601 format, but what is it then .. ? !!
+          // $record->$column_name = \DateTime::createFromFormat( \DateTime::ISO8601, $asset_cmc->$cmc_name )->format( 'Y-m-d H:i:s' );
+          $record->$column_name = ( new \DateTime( $asset_cmc->$cmc_name ) )->format( 'Y-m-d H:i:s' );
+          break;
+        case 'quote':
+          $record->$column_name = maybe_serialize( $asset_cmc->$cmc_name );
+          break;
+        default:
+          switch ( $format[ $index ] ) {
+            case '%d':
+              $record->$column_name = intval( $asset_cmc->$cmc_name );
+              break;
+            case '%f':
+              $record->$column_name = floatstr( $asset_cmc->$cmc_name );
+              break;
+            default:
+              $record->$column_name = sanitize_text_field( $asset_cmc->$cmc_name );
+          }
+      }
+      $index++;
+    }
+
+    return $record;
+  }
+
+  /**
+   * Deserialize a database record into a cmc asset.
+   *
+   * @param object $record The database record.
+   *
+   * @return object $asset_cmc
+   */
+  private static function deserialize_record( object $record ) : object
+  {
+    $asset_cmc = new \stdClass();
+
+    foreach ( self::COLUMNS as $column_name => $format_and_cmc_name ) {
+      $cmc_name = $format_and_cmc_name[1];
+      switch ( $column_name ) {
+        case 'last_updated':
+          // '2021-11-02T11:55:27.000Z' is not exactly the ISO8601 format, but what is it then .. ? !!
+          $asset_cmc->$cmc_name = ( new \DateTime( $record->$column_name ) )->format( \DateTime::ISO8601 );
+          break;
+        case 'quote':
+          $asset_cmc->$cmc_name = maybe_deserialize( $record->$column_name );
+          break;
+        default:
+          $asset_cmc->$cmc_name = sanitize_text_field( $record->$column_name );
+      }
+    }
+
+    return $asset_cmc;
+  }
+
+  /**
+   * Update and get market cap history.
+   *
+   * @param array $cmc_latest Array of cmc assets.
+   * @param int   $limit      Limit the returned historical objects per asset.
+   *
+   * @global wpdb $wpdb
+   *
+   * @return array History extended data.
+   */
+  private static function update_get_history( array $cmc_latest, int $limit = 30 ) : array
+  {
+    \Trader_Setup::create_db_tables();
+
+    global $wpdb;
+
+    $cmc_history = array();
+
+    foreach ( $cmc_latest as $asset_cmc ) {
+      $results = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}trader_market_cap WHERE symbol = %s ORDER BY last_updated DESC LIMIT %d", $asset_cmc->symbol, $limit ) );
+
+      $do_insert = true;
+
+      if ( null !== $results && count( $results ) > 0 ) {
+        foreach ( $results as $index => $result ) {
+          if ( $index === 0 ) {
+            if ( 0 === trader_offset_days( $result->last_updated ) ) {
+              $do_insert = false;
+              $wpdb->update( "{$wpdb->prefix}trader_market_cap", (array) self::serialize_record( $asset_cmc, $format ), array( 'id' => $result->id ), $format, '%d' );
+            }
+          }
+        }
+      } else {
+        $results = array();
+      }
+
+      if ( $do_insert ) {
+        $wpdb->insert( "{$wpdb->prefix}trader_market_cap", (array) self::serialize_record( $asset_cmc, $format ), $format );
+      }
+
+      $cmc_history[] = array_merge( array( $asset_cmc ), array_slice( $results, $do_insert ? 0 : 1 ) );
+    }
+
+    return $cmc_history;
+  }
 
   /**
    * List latest.
@@ -68,6 +200,9 @@ class CoinMarketCap
       )
     );
 
+    $limit          = $query['limit'];
+    $query['limit'] = 100; // always query 100 results for market cap history log
+
     $response = self::request( $endpoint, $query );
 
     if ( empty( $response ) || empty( $response->data ) || ! is_array( $response->data ) ) {
@@ -79,6 +214,6 @@ class CoinMarketCap
       return $errors;
     }
 
-    return $response->data;
+    return array_slice( self::update_get_history( $response->data ), 0, $limit );
   }
 }
