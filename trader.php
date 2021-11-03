@@ -95,6 +95,11 @@ require __DIR__ . '/trader/class-indicator.php';
 require __DIR__ . '/trader/functions-trader.php';
 
 /**
+ * Load cron hooks.
+ */
+require __DIR__ . '/inc/hooks-cron.php';
+
+/**
  * Load html element functions.
  */
 require __DIR__ . '/inc/html-output.php';

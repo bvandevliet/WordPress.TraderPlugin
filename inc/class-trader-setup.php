@@ -19,6 +19,7 @@ class Trader_Setup
     self::create_db_tables();
     self::add_roles_caps();
     self::verify_secret_key();
+    self::init_cronjob_hook();
   }
 
   /**
@@ -30,7 +31,7 @@ class Trader_Setup
       return;
     }
 
-    // do something ..
+    self::remove_cronjob_hook();
   }
 
   /**
@@ -177,5 +178,19 @@ class Trader_Setup
 
     // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
     $wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}trader_market_cap" );
+  }
+
+  private static function remove_cronjob_hook()
+  {
+    wp_clear_scheduled_hook( 'trader_cronjob_hourly' );
+  }
+
+  public static function init_cronjob_hook()
+  {
+    self::remove_cronjob_hook();
+
+    if ( ! wp_next_scheduled( 'trader_cronjob_hourly' ) ) {
+      wp_schedule_event( strtotime( gmdate( 'Y-m-d H:00:00' ) ), 'hourly', 'trader_cronjob_hourly' );
+    }
   }
 }
