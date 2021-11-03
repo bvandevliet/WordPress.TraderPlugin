@@ -231,7 +231,7 @@ function get_asset_allocations(
      * Skip if is stablecoin or weighting is set to zero.
      */
     // phpcs:ignore WordPress.PHP.StrictComparisons
-    if ( in_array( 'stablecoin', $asset_cmc->tags, true ) || ( array_key_exists( $asset_cmc->symbol, $assets_weightings ) && $assets_weightings[ $asset_cmc->symbol ] == 0 ) ) {
+    if ( in_array( 'stablecoin', $asset_cmc[0]->tags, true ) || ( array_key_exists( $asset_cmc[0]->symbol, $assets_weightings ) && $assets_weightings[ $asset_cmc[0]->symbol ] == 0 ) ) {
       continue;
     }
 
@@ -240,7 +240,7 @@ function get_asset_allocations(
      *
      * ONLY BITVAVO EXCHANGE IS SUPPORTED YET !!
      */
-    $market = $asset_cmc->symbol . '-' . \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY;
+    $market = $asset_cmc[0]->symbol . '-' . \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY;
 
     /**
      * Get candlesticks from exchange.
@@ -267,17 +267,17 @@ function get_asset_allocations(
     /**
      * Store indicator data.
      */
-    $asset_cmc->indicators = new \stdClass();
+    $asset_cmc[0]->indicators = new \stdClass();
     retrieve_allocation_indicators(
-      $asset_cmc->symbol,
+      $asset_cmc[0]->symbol,
       $args['interval_days'],
-      $asset_cmc->indicators->market_cap
+      $asset_cmc[0]->indicators->market_cap
     );
 
     /**
      * Append to global array for next loop(s).
      */
-    $balance->assets[] = new \Trader\Exchanges\Asset( $asset_cmc );
+    $balance->assets[] = new \Trader\Exchanges\Asset( $asset_cmc[0] );
   }
 
   /**

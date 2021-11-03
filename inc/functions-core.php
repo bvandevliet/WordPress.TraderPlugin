@@ -190,3 +190,38 @@ function trader_request( string $url, array $query = array(), array $args = arra
   $response = wp_remote_request( $url, $args );
   return '' === wp_remote_retrieve_response_code( $response ) ? false : $response['body'];
 }
+
+/**
+ * Determine a given date is today or an offset in days from today.
+ *
+ * @param string $date The date to test.
+ *
+ * @return int The offset in days the given date differs from today, 0 means today.
+ */
+function trader_offset_days( string $date ) : int
+{
+  // time() === strtotime( gmdate( DateTime::ISO8601 ) ) => true
+
+  $current    = strtotime( gmdate( 'Y-m-d' ) );
+  $given_time = strtotime( $date );
+
+  $diff = ( $given_time - $current ) / ( 60 * 60 * 24 ); // 86400
+
+  return floor( $diff );
+}
+
+/**
+ * Enable or disable WP-Cron.
+ *
+ * @param bool $enable Enable/disable.
+ *
+ * @return bool Success.
+ */
+function trader_enable_wp_cron( bool $enable = true ) : bool
+{
+  $wp_config_editor = new \Trader\WP_Config_Editor();
+
+  $wp_config_editor->set_constant( 'DISABLE_WP_CRON', ! $enable ? true : null );
+
+  return $wp_config_editor->write();
+}
