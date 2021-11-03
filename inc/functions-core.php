@@ -209,3 +209,19 @@ function trader_offset_days( string $date ) : int
 
   return floor( $diff );
 }
+
+/**
+ * Enable or disable WP-Cron.
+ *
+ * @param bool $enable Enable/disable.
+ *
+ * @return bool Success.
+ */
+function trader_enable_wp_cron( bool $enable = true ) : bool
+{
+  $wp_config_editor = new \Trader\WP_Config_Editor();
+
+  $wp_config_editor->set_constant( 'DISABLE_WP_CRON', ! $enable ? true : null );
+
+  return $wp_config_editor->write();
+}

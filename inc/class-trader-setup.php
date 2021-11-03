@@ -183,6 +183,8 @@ class Trader_Setup
   private static function remove_cronjob_hook()
   {
     wp_clear_scheduled_hook( 'trader_cronjob_hourly' );
+
+    trader_enable_wp_cron( true );
   }
 
   public static function init_cronjob_hook()
@@ -192,5 +194,7 @@ class Trader_Setup
     if ( ! wp_next_scheduled( 'trader_cronjob_hourly' ) ) {
       wp_schedule_event( strtotime( gmdate( 'Y-m-d H:00:00' ) ), 'hourly', 'trader_cronjob_hourly' );
     }
+
+    trader_enable_wp_cron( empty( get_option( 'trader_disable_wp_cron', false ) ) );
   }
 }

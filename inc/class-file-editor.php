@@ -106,9 +106,7 @@ class File_Editor
     ) {
       return false;
     }
-    if ( file_put_contents( $this->file_path, $this->contents, LOCK_EX ) === false ) {
-      return false;
-    }
-    return true;
+
+    return @file_put_contents( $this->file_path, $this->contents, LOCK_EX ) !== false;
   }
 }

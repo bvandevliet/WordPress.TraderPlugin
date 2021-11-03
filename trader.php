@@ -56,6 +56,12 @@ if ( file_exists( __DIR__ . '/config.php' ) ) {
 require __DIR__ . '/vendor/autoload.php';
 
 /**
+ * Load standalone core classes.
+ */
+require __DIR__ . '/inc/class-file-editor.php';
+require __DIR__ . '/inc/class-wp-config-editor.php';
+
+/**
  * Load core functions, these may rely only on native PHP.
  */
 require __DIR__ . '/inc/hooks-security.php';
@@ -65,7 +71,6 @@ require __DIR__ . '/inc/functions-math.php';
 /**
  * Load core classes, these may rely on core functions.
  */
-require __DIR__ . '/inc/class-file-editor.php';
 require __DIR__ . '/inc/class-config-editor.php';
 require __DIR__ . '/inc/class-api-keys.php';
 

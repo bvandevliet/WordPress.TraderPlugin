@@ -79,13 +79,13 @@ function trader_admin_page_apis( $page )
         value="<?php echo esc_attr( $keys['coinmarketcap'] ?? '' ); ?>" />
 
         <p class="description">
-        <?php
-        _e(
-          'This service is used to obtain a ranking of assets.',
-          'trader'
-        );
-        ?>
-      </p>
+          <?php
+          _e(
+            'This service is used to obtain a ranking of assets.',
+            'trader'
+          );
+          ?>
+        </p>
 
       </fieldset>
       <?php
