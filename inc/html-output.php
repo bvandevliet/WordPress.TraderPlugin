@@ -95,24 +95,38 @@ function trader_echo_portfolio( \Trader\Exchanges\Balance $balance, bool $show_c
           <th></th>
           <th colspan="4" class="min-width"><?php esc_html_e( 'Rebalanced situation', 'trader' ); ?></th>
           <?php endif; ?>
+          <?php if ( $show_current && $show_rebalanced ) : ?>
+          <th></th>
+          <th colspan="2"><?php esc_html_e( 'Diff', 'trader' ); ?></th>
+          <?php endif; ?>
         </tr>
       </thead>
       <tbody>
-        <?php foreach ( $balance->assets as $asset ) : ?>
+        <?php
+        foreach ( $balance->assets as $asset ) :
+          $allocation_current = 100 * $asset->allocation_current;
+          $allocation_rebl    = 100 * ( reset( $asset->allocation_rebl ) ?? 0 );
+          $diff               = $allocation_current - $allocation_rebl;
+          ?>
           <tr>
             <td><?php echo esc_html( $asset->symbol ); ?></td>
             <?php if ( $show_current ) : ?>
             <td class="trader-number"></td>
             <td class="trader-number">€</td>
             <td class="trader-number"><?php echo esc_html( number_format( $asset->amount_quote, 2 ) ); ?></td>
-            <td class="trader-number"><?php echo esc_html( number_format( 100 * $asset->allocation_current, 2 ) ); ?></td>
+            <td class="trader-number"><?php echo esc_html( number_format( $allocation_current, 2 ) ); ?></td>
             <td class="trader-number">%</td>
             <?php endif; ?>
             <?php if ( $show_rebalanced ) : ?>
             <td class="trader-number"></td>
             <td class="trader-number">€</td>
             <td class="trader-number"><?php echo esc_html( number_format( bcmul( reset( $asset->allocation_rebl ), $balance->amount_quote_total ), 2 ) ); ?></td>
-            <td class="trader-number"><?php echo esc_html( number_format( 100 * reset( $asset->allocation_rebl ), 2 ) ); ?></td>
+            <td class="trader-number"><?php echo esc_html( number_format( $allocation_rebl, 2 ) ); ?></td>
+            <td class="trader-number">%</td>
+            <?php endif; ?>
+            <?php if ( $show_current && $show_rebalanced ) : ?>
+            <td class="trader-number"></td>
+            <td class="trader-number"><?php echo esc_html( ( $diff >= 0 ? '+' : '-' ) . number_format( abs( $diff ), 2 ) ); ?></td>
             <td class="trader-number">%</td>
             <?php endif; ?>
           </tr>
@@ -145,13 +159,13 @@ function trader_echo_onchain_summary( ?array $market_cap = null )
           <td><a href="https://www.lookintobitcoin.com/charts/relative-unrealized-profit--loss/" target="_blank" rel="noopener noreferrer">nupl</a></td>
           <td class="trader-number">:</td>
           <td class="trader-number"><?php echo number_format( $nupl_mvrvz['nupl'], 2 ); ?></td>
-          <td class="trader-number">&nbsp;<?php esc_html_e( '>=  0.75 and falling', 'trader' ); ?></td>
+          <td class="trader-number"><?php esc_html_e( '>=  0.75 and falling', 'trader' ); ?></td>
         </tr>
         <tr>
           <td><a href="https://www.lookintobitcoin.com/charts/mvrv-zscore/" target="_blank" rel="noopener noreferrer">mvrv_z_score</a></td>
           <td class="trader-number">:</td>
           <td class="trader-number"><?php echo number_format( $nupl_mvrvz['mvrvz'], 2 ); ?></td>
-          <td class="trader-number">&nbsp;<?php esc_html_e( '>=  9.00 and falling', 'trader' ); ?></td>
+          <td class="trader-number"><?php esc_html_e( '>=  9.00 and falling', 'trader' ); ?></td>
         </tr>
         <tr>
           <td><a href="https://alternative.me/crypto/fear-and-greed-index/" target="_blank" rel="noopener noreferrer">fag_index</a></td>

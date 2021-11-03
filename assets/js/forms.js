@@ -16,7 +16,7 @@
       let $this = $(e.target);
 
       $("form input[name='" + $this.attr('name') + "']").not(e.target)
-        .filter((i, input) => !/\[\]$/.test($(input).attr('name'))).val($this.val());
+        .filter((i, input) => !/\[\]/.test($(input).attr('name'))).val($this.val());
     }
   });
 
