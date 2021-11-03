@@ -43,6 +43,7 @@ class Trader_Setup
       return;
     }
 
+    self::remove_settings();
     self::remove_roles_caps();
     self::drop_db_tables();
   }
@@ -196,5 +197,19 @@ class Trader_Setup
     }
 
     trader_enable_wp_cron( empty( get_option( 'trader_disable_wp_cron', false ) ) );
+  }
+
+  /**
+   * Remove plugin admin and user settings from database.
+   */
+  private static function remove_settings()
+  {
+    delete_option( 'trader_api_keys' );
+    delete_option( 'trader_disable_wp_cron' );
+
+    foreach ( get_users() as $user ) {
+      delete_user_meta( $user->ID, 'api_keys' );
+      delete_user_meta( $user->ID, 'asset_weightings' );
+    }
   }
 }
