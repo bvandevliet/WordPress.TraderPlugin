@@ -147,7 +147,7 @@ class CoinMarketCap
    */
   private static function update_get_history( array $cmc_latest, int $limit = 30 ) : array
   {
-    \Trader_Setup::create_db_tables();
+    // \Trader_Setup::create_db_tables();
 
     global $wpdb;
 
