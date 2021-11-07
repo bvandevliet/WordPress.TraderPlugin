@@ -6,7 +6,13 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Update market cap history.
  */
-add_action( 'trader_cronjob_hourly_filtered', array( '\Trader\Metrics\CoinMarketCap', 'list_latest' ) );
+add_action(
+  'trader_cronjob_hourly_filtered',
+  function ()
+  {
+    \Trader\Metrics\CoinMarketCap::list_latest( array( 'convert' => \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY ) );
+  }
+);
 
 /**
  * Filter cronjob execution.
