@@ -125,7 +125,7 @@ class CoinMarketCap
           $asset_cmc->$cmc_name = ( new \DateTime( $record->$column_name ) )->format( \DateTime::ISO8601 );
           break;
         case 'quote':
-          $asset_cmc->$cmc_name = maybe_deserialize( $record->$column_name );
+          $asset_cmc->$cmc_name = maybe_unserialize( $record->$column_name );
           break;
         default:
           $asset_cmc->$cmc_name = sanitize_text_field( $record->$column_name );
@@ -139,13 +139,13 @@ class CoinMarketCap
    * Update and get market cap history.
    *
    * @param array $cmc_latest Array of cmc assets.
-   * @param int   $limit      Limit the returned historical objects per asset.
+   * @param int   $limit      Limit the returned historical database records per asset.
    *
    * @global wpdb $wpdb
    *
    * @return array History extended data.
    */
-  private static function update_get_history( array $cmc_latest, int $limit = 30 ) : array
+  private static function update_get_history( array $cmc_latest, int $limit = 1 ) : array
   {
     // \Trader_Setup::create_db_tables();
 
@@ -154,17 +154,20 @@ class CoinMarketCap
     $cmc_history = array();
 
     foreach ( $cmc_latest as $asset_cmc ) {
-      $results = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}trader_market_cap WHERE symbol = %s ORDER BY last_updated DESC LIMIT %d", $asset_cmc->symbol, $limit ) );
+      $results =
+        $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}trader_market_cap WHERE symbol = %s ORDER BY last_updated DESC LIMIT %d", $asset_cmc->symbol, max( 1, $limit ) ) );
 
       $do_insert = true;
 
-      if ( null !== $results && count( $results ) > 0 ) {
-        foreach ( $results as $index => $result ) {
-          if ( $index === 0 ) {
-            if ( 0 === trader_offset_days( $result->last_updated ) ) {
-              $do_insert = false;
-              $wpdb->update( "{$wpdb->prefix}trader_market_cap", (array) self::serialize_record( $asset_cmc, $format ), array( 'id' => $result->id ), $format, '%d' );
-            }
+      if ( count( $results ) > 0 ) {
+        // we need to pass as reference because of re-assignment
+        foreach ( $results as $index => &$result ) {
+          if ( $index === 0 && 0 === trader_offset_days( $result->last_updated ) ) {
+            $do_insert = false;
+            $wpdb->update( "{$wpdb->prefix}trader_market_cap", (array) self::serialize_record( $asset_cmc, $format ), array( 'id' => $result->id ), $format, '%d' );
+          } else {
+            // no need to deserialize first record if $do_insert == false
+            $result = self::deserialize_record( $result );
           }
         }
       } else {
@@ -182,26 +185,26 @@ class CoinMarketCap
   }
 
   /**
-   * List latest.
+   * Returns the top 100 from CoinMarketCap.
    *
    * @param array $query https://coinmarketcap.com/api/documentation/v1/#operation/getV1CryptocurrencyListingsLatest
+   * @param int   $limit Limit the fetched historical database records per asset, ignore if only a database update is needed.
    *
    * @return object[]|WP_Error
    */
-  public static function list_latest( $query = array() )
+  public static function list_latest( $query = array(), int $limit = 1 )
   {
     $endpoint = 'cryptocurrency/listings/latest';
 
     $query = wp_parse_args(
       $query,
       array(
-        'limit' => 100,
-        'sort'  => 'market_cap',
+        'sort'    => 'market_cap',
+        'convert' => \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY,
       )
     );
 
-    $limit          = $query['limit'];
-    $query['limit'] = 100; // always query 100 results for market cap history log
+    $query['limit'] = 100; // always query 100 results for market cap history log, handle top limit elsewhere
 
     $response = self::request( $endpoint, $query );
 
@@ -214,6 +217,6 @@ class CoinMarketCap
       return $errors;
     }
 
-    return array_slice( self::update_get_history( $response->data ), 0, $limit );
+    return self::update_get_history( $response->data, $limit );
   }
 }
