@@ -151,11 +151,13 @@ class CoinMarketCap
 
     global $wpdb;
 
+    $limit = max( 1, $limit );
+
     $cmc_history = array();
 
     foreach ( $cmc_latest as $asset_cmc ) {
       $results =
-        $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}trader_market_cap WHERE symbol = %s ORDER BY last_updated DESC LIMIT %d", $asset_cmc->symbol, max( 1, $limit ) ) );
+        $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}trader_market_cap WHERE symbol = %s ORDER BY last_updated DESC LIMIT %d", $asset_cmc->symbol, $limit ) );
 
       $do_insert = true;
 
@@ -190,7 +192,7 @@ class CoinMarketCap
    * @param array $query https://coinmarketcap.com/api/documentation/v1/#operation/getV1CryptocurrencyListingsLatest
    * @param int   $limit Limit the fetched historical database records per asset, ignore if only a database update is needed.
    *
-   * @return object[]|WP_Error
+   * @return object[]|array[]|WP_Error Array of historical object[] per asset if 'sort' == 'market_cap', else object[] with assets.
    */
   public static function list_latest( $query = array(), int $limit = 1 )
   {
@@ -217,6 +219,6 @@ class CoinMarketCap
       return $errors;
     }
 
-    return self::update_get_history( $response->data, $limit );
+    return $query['sort'] === 'market_cap' ? self::update_get_history( $response->data, $limit ) : $response->data;
   }
 }
