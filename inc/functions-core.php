@@ -194,18 +194,17 @@ function trader_request( string $url, array $query = array(), array $args = arra
 /**
  * Determine a given date is today or an offset in days from today.
  *
- * @param string $date The date to test.
+ * @param string $date The datetime to test.
+ * @param string $base The datetime of the day to test against, defaults to 'now'.
  *
  * @return int The offset in days the given date differs from today, 0 means today.
  */
-function trader_offset_days( string $date ) : int
+function trader_offset_days( string $date, string $base = 'now' ) : int
 {
-  // time() === strtotime( gmdate( DateTime::ISO8601 ) ) => true
-
-  $current    = strtotime( gmdate( 'Y-m-d' ) );
   $given_time = strtotime( $date );
+  $base_time  = strtotime( ( new DateTime( $base, new DateTimeZone( 'UTC' ) ) )->format( 'Y-m-d' ) );
 
-  $diff = ( $given_time - $current ) / ( 60 * 60 * 24 ); // 86400
+  $diff = ( $given_time - $base_time ) / ( 60 * 60 * 24 ); // 86400
 
   return floor( $diff );
 }

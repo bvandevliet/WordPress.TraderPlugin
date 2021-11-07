@@ -14,6 +14,7 @@ function get_args_from_request_params() : array
 {
   $defaults = array(
     'top_count'   => 30,
+    'smoothing'   => 14,
     'sqrt'        => 5,
     'alloc_quote' => 0,
     'takeout'     => 0,
@@ -26,10 +27,11 @@ function get_args_from_request_params() : array
     $req_value = null !== $req_value ? wp_unslash( $req_value ) : null;
     switch ( $param ) {
       case 'top_count':
-        $args[ $param ] = is_numeric( $req_value ) ? trader_max( 1, intval( $req_value ) ) : $default;
+        $args[ $param ] = is_numeric( $req_value ) ? min( max( 1, intval( $req_value ) ), 100 ) : $default;
         break;
+      case 'smoothing':
       case 'sqrt':
-        $args[ $param ] = is_numeric( $req_value ) ? trader_max( 1, intval( $req_value ) ) : $default;
+        $args[ $param ] = is_numeric( $req_value ) ? max( 1, intval( $req_value ) ) : $default;
         break;
       case 'alloc_quote':
         $args[ $param ] = is_numeric( $req_value ) ? trader_max( 0, floatstr( floatval( $req_value ) ) ) : $default;
@@ -74,7 +76,7 @@ function merge_balance( $balance, $balance_exchange = null, array $args = array(
   /**
    * Get current allocations.
    */
-  foreach ( $balance_merged->assets as $asset ) { // pass by ref not required since var is object
+  foreach ( $balance_merged->assets as $asset ) {
     if ( ! empty( $balance_exchange->assets ) ) {
       foreach ( $balance_exchange->assets as $asset_exchange ) {
         if ( $asset_exchange->symbol === $asset->symbol ) {
@@ -129,22 +131,42 @@ function merge_balance( $balance, $balance_exchange = null, array $args = array(
  *
  * Subject to change: more indicators may be added in later versions.
  *
- * @param string       $symbol        Asset symbol.
- * @param float        $interval_days Rebalance period.
- * @param array[]|null $market_cap    Out. Historical price, free-float, current and realized market cap data.
+ * @param array $asset_cmc_arr  Array of historical asset objects of a single asset.
+ * @param array $market_cap_ema Out. Smoothed Market Cap values.
+ * @param int   $smoothing      The period to use for smoothing Market Cap.
+ * @param float $interval_days  Rebalance period.
  */
 function retrieve_allocation_indicators(
-  string $symbol,
-  float $interval_days = 7,
-  &$market_cap = null )
+  array $asset_cmc_arr,
+  &$market_cap_ema,
+  int $smoothing = 14,
+  float $interval_days = 7 )
 {
   /**
-   * Market Cap.
-   *
-   * DISABLED FOR NOW TO SPEED UP PAGE LOAD,
-   * BECAUSE HISTORICAL MARKET CAP DATA IS NOT USED AT THE MOMENT.
+   * Calculate Exponential Moving Average of Market Cap.
    */
-  // $market_cap = Metrics\CoinMetrics::market_cap( $symbol );
+  $market_cap_arr = array();
+
+  foreach ( $asset_cmc_arr as $index => $asset_cmc ) {
+    $quote = ( (array) $asset_cmc->quote )[ \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY ];
+
+    $market_cap_arr[] = $quote->market_cap ?? 0;
+
+    /**
+     * Break if required amount for smoothing period is reached OR if next iteration is of more than 1 days offset.
+     */
+    if ( empty( $quote->market_cap ) ||
+      $index + 1 >= $smoothing || $index <= trader_offset_days( $quote->last_updated )
+    ) {
+      break;
+    }
+  }
+
+  $real   = array_reverse( $market_cap_arr );
+  $period = count( $market_cap_arr );
+
+  // calculate EMA
+  $market_cap_ema = $period > 1 ? \LupeCode\phpTraderNative\Trader::ema( $real, $period ) : /*array_reverse( */$market_cap_arr;/* )*/
 }
 
 
@@ -155,18 +177,16 @@ function retrieve_allocation_indicators(
  *
  * @param mixed                   $weighting  User defined adjusted weighting factor, usually 1.
  * @param \Trader\Exchanges\Asset $asset      The asset object.
- * @param array                   $market_cap Historical price, free-float, current and realized market cap data.
- * @param int                     $sqrt       The square root of market cap to use.
+ * @param string                  $market_cap Smoothed Market Cap value.
+ * @param int                     $sqrt       The nth root of Market Cap to use for allocation.
  */
 function set_asset_allocations(
   $weighting,
-  \Trader\Exchanges\Asset $asset, // pass by ref not required since var is object
-  array $market_cap,
+  \Trader\Exchanges\Asset $asset,
+  string $market_cap,
   int $sqrt = 5 )
 {
-  $cap_ff = $market_cap[0]['CapMrktFFUSD'] ?? 0;
-
-  $asset->allocation_rebl['default']  = trader_max( 0, bcmul( $weighting, pow( $cap_ff, 1 / $sqrt ) ) );
+  $asset->allocation_rebl['default']  = trader_max( 0, bcmul( $weighting, pow( $market_cap, 1 / $sqrt ) ) );
   $asset->allocation_rebl['absolute'] = trader_max( 0, $weighting );
 }
 
@@ -176,9 +196,10 @@ function set_asset_allocations(
  *
  * @param array $assets_weightings     User defined adjusted weighting factors per asset.
  * @param array $args {.
- *   @type float        $interval_days Rebalance period.
  *   @type int          $top_count     Amount of assets from the top market cap ranking.
+ *   @type int          $smoothing     The period to use for smoothing Market Cap.
  *   @type int          $sqrt          The square root of market cap to use in allocation calculation.
+ *   @type float        $interval_days Rebalance period.
  *   @type float|string $alloc_quote   Allocation to keep in quote currency. Default is 0.
  * }
  *
@@ -191,9 +212,10 @@ function get_asset_allocations(
   $args = wp_parse_args(
     $args,
     array(
-      'interval_days' => 7,
       'top_count'     => 30,
+      'smoothing'     => 14,
       'sqrt'          => 5,
+      'interval_days' => 7,
     )
   );
 
@@ -211,9 +233,10 @@ function get_asset_allocations(
    */
   $cmc_latest = Metrics\CoinMarketCap::list_latest(
     array(
-      'limit'   => $args['top_count'],
+      'sort'    => 'market_cap',
       'convert' => \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY,
-    )
+    ),
+    $args['smoothing']
   );
 
   /**
@@ -226,21 +249,28 @@ function get_asset_allocations(
   /**
    * Loop through the asset ranking and retrieve candlesticks and indicators.
    */
-  foreach ( $cmc_latest as $asset_cmc ) {
+  foreach ( $cmc_latest as $index => $asset_cmc_arr ) {
+    /**
+     * Handle top count limit.
+     */
+    if ( $index + 1 >= $args['top_count'] ) {
+      break;
+    }
+
     /**
      * Skip if is stablecoin or weighting is set to zero.
      */
-    // phpcs:ignore WordPress.PHP.StrictComparisons
-    if ( in_array( 'stablecoin', $asset_cmc[0]->tags, true ) || ( array_key_exists( $asset_cmc[0]->symbol, $assets_weightings ) && $assets_weightings[ $asset_cmc[0]->symbol ] == 0 ) ) {
+    if (
+      in_array( 'stablecoin', $asset_cmc_arr[0]->tags, true ) ||
+      ( array_key_exists( $asset_cmc_arr[0]->symbol, $assets_weightings ) && $assets_weightings[ $asset_cmc_arr[0]->symbol ] <= 0 )
+    ) {
       continue;
     }
 
     /**
      * Define market.
-     *
-     * ONLY BITVAVO EXCHANGE IS SUPPORTED YET !!
      */
-    $market = $asset_cmc[0]->symbol . '-' . \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY;
+    $market = $asset_cmc_arr[0]->symbol . '-' . \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY;
 
     /**
      * Get candlesticks from exchange.
@@ -265,33 +295,35 @@ function get_asset_allocations(
     }
 
     /**
-     * Store indicator data.
+     * Get indicator data.
      */
-    $asset_cmc[0]->indicators = new \stdClass();
     retrieve_allocation_indicators(
-      $asset_cmc[0]->symbol,
-      $args['interval_days'],
-      $asset_cmc[0]->indicators->market_cap
+      $asset_cmc_arr,
+      $market_cap_ema,
+      $args['smoothing'],
+      $args['interval_days']
     );
+    $asset_cmc_arr[0]->indicators                 = new \stdClass();
+    $asset_cmc_arr[0]->indicators->market_cap_ema = end( $market_cap_ema );
 
     /**
      * Append to global array for next loop(s).
      */
-    $balance->assets[] = new \Trader\Exchanges\Asset( $asset_cmc[0] );
+    $balance->assets[] = new \Trader\Exchanges\Asset( $asset_cmc_arr[0] );
   }
 
   /**
    * Loop to retrieve absolute asset allocations.
    */
   $total_allocations = array();
-  foreach ( $balance->assets as $index => $asset ) { // pass by ref not required since var is object
+  foreach ( $balance->assets as $index => $asset ) {
     /**
      * Retrieve weighted asset allocation.
      */
     set_asset_allocations(
       $assets_weightings[ $asset->symbol ] ?? 1,
       $asset,
-      array( 0 => array( 'CapMrktFFUSD' => ( (array) $asset->quote )[ \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY ]->market_cap ) ),
+      $asset->indicators->market_cap_ema,
       $args['sqrt']
     );
 
@@ -317,7 +349,7 @@ function get_asset_allocations(
   /**
    * Loop to calculate relative asset allocations.
    */
-  foreach ( $balance->assets as $asset ) { // pass by ref not required since var is object
+  foreach ( $balance->assets as $asset ) {
     foreach ( $asset->allocation_rebl as $mode => &$allocation ) {
       $allocation = trader_get_allocation( $allocation, $total_allocations[ $mode ] );
     }
@@ -365,8 +397,6 @@ function rebalance( \Trader\Exchanges\Balance $balance, string $mode = 'default'
 
   /**
    * Initiate array $result containing order data.
-   *
-   * ONLY BITVAVO EXCHANGE IS SUPPORTED YET !!
    */
   $result = ! $simulate ? \Trader\Exchanges\Bitvavo::cancel_all_orders() : array();
 

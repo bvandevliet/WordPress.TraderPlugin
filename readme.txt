@@ -5,7 +5,7 @@ Tags:
 Requires at least: 5.7
 Tested up to: 5.8
 Requires PHP: 7.2
-Stable tag: 2021.11.03
+Stable tag: 2021.11.07
 License: MIT
 
 Calculates and executes a crypto portfolio rebalance.
@@ -18,8 +18,11 @@ Connects to exchange API's, provides blocks for rendering exchange data and incl
 
 == Changelog ==
 
+= 2021.11.07 =
+* Market Cap EMA.
+
 = 2021.11.03 =
-* Log market cap history.
+* Log Market Cap history.
 
 = 2021.10.27 =
 * Initial release.
