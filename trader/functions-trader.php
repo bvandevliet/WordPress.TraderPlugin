@@ -156,7 +156,7 @@ function retrieve_allocation_indicators(
      * Break if required amount for smoothing period is reached OR if next iteration is of more than 1 days offset.
      */
     if ( empty( $quote->market_cap ) ||
-      $index + 1 >= $smoothing || $index <= trader_offset_days( $quote->last_updated )
+      $index + 1 >= $smoothing || $index + 1 <= trader_offset_days( $quote->last_updated )
     ) {
       break;
     }
@@ -177,13 +177,13 @@ function retrieve_allocation_indicators(
  *
  * @param mixed                   $weighting  User defined adjusted weighting factor, usually 1.
  * @param \Trader\Exchanges\Asset $asset      The asset object.
- * @param string                  $market_cap Smoothed Market Cap value.
+ * @param mixed                   $market_cap Smoothed Market Cap value.
  * @param int                     $sqrt       The nth root of Market Cap to use for allocation.
  */
 function set_asset_allocations(
   $weighting,
   \Trader\Exchanges\Asset $asset,
-  string $market_cap,
+  $market_cap,
   int $sqrt = 5 )
 {
   $asset->allocation_rebl['default']  = trader_max( 0, bcmul( $weighting, pow( $market_cap, 1 / $sqrt ) ) );
