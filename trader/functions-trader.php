@@ -127,20 +127,15 @@ function merge_balance( $balance, $balance_exchange = null, array $args = array(
 
 
 /**
- * Retrieve allocation indicators.
+ * Retrieve Market Cap EMA.
  *
  * Subject to change: more indicators may be added in later versions.
  *
- * @param array $asset_cmc_arr  Array of historical asset objects of a single asset.
+ * @param array $asset_cmc_arr  Array of historical cmc asset objects of a single asset.
  * @param array $market_cap_ema Out. Smoothed Market Cap values.
  * @param int   $smoothing      The period to use for smoothing Market Cap.
- * @param float $interval_days  Rebalance period.
  */
-function retrieve_allocation_indicators(
-  array $asset_cmc_arr,
-  &$market_cap_ema,
-  int $smoothing = 14,
-  float $interval_days = 7 )
+function retrieve_market_cap_ema( array $asset_cmc_arr, &$market_cap_ema, int $smoothing = 14 )
 {
   /**
    * Calculate Exponential Moving Average of Market Cap.
@@ -180,11 +175,7 @@ function retrieve_allocation_indicators(
  * @param mixed                   $market_cap Smoothed Market Cap value.
  * @param int                     $sqrt       The nth root of Market Cap to use for allocation.
  */
-function set_asset_allocations(
-  $weighting,
-  \Trader\Exchanges\Asset $asset,
-  $market_cap,
-  int $sqrt = 5 )
+function set_asset_allocations( $weighting, \Trader\Exchanges\Asset $asset, $market_cap, int $sqrt = 5 )
 {
   $asset->allocation_rebl['default']  = trader_max( 0, bcmul( $weighting, pow( $market_cap, 1 / $sqrt ) ) );
   $asset->allocation_rebl['absolute'] = trader_max( 0, $weighting );
@@ -205,9 +196,7 @@ function set_asset_allocations(
  *
  * @return \Trader\Exchanges\Balance|WP_Error
  */
-function get_asset_allocations(
-  array $assets_weightings = array(),
-  array $args = array() )
+function get_asset_allocations( array $assets_weightings = array(), array $args = array() )
 {
   $args = wp_parse_args(
     $args,
@@ -220,13 +209,6 @@ function get_asset_allocations(
   );
 
   $alloc_quote = ! empty( $args['alloc_quote'] ) ? bcdiv( trader_max( 0, trader_min( 100, $args['alloc_quote'] ) ), 100 ) : '0';
-
-  /**
-   * Initiate balance object and quote asset.
-   */
-  $balance             = new \Trader\Exchanges\Balance();
-  $asset_quote         = new \Trader\Exchanges\Asset();
-  $asset_quote->symbol = \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY;
 
   /**
    * List latest based on market cap.
@@ -247,16 +229,40 @@ function get_asset_allocations(
   }
 
   /**
-   * Loop through the asset ranking and retrieve candlesticks and indicators.
+   * Initiate balance object and quote asset.
    */
-  foreach ( $cmc_latest as $index => $asset_cmc_arr ) {
-    /**
-     * Handle top count limit.
-     */
-    if ( $index + 1 >= $args['top_count'] ) {
-      break;
-    }
+  $balance             = new \Trader\Exchanges\Balance();
+  $asset_quote         = new \Trader\Exchanges\Asset();
+  $asset_quote->symbol = \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY;
 
+  /**
+   * Loop through the asset ranking and retrieve Market Cap EMA.
+   */
+  foreach ( $cmc_latest as $asset_cmc_arr ) {
+    /**
+     * Get Market Cap EMA.
+     */
+    retrieve_market_cap_ema( $asset_cmc_arr, $market_cap_ema, $args['smoothing'] );
+    $asset_cmc_arr[0]->indicators                 = new \stdClass();
+    $asset_cmc_arr[0]->indicators->market_cap_ema = end( $market_cap_ema );
+  }
+
+  /**
+   * Sort again based on EMA value then handle top count.
+   */
+  usort(
+    $cmc_latest,
+    function ( $a, $b )
+    {
+      return $b[0]->indicators->market_cap_ema <=> $a[0]->indicators->market_cap_ema;
+    }
+  );
+  $cmc_latest = array_slice( $cmc_latest, 0, $args['top_count'] );
+
+  /**
+   * Loop to leave out certain non-relevant assets then retrieve candlesticks and indicators.
+   */
+  foreach ( $cmc_latest as $asset_cmc_arr ) {
     /**
      * Skip if is stablecoin or weighting is set to zero.
      */
@@ -295,16 +301,9 @@ function get_asset_allocations(
     }
 
     /**
-     * Get indicator data.
+     * Get additional price action indicator data, TO BE DEVELOPED !!
      */
-    retrieve_allocation_indicators(
-      $asset_cmc_arr,
-      $market_cap_ema,
-      $args['smoothing'],
-      $args['interval_days']
-    );
-    $asset_cmc_arr[0]->indicators                 = new \stdClass();
-    $asset_cmc_arr[0]->indicators->market_cap_ema = end( $market_cap_ema );
+    // retrieve_allocation_indicators( $asset_cmc_arr[0], $candles, $args['interval_days'] );
 
     /**
      * Append to global array for next loop(s).
@@ -367,7 +366,7 @@ function get_asset_allocations(
   );
 
   /**
-   * Finally, return $balance.
+   * Finally, prepend quote currency and return $balance.
    */
   array_unshift( $balance->assets, $asset_quote );
   return $balance;
