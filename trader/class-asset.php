@@ -1,6 +1,6 @@
 <?php
 
-namespace Trader\Exchanges;
+namespace Trader;
 
 defined( 'ABSPATH' ) || exit;
 

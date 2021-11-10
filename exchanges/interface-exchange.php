@@ -110,7 +110,7 @@ interface Exchange
   /**
    * Get balance. First entry of $assets is quote currency.
    *
-   * @return Balance|WP_Error
+   * @return \Trader\Balance|\WP_Error
    */
   public static function get_balance();
 

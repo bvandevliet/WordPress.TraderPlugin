@@ -192,7 +192,7 @@ class CoinMarketCap
    * @param array $query https://coinmarketcap.com/api/documentation/v1/#operation/getV1CryptocurrencyListingsLatest
    * @param int   $limit Limit the fetched historical database records per asset, ignore if only a database update is needed.
    *
-   * @return object[]|array[]|WP_Error Array of historical object[] per asset if 'sort' == 'market_cap', else object[] with assets.
+   * @return object[]|array[]|\WP_Error Array of historical object[] per asset if 'sort' == 'market_cap', else object[] with assets.
    */
   public static function list_latest( $query = array(), int $limit = 1 )
   {

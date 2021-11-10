@@ -168,10 +168,10 @@ class Bitvavo implements Exchange
       return $errors;
     }
 
-    $balance = new Balance();
+    $balance = new \Trader\Balance();
 
     for ( $i = 0, $length = count( $balance_exchange ); $i < $length; $i++ ) {
-      $asset = new Asset();
+      $asset = new \Trader\Asset();
 
       $asset->symbol       = self::QUOTE_CURRENCY;
       $asset->price        = '1';

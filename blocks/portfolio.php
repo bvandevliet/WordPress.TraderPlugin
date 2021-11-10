@@ -21,14 +21,14 @@ function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
     return;
   }
 
-  $args = \Trader\get_args_from_request_params();
+  $args = Trader::get_args_from_request_params();
 
   $errors = get_error_obj();
 
   $assets_weightings = get_user_meta( $current_user->ID, 'asset_weightings', true );
   $assets_weightings = is_array( $assets_weightings ) ? $assets_weightings : array();
 
-  $balance_allocated = \Trader\get_asset_allocations( $assets_weightings, $args );
+  $balance_allocated = Trader::get_asset_allocations( $assets_weightings, $args );
 
   if ( isset( $_SERVER['REQUEST_METHOD'] ) && 'POST' === $_SERVER['REQUEST_METHOD'] ) {
     if ( isset( $_POST['action'] )
@@ -38,7 +38,7 @@ function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
 
         case 'do-portfolio-rebalance':
           $balance_exchange = \Trader\Exchanges\Bitvavo::get_balance();
-          $balance          = \Trader\merge_balance( $balance_allocated, $balance_exchange, $args );
+          $balance          = Trader::merge_balance( $balance_allocated, $balance_exchange, $args );
 
           if ( is_wp_error( $balance_allocated ) ) {
             $errors->merge_from( $balance_allocated );
@@ -51,7 +51,7 @@ function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
             break;
           }
 
-          foreach ( \Trader\rebalance( $balance, 'default' ) as $index => $order ) {
+          foreach ( Trader::rebalance( $balance, 'default' ) as $index => $order ) {
             if ( ! empty( $order['errorCode'] ) ) {
               $errors->add(
                 $order['errorCode'] . '-' . $index,
@@ -80,7 +80,7 @@ function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
   }
 
   $balance_exchange = \Trader\Exchanges\Bitvavo::get_balance();
-  $balance          = \Trader\merge_balance( $balance_allocated, $balance_exchange, $args );
+  $balance          = Trader::merge_balance( $balance_allocated, $balance_exchange, $args );
 
   if ( is_wp_error( $balance_allocated ) ) {
     $errors->merge_from( $balance_allocated );
@@ -104,7 +104,7 @@ function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
 
   if ( ! is_wp_error( $balance_allocated ) && ! is_wp_error( $balance_exchange ) ) :
     $expected_fee = 0;
-    foreach ( \Trader\rebalance( $balance, 'default', array(), true ) as $fake_order ) {
+    foreach ( Trader::rebalance( $balance, 'default', array(), true ) as $fake_order ) {
       $expected_fee = bcadd( $expected_fee, trader_ceil( $fake_order['feePaid'] ?? 0, 2 ) );
     }
     $expected_fee = number_format( trader_ceil( $expected_fee, 2 ), 2 );
