@@ -15,6 +15,13 @@ class Alternative_Me
   public const URL = 'https://api.alternative.me/';
 
   /**
+   * Cached value of current Fear and Greed index.
+   *
+   * @var null|int
+   */
+  private static ?int $fag_index_cached = null;
+
+  /**
    * Perform API request.
    *
    * @param string $endpoint Endpoint for this API request.
@@ -55,6 +62,21 @@ class Alternative_Me
     );
 
     $response = self::request( $endpoint, $query );
-    return is_object( $response ) ? $response->data : array( (object) array( 'value' => -1 ) );
+    return is_object( $response ) ? $response->data : null;
+  }
+
+  /**
+   * Current (cached) Fear and Greed index.
+   *
+   * @return int
+   */
+  public static function fag_index_current() : int
+  {
+    if ( null === self::$fag_index_cached ) {
+      $result                 = self::fag_index( $query = array( 'limit' => 1 ) );
+      self::$fag_index_cached = ! is_array( $result ) || count( $result ) === 0 ? 50 : $result[0]->value; // !!
+    }
+
+    return self::$fag_index_cached;
   }
 }

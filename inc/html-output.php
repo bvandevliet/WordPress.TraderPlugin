@@ -146,15 +146,16 @@ function trader_echo_onchain_summary( ?array $market_cap = null )
 {
   $market_cap = $market_cap ?? \Trader\Metrics\CoinMetrics::market_cap( 'BTC' );
 
-  if ( false !== $market_cap[0]['time'] ) :
-    $nupl_mvrvz = \Trader\Metrics\CoinMetrics::nupl_mvrvz( $market_cap );
-    $fag_index  = \Trader\Metrics\Alternative_Me::fag_index()[0]->value;
-    ?>
-    <figure class="wp-block-table">
-      <table class="trader-onchain-summary no-wrap" style="width:auto;">
-        <tr>
-          <td colspan="99"><?php esc_html_e( 'BTC top is reached when ..', 'trader' ); ?></td>
-        </tr>
+  ?>
+  <figure class="wp-block-table">
+    <table class="trader-onchain-summary no-wrap" style="width:auto;">
+      <tr>
+        <td colspan="99"><?php esc_html_e( 'BTC top is reached when ..', 'trader' ); ?></td>
+      </tr>
+      <?php
+      if ( false !== $market_cap[0]['time'] ) :
+        $nupl_mvrvz = \Trader\Metrics\CoinMetrics::nupl_mvrvz( $market_cap );
+        ?>
         <tr>
           <td><a href="https://www.lookintobitcoin.com/charts/relative-unrealized-profit--loss/" target="_blank" rel="noopener noreferrer">nupl</a></td>
           <td class="trader-number">:</td>
@@ -167,16 +168,14 @@ function trader_echo_onchain_summary( ?array $market_cap = null )
           <td class="trader-number"><?php echo number_format( $nupl_mvrvz['mvrvz'], 2 ); ?></td>
           <td class="trader-number"><?php esc_html_e( '>=  9.00 and falling', 'trader' ); ?></td>
         </tr>
-        <tr>
-          <td><a href="https://alternative.me/crypto/fear-and-greed-index/" target="_blank" rel="noopener noreferrer">fag_index</a></td>
-          <td class="trader-number">:</td>
-          <td class="trader-number"><?php echo number_format( $fag_index, 0 ); ?>&nbsp;&nbsp;&nbsp;</td>
-          <td class="trader-number"><?php esc_html_e( '>= 80    and falling', 'trader' ); ?></td>
-        </tr>
-      </table>
-    </figure>
-    <?php
-  else :
-    esc_html_e( 'Something went wrong while fetching onchain indicators ..', 'trader' );
-  endif;
+      <?php endif; ?>
+      <tr>
+        <td><a href="https://alternative.me/crypto/fear-and-greed-index/" target="_blank" rel="noopener noreferrer">fag_index</a></td>
+        <td class="trader-number">:</td>
+        <td class="trader-number"><?php echo number_format( \Trader\Metrics\Alternative_Me::fag_index_current(), 0 ); ?>&nbsp;&nbsp;&nbsp;</td>
+        <td class="trader-number"><?php esc_html_e( '>= 80    and falling', 'trader' ); ?></td>
+      </tr>
+    </table>
+  </figure>
+  <?php
 }

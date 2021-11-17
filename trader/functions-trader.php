@@ -13,11 +13,12 @@ defined( 'ABSPATH' ) || exit;
 function get_args_from_request_params() : array
 {
   $defaults = array(
-    'top_count'   => 30,
-    'smoothing'   => 14,
-    'sqrt'        => 5,
-    'alloc_quote' => 0,
-    'takeout'     => 0,
+    'top_count'                => 30,
+    'smoothing'                => 14,
+    'sqrt'                     => 4,
+    'alloc_quote'              => 0,
+    'takeout'                  => 0,
+    'alloc_quote_fag_multiply' => false,
   );
 
   $args = array();
@@ -38,6 +39,9 @@ function get_args_from_request_params() : array
         break;
       case 'takeout':
         $args[ $param ] = is_numeric( $req_value ) ? trader_max( 0, floatstr( floatval( $req_value ) ) ) : $default;
+        break;
+      case 'alloc_quote_fag_multiply':
+        $args[ $param ] = ! empty( $req_value ) ? boolval( $req_value ) : $default;
         break;
       default:
         $args[ $param ] = is_numeric( $req_value ) ? floatstr( floatval( $req_value ) ) : $default;
@@ -184,7 +188,7 @@ function set_asset_allocations(
   $weighting,
   \Trader\Exchanges\Asset $asset,
   $market_cap,
-  int $sqrt = 5 )
+  int $sqrt = 4 )
 {
   $asset->allocation_rebl['default']  = trader_max( 0, bcmul( $weighting, pow( $market_cap, 1 / $sqrt ) ) );
   $asset->allocation_rebl['absolute'] = trader_max( 0, $weighting );
@@ -196,11 +200,12 @@ function set_asset_allocations(
  *
  * @param array $assets_weightings     User defined adjusted weighting factors per asset.
  * @param array $args {.
- *   @type int          $top_count     Amount of assets from the top market cap ranking.
- *   @type int          $smoothing     The period to use for smoothing Market Cap.
- *   @type int          $sqrt          The square root of market cap to use in allocation calculation.
- *   @type float        $interval_days Rebalance period.
- *   @type float|string $alloc_quote   Allocation to keep in quote currency. Default is 0.
+ *   @type int          $top_count                Amount of assets from the top market cap ranking.
+ *   @type int          $smoothing                The period to use for smoothing Market Cap.
+ *   @type int          $sqrt                     The square root of market cap to use in allocation calculation.
+ *   @type float        $interval_days            Rebalance period.
+ *   @type float|string $alloc_quote              Allocation to keep in quote currency. Default is 0.
+ *   @type bool         $alloc_quote_fag_multiply Multiply quote allocation by Fear and Greed index. Default is true.
  * }
  *
  * @return \Trader\Exchanges\Balance|WP_Error
@@ -212,14 +217,16 @@ function get_asset_allocations(
   $args = wp_parse_args(
     $args,
     array(
-      'top_count'     => 30,
-      'smoothing'     => 14,
-      'sqrt'          => 5,
-      'interval_days' => 7,
+      'top_count'                => 30,
+      'smoothing'                => 14,
+      'sqrt'                     => 4,
+      'interval_days'            => 7,
+      'alloc_quote_fag_multiply' => false,
     )
   );
 
   $alloc_quote = ! empty( $args['alloc_quote'] ) ? bcdiv( trader_max( 0, trader_min( 100, $args['alloc_quote'] ) ), 100 ) : '0';
+  $alloc_quote = $args['alloc_quote_fag_multiply'] ? bcmul( $alloc_quote, bcdiv( \Trader\Metrics\Alternative_Me::fag_index_current(), 100 ) ) : $alloc_quote;
 
   /**
    * Initiate balance object and quote asset.

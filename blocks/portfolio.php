@@ -156,6 +156,14 @@ function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
             </label>
           </p>
           <p class="form-row form-row-last">
+            <label title="<?php echo esc_attr_e( 'Multiply quote allocation by Fear and Greed index.', 'trader' ); ?>">
+              <?php esc_html_e( 'Quote allocation x FAG', 'trader' ); ?>&nbsp;
+              <span style="display:inline-block;"><?php echo esc_html( sprintf( __( '(current = %s)', 'trader' ), wp_json_encode( true === $args['alloc_quote_fag_multiply'] ) ) ); ?></span>
+              <input type="checkbox" name="alloc_quote_fag_multiply" <?php checked( $args['alloc_quote_fag_multiply'] ); ?> />
+            </label>
+          </p>
+          <div class="clear"></div>
+          <p class="form-row form-row-wide">
             <label title="<?php echo esc_attr( sprintf( __( 'Takeout a given amount of quote currency \'%s\'.', 'trader' ), \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY ) ); ?>">
               <?php esc_html_e( 'Quote takeout', 'trader' ); ?> [€]&nbsp;
               <span style="display:inline-block;"><?php echo esc_html( sprintf( __( '(current = %s)', 'trader' ), $args['takeout'] ) ); ?></span>
@@ -175,6 +183,7 @@ function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
       <input type="hidden" name="smoothing" value="<?php echo esc_attr( $args['smoothing'] ); ?>" />
       <input type="hidden" name="sqrt" value="<?php echo esc_attr( $args['sqrt'] ); ?>" />
       <input type="hidden" name="alloc_quote" value="<?php echo esc_attr( $args['alloc_quote'] ); ?>" />
+      <input type="hidden" name="alloc_quote_fag_multiply" value="<?php echo esc_attr( $args['alloc_quote_fag_multiply'] ); ?>" />
       <input type="hidden" name="takeout" value="<?php echo esc_attr( $args['takeout'] ); ?>" />
       <p style="display:inline-block;">
         <button type="submit" class="button trader-action-zone" name="action" value="do-portfolio-rebalance"
