@@ -25,10 +25,10 @@ function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
 
   $errors = get_error_obj();
 
-  $assets_weightings = get_user_meta( $current_user->ID, 'asset_weightings', true );
-  $assets_weightings = is_array( $assets_weightings ) ? $assets_weightings : array();
+  $asset_weightings = get_user_meta( $current_user->ID, 'asset_weightings', true );
+  $asset_weightings = is_array( $asset_weightings ) ? $asset_weightings : array();
 
-  $balance_allocated = \Trader\get_asset_allocations( $assets_weightings, $args );
+  $balance_allocated = \Trader\get_asset_allocations( $asset_weightings, $args );
 
   if ( isset( $_SERVER['REQUEST_METHOD'] ) && 'POST' === $_SERVER['REQUEST_METHOD'] ) {
     if ( isset( $_POST['action'] )

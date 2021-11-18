@@ -30,7 +30,7 @@ function trader_dynamic_block_configuration_cb( $block_attributes, $content )
         isset( $_POST['assets'] ) && is_array( $_POST['assets'] ) &&
         isset( $_POST['weightings'] ) && is_array( $_POST['weightings'] )
       ) {
-        $assets_weightings = array();
+        $asset_weightings = array();
 
         $assets     = wp_unslash( $_POST['assets'] );
         $weightings = wp_unslash( $_POST['weightings'] );
@@ -45,21 +45,21 @@ function trader_dynamic_block_configuration_cb( $block_attributes, $content )
           $weighting = is_numeric( $weightings[ $index ] ) ? trader_max( 0, floatstr( $weightings[ $index ] ) ) : 1;
 
           if ( '' !== $asset ) {
-            $assets_weightings[ $asset ] = $weighting;
+            $asset_weightings[ $asset ] = $weighting;
           }
         }
       }
 
       if ( ! $errors->has_errors() ) {
-        update_user_meta( $current_user->ID, 'asset_weightings', $assets_weightings );
+        update_user_meta( $current_user->ID, 'asset_weightings', $asset_weightings );
       }
     }
   }
 
-  $assets_weightings = get_user_meta( $current_user->ID, 'asset_weightings', true );
-  $assets_weightings = is_array( $assets_weightings ) ? $assets_weightings : array();
-  ksort( $assets_weightings );
-  arsort( $assets_weightings );
+  $asset_weightings = get_user_meta( $current_user->ID, 'asset_weightings', true );
+  $asset_weightings = is_array( $asset_weightings ) ? $asset_weightings : array();
+  ksort( $asset_weightings );
+  arsort( $asset_weightings );
 
   ob_start();
   ?>
@@ -86,7 +86,7 @@ function trader_dynamic_block_configuration_cb( $block_attributes, $content )
           );
           ?>
         </legend>
-        <?php foreach ( array_merge( $assets_weightings, array( '' => 1 ) ) as $asset => $weighting ) : ?>
+        <?php foreach ( array_merge( $asset_weightings, array( '' => 1 ) ) as $asset => $weighting ) : ?>
           <p class="form-row form-row-wide form-row-cloneable">
             <input type="text" class="input-text form-row-first" name="assets[]" autocomplete="off" value="<?php echo esc_attr( $asset ); ?>" />
             <input type="number" min="0" step=".01" class="input-number form-row-last" name="weightings[]" value="<?php echo esc_attr( $weighting ); ?>" default="1" />

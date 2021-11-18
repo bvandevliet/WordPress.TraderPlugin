@@ -198,7 +198,7 @@ function set_asset_allocations(
 /**
  * Construct a ranked $balance with rebalanced allocation data.
  *
- * @param array $assets_weightings     User defined adjusted weighting factors per asset.
+ * @param array $asset_weightings     User defined adjusted weighting factors per asset.
  * @param array $args {.
  *   @type int          $top_count                Amount of assets from the top market cap ranking.
  *   @type int          $smoothing                The period to use for smoothing Market Cap.
@@ -211,7 +211,7 @@ function set_asset_allocations(
  * @return \Trader\Exchanges\Balance|WP_Error
  */
 function get_asset_allocations(
-  array $assets_weightings = array(),
+  array $asset_weightings = array(),
   array $args = array() )
 {
   $args = wp_parse_args(
@@ -269,7 +269,7 @@ function get_asset_allocations(
      */
     if (
       in_array( 'stablecoin', $asset_cmc_arr[0]->tags, true ) ||
-      ( array_key_exists( $asset_cmc_arr[0]->symbol, $assets_weightings ) && $assets_weightings[ $asset_cmc_arr[0]->symbol ] <= 0 )
+      ( array_key_exists( $asset_cmc_arr[0]->symbol, $asset_weightings ) && $asset_weightings[ $asset_cmc_arr[0]->symbol ] <= 0 )
     ) {
       continue;
     }
@@ -328,7 +328,7 @@ function get_asset_allocations(
      * Retrieve weighted asset allocation.
      */
     set_asset_allocations(
-      $assets_weightings[ $asset->symbol ] ?? 1,
+      $asset_weightings[ $asset->symbol ] ?? 1,
       $asset,
       $asset->indicators->market_cap_ema,
       $args['sqrt']
