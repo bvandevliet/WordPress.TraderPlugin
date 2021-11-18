@@ -67,11 +67,8 @@ function trader_dynamic_block_configuration_cb( $block_attributes, $content )
   <form action="<?php echo esc_attr( get_permalink() ); ?>" method="post">
     <?php wp_nonce_field( 'update-user_' . $current_user->ID, 'save-trader-configuration-nonce' ); ?>
 
-    <?php if ( isset( $errors ) && is_wp_error( $errors ) && ! $errors->has_errors() ) : ?>
+    <?php if ( isset( $asset_weightings ) ) : ?>
       <div class="updated notice is-dismissible"><p><?php esc_html_e( 'Configuration updated.', 'trader' ); ?></p></div>
-    <?php endif; ?>
-    <?php if ( isset( $errors ) && is_wp_error( $errors ) && $errors->has_errors() ) : ?>
-      <div class="error"><p><?php echo implode( "</p>\n<p>", $errors->get_error_messages() ); ?></p></div>
     <?php endif; ?>
 
     <fieldset class="wp-block-columns">

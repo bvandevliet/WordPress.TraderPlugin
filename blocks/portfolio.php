@@ -25,7 +25,7 @@ function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
 
   $errors = get_error_obj();
 
-  $balance_allocated = \Trader\get_asset_allocations( $configuration );
+  $balance_allocated = \Trader::get_asset_allocations( $configuration );
 
   if ( isset( $_SERVER['REQUEST_METHOD'] ) && 'POST' === $_SERVER['REQUEST_METHOD'] ) {
     if ( isset( $_POST['action'] )
@@ -35,7 +35,7 @@ function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
 
         case 'do-portfolio-rebalance':
           $balance_exchange = \Trader\Exchanges\Bitvavo::get_balance();
-          $balance          = \Trader\merge_balance( $balance_allocated, $balance_exchange, $configuration );
+          $balance          = \Trader::merge_balance( $balance_allocated, $balance_exchange, $configuration );
 
           if ( is_wp_error( $balance_allocated ) ) {
             $errors->merge_from( $balance_allocated );
@@ -48,7 +48,7 @@ function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
             break;
           }
 
-          foreach ( \Trader\rebalance( $balance, 'default', $configuration ) as $index => $order ) {
+          foreach ( \Trader::rebalance( $balance, 'default', $configuration ) as $index => $order ) {
             if ( ! empty( $order['errorCode'] ) ) {
               $errors->add(
                 $order['errorCode'] . '-' . $index,
@@ -77,7 +77,7 @@ function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
   }
 
   $balance_exchange = \Trader\Exchanges\Bitvavo::get_balance();
-  $balance          = \Trader\merge_balance( $balance_allocated, $balance_exchange, $configuration );
+  $balance          = \Trader::merge_balance( $balance_allocated, $balance_exchange, $configuration );
 
   if ( is_wp_error( $balance_allocated ) ) {
     $errors->merge_from( $balance_allocated );
@@ -101,7 +101,7 @@ function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
 
   if ( ! is_wp_error( $balance_allocated ) && ! is_wp_error( $balance_exchange ) ) :
     $expected_fee = 0;
-    foreach ( \Trader\rebalance( $balance, 'default', $configuration, true ) as $fake_order ) {
+    foreach ( \Trader::rebalance( $balance, 'default', $configuration, true ) as $fake_order ) {
       $expected_fee = bcadd( $expected_fee, trader_ceil( $fake_order['feePaid'] ?? 0, 2 ) );
     }
     $expected_fee = number_format( trader_ceil( $expected_fee, 2 ), 2 );

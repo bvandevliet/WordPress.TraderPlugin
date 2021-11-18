@@ -98,7 +98,7 @@ require __DIR__ . '/exchanges/class-bitvavo.php';
  * Load trader classes and functions.
  */
 require __DIR__ . '/trader/class-indicator.php';
-require __DIR__ . '/trader/functions-trader.php';
+require __DIR__ . '/trader/class-trader.php';
 
 /**
  * Load cron hooks.

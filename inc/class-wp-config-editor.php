@@ -6,7 +6,7 @@ defined( 'ABSPATH' ) || exit;
 
 
 /**
- * Class for editing files on the server.
+ * Class for modifying constants in wp-config.php.
  */
 class WP_Config_Editor extends File_Editor
 {

@@ -6,11 +6,11 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Print html for a basic balance overview.
  *
- * @param \Trader\Exchanges\Balance|\WP_Error $balance_exchange The exchange balance.
+ * @param \Trader\Balance|\WP_Error $balance_exchange The exchange balance.
  */
 function trader_echo_balance_summary( $balance_exchange )
 {
-  if ( $balance_exchange instanceof \Trader\Exchanges\Balance ) :
+  if ( $balance_exchange instanceof \Trader\Balance ) :
     $deposit_history    = \Trader\Exchanges\Bitvavo::deposit_history();
     $withdrawal_history = \Trader\Exchanges\Bitvavo::withdrawal_history();
 
@@ -75,11 +75,11 @@ function trader_echo_balance_summary( $balance_exchange )
 /**
  * Print html for a portfolio balance overview.
  *
- * @param \Trader\Exchanges\Balance $balance         The balance to print.
- * @param boolean                   $show_current    Print current balance?
- * @param boolean                   $show_rebalanced Print rebalanced situation?
+ * @param \Trader\Balance $balance         The balance to print.
+ * @param boolean         $show_current    Print current balance?
+ * @param boolean         $show_rebalanced Print rebalanced situation?
  */
-function trader_echo_portfolio( \Trader\Exchanges\Balance $balance, bool $show_current = true, bool $show_rebalanced = true )
+function trader_echo_portfolio( \Trader\Balance $balance, bool $show_current = true, bool $show_rebalanced = true )
 {
   ?>
   <figure class="wp-block-table">
