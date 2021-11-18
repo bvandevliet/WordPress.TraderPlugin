@@ -7,7 +7,7 @@
  *
  * @wordpress-plugin
  * Plugin Name:       Trader
- * Version:           2021.11.07
+ * Version:           2021.11.09
  * Requires at least: 5.7
  * Requires PHP:      7.4
  * Description:       Connects to exchange API's and provides blocks for rendering exchange data.
@@ -21,7 +21,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'TRADER_PLUGIN_VERSION', '2021.11.07' );
+define( 'TRADER_PLUGIN_VERSION', '2021.11.09' );
 
 /**
  * Increase execution times allowing some headroom to wait for order fills.
