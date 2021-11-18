@@ -6,11 +6,11 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Print html for a basic balance overview.
  *
- * @param \Trader\Exchanges\Balance|\Trader\Exchanges\WP_Error $balance_exchange The exchange balance.
+ * @param \Trader\Exchanges\Balance|\WP_Error $balance_exchange The exchange balance.
  */
 function trader_echo_balance_summary( $balance_exchange )
 {
-  if ( ! is_wp_error( $balance_exchange ) ) :
+  if ( $balance_exchange instanceof \Trader\Exchanges\Balance ) :
     $deposit_history    = \Trader\Exchanges\Bitvavo::deposit_history();
     $withdrawal_history = \Trader\Exchanges\Bitvavo::withdrawal_history();
 

@@ -210,6 +210,7 @@ class Trader_Setup
     foreach ( get_users() as $user ) {
       delete_user_meta( $user->ID, 'api_keys' );
       delete_user_meta( $user->ID, 'asset_weightings' );
+      delete_user_meta( $user->ID, 'configuration' );
     }
   }
 }

@@ -86,6 +86,7 @@ require __DIR__ . '/metrics/class-alternative-me.php';
  */
 require __DIR__ . '/trader/class-asset.php';
 require __DIR__ . '/trader/class-balance.php';
+require __DIR__ . '/trader/class-configuration.php';
 
 /**
  * Load exchange functions.

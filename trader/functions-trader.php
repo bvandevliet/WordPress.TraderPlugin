@@ -6,64 +6,18 @@ defined( 'ABSPATH' ) || exit;
 
 
 /**
- * Get rebalance parameters from request parameters.
- *
- * @return array
- */
-function get_args_from_request_params() : array
-{
-  $defaults = array(
-    'top_count'                => 30,
-    'smoothing'                => 14,
-    'sqrt'                     => 4,
-    'alloc_quote'              => 0,
-    'takeout'                  => 0,
-    'alloc_quote_fag_multiply' => false,
-  );
-
-  $args = array();
-  foreach ( $defaults as $param => $default ) {
-    // phpcs:ignore WordPress.Security
-    $req_value = $_POST[ $param ] ?? $_GET[ $param ] ?? null;
-    $req_value = null !== $req_value ? wp_unslash( $req_value ) : null;
-    switch ( $param ) {
-      case 'top_count':
-        $args[ $param ] = is_numeric( $req_value ) ? min( max( 1, intval( $req_value ) ), 100 ) : $default;
-        break;
-      case 'smoothing':
-      case 'sqrt':
-        $args[ $param ] = is_numeric( $req_value ) ? max( 1, intval( $req_value ) ) : $default;
-        break;
-      case 'alloc_quote':
-        $args[ $param ] = is_numeric( $req_value ) ? trader_max( 0, floatstr( floatval( $req_value ) ) ) : $default;
-        break;
-      case 'takeout':
-        $args[ $param ] = is_numeric( $req_value ) ? trader_max( 0, floatstr( floatval( $req_value ) ) ) : $default;
-        break;
-      case 'alloc_quote_fag_multiply':
-        $args[ $param ] = ! empty( $req_value ) ? boolval( $req_value ) : $default;
-        break;
-      default:
-        $args[ $param ] = is_numeric( $req_value ) ? floatstr( floatval( $req_value ) ) : $default;
-    }
-  }
-
-  return $args;
-}
-
-/**
  * Update an existing balance with actual values from an exchange balance.
  *
- * @param \Trader\Exchanges\Balance $balance          Existing balance.
- * @param \Trader\Exchanges\Balance $balance_exchange Updated balance.
- * @param array                     $args {.
- *   @type float|string               $takeout        Amount in quote currency to keep out / not re-invest. Default is 0.
- * }
+ * @param \Trader\Exchanges\Balance|null|\WP_Error $balance          Existing balance.
+ * @param \Trader\Exchanges\Balance|null|\WP_Error $balance_exchange Updated balance.
+ * @param Configuration             $configuration    Rebalance configuration.
  *
  * @return \Trader\Exchanges\Balance $balance_merged Merged balance.
  */
-function merge_balance( $balance, $balance_exchange = null, array $args = array() ) : \Trader\Exchanges\Balance
+function merge_balance( $balance, $balance_exchange = null, ?Configuration $configuration = null ) : \Trader\Exchanges\Balance
 {
+  $configuration = $configuration ?? Configuration::get();
+
   if ( is_wp_error( $balance ) || ! $balance instanceof \Trader\Exchanges\Balance ) {
     $balance_merged = new \Trader\Exchanges\Balance();
   } else {
@@ -74,8 +28,8 @@ function merge_balance( $balance, $balance_exchange = null, array $args = array(
     $balance_exchange = new \Trader\Exchanges\Balance();
   }
 
-  $args['takeout'] = ! empty( $args['takeout'] ) ? trader_max( 0, trader_min( $balance_exchange->amount_quote_total, $args['takeout'] ) ) : 0;
-  $takeout_alloc   = $args['takeout'] > 0 ? trader_get_allocation( $args['takeout'], $balance_exchange->amount_quote_total ) : 0;
+  $configuration->takeout = ! empty( $configuration->takeout ) ? trader_max( 0, trader_min( $balance_exchange->amount_quote_total, $configuration->takeout ) ) : 0;
+  $takeout_alloc          = $configuration->takeout > 0 ? trader_get_allocation( $configuration->takeout, $balance_exchange->amount_quote_total ) : 0;
 
   /**
    * Get current allocations.
@@ -138,13 +92,13 @@ function merge_balance( $balance, $balance_exchange = null, array $args = array(
  * @param array $asset_cmc_arr  Array of historical asset objects of a single asset.
  * @param array $market_cap_ema Out. Smoothed Market Cap values.
  * @param int   $smoothing      The period to use for smoothing Market Cap.
- * @param float $interval_days  Rebalance period.
+ * @param int   $interval_hours Rebalance period.
  */
 function retrieve_allocation_indicators(
   array $asset_cmc_arr,
   &$market_cap_ema,
   int $smoothing = 14,
-  float $interval_days = 7 )
+  int $interval_hours = 96 )
 {
   /**
    * Calculate Exponential Moving Average of Market Cap.
@@ -182,15 +136,15 @@ function retrieve_allocation_indicators(
  * @param mixed                   $weighting  User defined adjusted weighting factor, usually 1.
  * @param \Trader\Exchanges\Asset $asset      The asset object.
  * @param mixed                   $market_cap Smoothed Market Cap value.
- * @param int                     $sqrt       The nth root of Market Cap to use for allocation.
+ * @param int                     $nth_root   The nth root of Market Cap to use for allocation.
  */
 function set_asset_allocations(
   $weighting,
   \Trader\Exchanges\Asset $asset,
   $market_cap,
-  int $sqrt = 4 )
+  int $nth_root = 4 )
 {
-  $asset->allocation_rebl['default']  = trader_max( 0, bcmul( $weighting, pow( $market_cap, 1 / $sqrt ) ) );
+  $asset->allocation_rebl['default']  = trader_max( 0, bcmul( $weighting, pow( $market_cap, 1 / $nth_root ) ) );
   $asset->allocation_rebl['absolute'] = trader_max( 0, $weighting );
 }
 
@@ -198,35 +152,16 @@ function set_asset_allocations(
 /**
  * Construct a ranked $balance with rebalanced allocation data.
  *
- * @param array $asset_weightings     User defined adjusted weighting factors per asset.
- * @param array $args {.
- *   @type int          $top_count                Amount of assets from the top market cap ranking.
- *   @type int          $smoothing                The period to use for smoothing Market Cap.
- *   @type int          $sqrt                     The square root of market cap to use in allocation calculation.
- *   @type float        $interval_days            Rebalance period.
- *   @type float|string $alloc_quote              Allocation to keep in quote currency. Default is 0.
- *   @type bool         $alloc_quote_fag_multiply Multiply quote allocation by Fear and Greed index. Default is true.
- * }
+ * @param Configuration $configuration Rebalance configuration.
  *
- * @return \Trader\Exchanges\Balance|WP_Error
+ * @return \Trader\Exchanges\Balance|\WP_Error
  */
-function get_asset_allocations(
-  array $asset_weightings = array(),
-  array $args = array() )
+function get_asset_allocations( ?Configuration $configuration = null )
 {
-  $args = wp_parse_args(
-    $args,
-    array(
-      'top_count'                => 30,
-      'smoothing'                => 14,
-      'sqrt'                     => 4,
-      'interval_days'            => 7,
-      'alloc_quote_fag_multiply' => false,
-    )
-  );
+  $configuration = $configuration ?? Configuration::get();
 
-  $alloc_quote = ! empty( $args['alloc_quote'] ) ? bcdiv( trader_max( 0, trader_min( 100, $args['alloc_quote'] ) ), 100 ) : '0';
-  $alloc_quote = $args['alloc_quote_fag_multiply'] ? bcmul( $alloc_quote, bcdiv( \Trader\Metrics\Alternative_Me::fag_index_current(), 100 ) ) : $alloc_quote;
+  $alloc_quote = ! empty( $configuration->alloc_quote ) ? bcdiv( trader_max( 0, trader_min( 100, $configuration->alloc_quote ) ), 100 ) : '0';
+  $alloc_quote = $configuration->alloc_quote_fag_multiply ? bcmul( $alloc_quote, bcdiv( \Trader\Metrics\Alternative_Me::fag_index_current(), 100 ) ) : $alloc_quote;
 
   /**
    * Initiate balance object and quote asset.
@@ -243,7 +178,7 @@ function get_asset_allocations(
       'sort'    => 'market_cap',
       'convert' => \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY,
     ),
-    $args['smoothing']
+    $configuration->smoothing
   );
 
   /**
@@ -260,7 +195,7 @@ function get_asset_allocations(
     /**
      * Handle top count limit.
      */
-    if ( $index + 1 >= $args['top_count'] ) {
+    if ( $index + 1 >= $configuration->top_count ) {
       break;
     }
 
@@ -269,7 +204,7 @@ function get_asset_allocations(
      */
     if (
       in_array( 'stablecoin', $asset_cmc_arr[0]->tags, true ) ||
-      ( array_key_exists( $asset_cmc_arr[0]->symbol, $asset_weightings ) && $asset_weightings[ $asset_cmc_arr[0]->symbol ] <= 0 )
+      ( array_key_exists( $asset_cmc_arr[0]->symbol, $configuration->asset_weightings ) && $configuration->asset_weightings[ $asset_cmc_arr[0]->symbol ] <= 0 )
     ) {
       continue;
     }
@@ -307,8 +242,8 @@ function get_asset_allocations(
     retrieve_allocation_indicators(
       $asset_cmc_arr,
       $market_cap_ema,
-      $args['smoothing'],
-      $args['interval_days']
+      $configuration->smoothing,
+      $configuration->interval_hours
     );
     $asset_cmc_arr[0]->indicators                 = new \stdClass();
     $asset_cmc_arr[0]->indicators->market_cap_ema = end( $market_cap_ema );
@@ -328,10 +263,10 @@ function get_asset_allocations(
      * Retrieve weighted asset allocation.
      */
     set_asset_allocations(
-      $asset_weightings[ $asset->symbol ] ?? 1,
+      $configuration->asset_weightings[ $asset->symbol ] ?? 1,
       $asset,
       $asset->indicators->market_cap_ema,
-      $args['sqrt']
+      $configuration->nth_root
     );
 
     /**
@@ -384,23 +319,16 @@ function get_asset_allocations(
 /**
  * Perform a portfolio rebalance.
  *
- * @param \Trader\Exchanges\Balance $balance      Portfolio.
- * @param string                    $mode         Rebalance mode as defined by allocation in $balance->assets[$i]->allocation_rebl[$mode]
- * @param array                     $args {.
- *   @type int                        $dust_limit Minimum required allocation difference in quote currency. Default is 2.
- * }
- * @param bool                      $simulate     Perform a fake rebalance, e.g. to determine expected fee amount.
+ * @param \Trader\Exchanges\Balance $balance       Portfolio.
+ * @param string                    $mode          Rebalance mode as defined by allocation in $balance->assets[$i]->allocation_rebl[$mode]
+ * @param Configuration             $configuration Rebalance configuration.
+ * @param bool                      $simulate      Perform a fake rebalance, e.g. to determine expected fee amount.
  *
  * @return array Order details.
  */
-function rebalance( \Trader\Exchanges\Balance $balance, string $mode = 'default', array $args = array(), bool $simulate = false ) : array
+function rebalance( \Trader\Exchanges\Balance $balance, string $mode = 'default', ?Configuration $configuration = null, bool $simulate = false ) : array
 {
-  $args = wp_parse_args(
-    $args,
-    array(
-      'dust_limit' => 2,
-    )
-  );
+  $configuration = $configuration ?? Configuration::get();
 
   /**
    * Initiate array $result containing order data.
@@ -427,7 +355,7 @@ function rebalance( \Trader\Exchanges\Balance $balance, string $mode = 'default'
     /**
      * RECUDE allocation ..
      */
-    if ( floatval( $diff ) <= -$args['dust_limit'] ) {
+    if ( floatval( $diff ) <= -$configuration->dust_limit ) {
       if ( floatval( bcabs( $diff ) ) < \Trader\Exchanges\Bitvavo::MIN_QUOTE ) {
         // REBUY REQUIRED ..
         $amount_quote_to_sell = bcadd( bcabs( $diff ), \Trader\Exchanges\Bitvavo::MIN_QUOTE + 1 );
@@ -443,7 +371,7 @@ function rebalance( \Trader\Exchanges\Balance $balance, string $mode = 'default'
     /**
      * INCREASE allocation ..
      */
-    elseif ( floatval( $diff ) >= $args['dust_limit'] && floatval( $diff ) < \Trader\Exchanges\Bitvavo::MIN_QUOTE + 1 ) {
+    elseif ( floatval( $diff ) >= $configuration->dust_limit && floatval( $diff ) < \Trader\Exchanges\Bitvavo::MIN_QUOTE + 1 ) {
       // REBUY REQUIRED ..
       $amount_quote_to_sell = \Trader\Exchanges\Bitvavo::MIN_QUOTE;
 
@@ -513,7 +441,7 @@ function rebalance( \Trader\Exchanges\Balance $balance, string $mode = 'default'
     /**
      * Skip if amount is below dust threshold.
      */
-    if ( floatval( $asset->amount_quote_to_buy ) >= $args['dust_limit'] ) {
+    if ( floatval( $asset->amount_quote_to_buy ) >= $configuration->dust_limit ) {
       $to_buy_total = bcadd( $to_buy_total, $asset->amount_quote_to_buy );
     }
   }
@@ -532,7 +460,7 @@ function rebalance( \Trader\Exchanges\Balance $balance, string $mode = 'default'
     /**
      * Skip if amount is below dust threshold.
      */
-    if ( floatval( $asset->amount_quote_to_buy ) < $args['dust_limit'] ) {
+    if ( floatval( $asset->amount_quote_to_buy ) < $configuration->dust_limit ) {
       continue;
     }
 

@@ -24,8 +24,6 @@ function trader_dynamic_block_configuration_cb( $block_attributes, $content )
      * Process form data ..
      */
     if ( isset( $_POST['save-trader-configuration-nonce'] ) && wp_verify_nonce( $_POST['save-trader-configuration-nonce'], 'update-user_' . $current_user->ID ) ) {
-      $errors = get_error_obj();
-
       if (
         isset( $_POST['assets'] ) && is_array( $_POST['assets'] ) &&
         isset( $_POST['weightings'] ) && is_array( $_POST['weightings'] )
@@ -48,18 +46,20 @@ function trader_dynamic_block_configuration_cb( $block_attributes, $content )
             $asset_weightings[ $asset ] = $weighting;
           }
         }
-      }
 
-      if ( ! $errors->has_errors() ) {
-        update_user_meta( $current_user->ID, 'asset_weightings', $asset_weightings );
+        $configuration = \Trader\Configuration::get();
+
+        $configuration->asset_weightings = $asset_weightings;
+
+        $configuration->save();
       }
     }
   }
 
-  $asset_weightings = get_user_meta( $current_user->ID, 'asset_weightings', true );
-  $asset_weightings = is_array( $asset_weightings ) ? $asset_weightings : array();
-  ksort( $asset_weightings );
-  arsort( $asset_weightings );
+  $configuration = \Trader\Configuration::get();
+
+  ksort( $configuration->asset_weightings );
+  arsort( $configuration->asset_weightings );
 
   ob_start();
   ?>
@@ -86,7 +86,7 @@ function trader_dynamic_block_configuration_cb( $block_attributes, $content )
           );
           ?>
         </legend>
-        <?php foreach ( array_merge( $asset_weightings, array( '' => 1 ) ) as $asset => $weighting ) : ?>
+        <?php foreach ( array_merge( $configuration->asset_weightings, array( '' => 1 ) ) as $asset => $weighting ) : ?>
           <p class="form-row form-row-wide form-row-cloneable">
             <input type="text" class="input-text form-row-first" name="assets[]" autocomplete="off" value="<?php echo esc_attr( $asset ); ?>" />
             <input type="number" min="0" step=".01" class="input-number form-row-last" name="weightings[]" value="<?php echo esc_attr( $weighting ); ?>" default="1" />
