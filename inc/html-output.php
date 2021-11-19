@@ -172,7 +172,7 @@ function trader_echo_onchain_summary( ?array $market_cap = null )
       <tr>
         <td><a href="https://alternative.me/crypto/fear-and-greed-index/" target="_blank" rel="noopener noreferrer">fag_index</a></td>
         <td class="trader-number">:</td>
-        <td class="trader-number"><?php echo number_format( \Trader\Metrics\Alternative_Me::fag_index_current(), 0 ); ?>&nbsp;&nbsp;&nbsp;</td>
+        <td class="trader-number"><?php echo \Trader\Metrics\Alternative_Me::fag_index_current(); ?>&nbsp;&nbsp;&nbsp;</td>
         <td class="trader-number"><?php esc_html_e( '>= 80    and falling', 'trader' ); ?></td>
       </tr>
     </table>

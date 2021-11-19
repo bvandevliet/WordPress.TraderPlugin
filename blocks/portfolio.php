@@ -114,7 +114,7 @@ function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
       <!-- <p class="form-row">
         <label title="<?php esc_attr_e( 'Rebalance interval in days.', 'trader' ); ?>">
           <?php esc_html_e( 'Interval days', 'trader' ); ?> [n]&nbsp;
-          <span style="display:inline-block;"><?php echo esc_html( sprintf( __( '(current = %s)', 'trader' ), $configuration->interval_hours ) ); ?></span>
+          <span style="float:right;"><?php echo esc_html( sprintf( __( '(current = %s)', 'trader' ), $configuration->interval_hours ) ); ?></span>
           <input type="number" min="1" class="input-number" name="interval_hours" value="<?php echo esc_attr( $configuration->interval_hours ); ?>" />
         </label>
       </p> -->
@@ -123,7 +123,7 @@ function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
           <p class="form-row form-row-wide">
             <label title="<?php esc_attr_e( 'Max amount of assets from CoinMarketCap listing.', 'trader' ); ?>">
               <?php esc_html_e( 'Top count', 'trader' ); ?> [n]&nbsp;
-              <span style="display:inline-block;"><?php echo esc_html( sprintf( __( '(current = %s)', 'trader' ), $configuration->top_count ) ); ?></span>
+              <span style="float:right;"><?php echo esc_html( sprintf( __( '(current = %s)', 'trader' ), $configuration->top_count ) ); ?></span>
               <input type="number" min="1" max="100" class="input-number" name="top_count" value="<?php echo esc_attr( $configuration->top_count ); ?>" />
             </label>
           </p>
@@ -131,14 +131,14 @@ function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
           <p class="form-row form-row-first">
             <label title="<?php esc_attr_e( 'Exponential Moving Average period of Market Cap, to smooth out volatility.', 'trader' ); ?>">
               <?php esc_html_e( 'Smoothing [days]', 'trader' ); ?>&nbsp;
-              <span style="display:inline-block;"><?php echo esc_html( sprintf( __( '(current = %s)', 'trader' ), $configuration->smoothing ) ); ?></span>
+              <span style="float:right;"><?php echo esc_html( sprintf( __( '(current = %s)', 'trader' ), $configuration->smoothing ) ); ?></span>
               <input type="number" min="1" class="input-number" name="smoothing" value="<?php echo esc_attr( $configuration->smoothing ); ?>" />
             </label>
           </p>
           <p class="form-row form-row-last">
             <label title="<?php esc_attr_e( 'nth root of Market Cap EMA, to dampen the effect an individual asset has on the portfolio.', 'trader' ); ?>">
               <?php esc_html_e( 'nth root ^(1/[n])', 'trader' ); ?>&nbsp;
-              <span style="display:inline-block;"><?php echo esc_html( sprintf( __( '(current = %s)', 'trader' ), $configuration->nth_root ) ); ?></span>
+              <span style="float:right;"><?php echo esc_html( sprintf( __( '(current = %s)', 'trader' ), $configuration->nth_root ) ); ?></span>
               <input type="number" min="1" class="input-number" name="nth_root" value="<?php echo esc_attr( $configuration->nth_root ); ?>" />
             </label>
           </p>
@@ -146,24 +146,19 @@ function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
         <!-- </div>
         <div class="wp-block-column"> -->
           <p class="form-row form-row-first">
-            <label title="<?php echo esc_attr( sprintf( __( 'Allocate a given percentage to quote currency \'%s\'.', 'trader' ), \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY ) ); ?>">
+            <label for="alloc_quote" title="<?php echo esc_attr( sprintf( __( 'Allocate a given percentage to quote currency \'%s\'.', 'trader' ), \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY ) ); ?>">
               <?php esc_html_e( 'Quote allocation', 'trader' ); ?> [%]&nbsp;
-              <span style="display:inline-block;"><?php echo esc_html( sprintf( __( '(current = %s)', 'trader' ), $configuration->alloc_quote ) ); ?></span>
-              <input type="number" min="0" class="input-number" name="alloc_quote" value="<?php echo esc_attr( $configuration->alloc_quote ); ?>" />
             </label>
-          </p>
-          <p class="form-row form-row-last">
-            <label title="<?php echo esc_attr_e( 'Multiply quote allocation by Fear and Greed index.', 'trader' ); ?>">
-              <?php esc_html_e( 'Quote allocation x FAG', 'trader' ); ?>&nbsp;
-              <span style="display:inline-block;"><?php echo esc_html( sprintf( __( '(current = %s)', 'trader' ), wp_json_encode( true === $configuration->alloc_quote_fag_multiply ) ) ); ?></span>
+            <label style="float:right;" title="<?php echo esc_attr_e( 'Multiply quote allocation by Fear and Greed index.', 'trader' ); ?>">
+              <?php echo esc_html( sprintf( __( '&#8226;~.%s', 'trader' ), \Trader\Metrics\Alternative_Me::fag_index_current() ) ); ?>
               <input type="checkbox" name="alloc_quote_fag_multiply" <?php checked( $configuration->alloc_quote_fag_multiply ); ?> />
             </label>
+            <input id="alloc_quote" type="number" min="0" class="input-number" name="alloc_quote" value="<?php echo esc_attr( $configuration->alloc_quote ); ?>" />
           </p>
-          <div class="clear"></div>
-          <p class="form-row form-row-wide">
+          <p class="form-row form-row-last">
             <label title="<?php echo esc_attr( sprintf( __( 'Takeout a given amount of quote currency \'%s\'.', 'trader' ), \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY ) ); ?>">
               <?php esc_html_e( 'Quote takeout', 'trader' ); ?> [€]&nbsp;
-              <span style="display:inline-block;"><?php echo esc_html( sprintf( __( '(current = %s)', 'trader' ), $configuration->takeout ) ); ?></span>
+              <span style="float:right;"><?php echo esc_html( sprintf( __( '(current = %s)', 'trader' ), $configuration->takeout ) ); ?></span>
               <input type="number" min="0" class="input-number" name="takeout" value="<?php echo esc_attr( $configuration->takeout ); ?>" />
             </label>
           </p>

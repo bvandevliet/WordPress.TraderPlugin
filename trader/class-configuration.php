@@ -78,6 +78,7 @@ class Configuration
           break;
         case 'smoothing':
         case 'nth_root':
+        case 'dust_limit':
           $configuration->$param = is_numeric( $req_value ) ? max( 1, intval( $req_value ) ) : $default;
           break;
         case 'alloc_quote':
