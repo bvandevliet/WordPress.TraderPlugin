@@ -15,6 +15,13 @@ class CoinMarketCap
   public const URL = 'https://pro-api.coinmarketcap.com/v1/';
 
   /**
+   * Cached values of historical Market Cap.
+   *
+   * @var object[]
+   */
+  private static ?array $market_cap_cached = null;
+
+  /**
    * Database columns names vs. CoinMarketCap data names.
    *
    * @var array
@@ -138,8 +145,8 @@ class CoinMarketCap
   /**
    * Update and get market cap history.
    *
-   * @param array $cmc_latest Array of cmc assets.
-   * @param int   $limit      Limit the returned historical database records per asset.
+   * @param object[] $cmc_latest Array of cmc assets.
+   * @param int      $limit      Limit the returned historical database records per asset.
    *
    * @global wpdb $wpdb
    *
@@ -189,24 +196,38 @@ class CoinMarketCap
   /**
    * Returns the top 100 from CoinMarketCap.
    *
-   * @param array $query https://coinmarketcap.com/api/documentation/v1/#operation/getV1CryptocurrencyListingsLatest
-   * @param int   $limit Limit the fetched historical database records per asset, ignore if only a database update is needed.
+   * @param array $query {
+   *   https://coinmarketcap.com/api/documentation/v1/#operation/getV1CryptocurrencyListingsLatest
+   *   @type string $sort
+   *   @type string $convert
+   * }
+   * @param int   $limit Limit the fetched historical database records per asset, let it default to 1 if only a database update is needed.
    *
-   * @return object[]|array[]|\WP_Error Array of historical object[] per asset if 'sort' == 'market_cap', else object[] with assets.
+   * @return object[][]|object[]|\WP_Error Array of historical object[] per asset if 'sort' == 'market_cap', else object[] with assets.
    */
   public static function list_latest( $query = array(), int $limit = 1 )
   {
     $endpoint = 'cryptocurrency/listings/latest';
 
-    $query = wp_parse_args(
+    /**
+     * Set defaults and remove illegal arguments to enforce consistent data being saved to the database.
+     * Always query 100 results for market cap history log, handle top limit elsewhere.
+     */
+    $query          = wp_parse_args(
       $query,
       array(
         'sort'    => 'market_cap',
         'convert' => \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY,
       )
     );
+    $query          = array_intersect_key( $query, array_flip( array( 'sort', 'convert' ) ) );
+    $query['limit'] = 100;
 
-    $query['limit'] = 100; // always query 100 results for market cap history log, handle top limit elsewhere
+    $db_appropriate = $query['sort'] === 'market_cap' && $query['convert'] === \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY;
+
+    if ( $db_appropriate && null !== self::$market_cap_cached ) {
+      return self::$market_cap_cached;
+    }
 
     $response = self::request( $endpoint, $query );
 
@@ -219,6 +240,6 @@ class CoinMarketCap
       return $errors;
     }
 
-    return $query['sort'] === 'market_cap' ? self::update_get_history( $response->data, $limit ) : $response->data;
+    return $db_appropriate ? self::$market_cap_cached = self::update_get_history( $response->data, $limit ) : $response->data;
   }
 }
