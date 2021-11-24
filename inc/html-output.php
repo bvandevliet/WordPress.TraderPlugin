@@ -6,81 +6,81 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Print html for a basic balance overview.
  *
- * @param \Trader\Balance|\WP_Error $balance_exchange The exchange balance.
+ * @param \Trader\Balance|\WP_Error|null $balance_exchange The exchange balance.
  */
-function trader_echo_balance_summary( $balance_exchange )
+function trader_echo_balance_summary( $balance_exchange = null )
 {
-  if ( $balance_exchange instanceof \Trader\Balance ) :
+  if ( $balanced_passed = $balance_exchange instanceof \Trader\Balance ) {
     $deposit_history    = \Trader\Exchanges\Bitvavo::deposit_history();
     $withdrawal_history = \Trader\Exchanges\Bitvavo::withdrawal_history();
-
-    $moneyflow_now = bcadd( $balance_exchange->amount_quote_total, $withdrawal_history['total'] );
-    ?>
-    <figure class="wp-block-table">
-      <table class="trader-balance-summary no-wrap" style="width:auto;">
-        <tr>
-          <td>Total deposited</td>
-          <td class="trader-number">(i)</td>
-          <td class="trader-number">:</td>
-          <td class="trader-number">€</td>
-          <td class="trader-number"><?php echo number_format( $deposit_history['total'], 2 ); ?></td>
-          <td class="trader-number"></td>
-        </tr>
-        <tr>
-          <td>Total withdrawn</td>
-          <td class="trader-number">(o)</td>
-          <td class="trader-number">:</td>
-          <td class="trader-number">€</td>
-          <td class="trader-number"><?php echo number_format( $withdrawal_history['total'], 2 ); ?></td>
-          <td class="trader-number"></td>
-        </tr>
-        <tr>
-          <td>Current balance</td>
-          <td class="trader-number">(b)</td>
-          <td class="trader-number">:</td>
-          <td class="trader-number">€</td>
-          <td class="trader-number"><?php echo number_format( $balance_exchange->amount_quote_total, 2 ); ?></td>
-          <td class="trader-number"></td>
-        </tr>
-        <tr>
-          <td>Moneyflow</td>
-          <td class="trader-number">(B=o+b)</td>
-          <td class="trader-number">:</td>
-          <td class="trader-number">€</td>
-          <td class="trader-number"><?php echo number_format( $moneyflow_now, 2 ); ?></td>
-          <td class="trader-number"></td>
-        </tr>
-        <tr style="border-top-width:1px;">
-          <td>Total gain</td>
-          <td class="trader-number">(B-i)</td>
-          <td class="trader-number">:</td>
-          <td class="trader-number">€</td>
-          <td class="trader-number"><?php echo number_format( bcsub( $moneyflow_now, $deposit_history['total'] ), 2 ); ?></td>
-          <td class="trader-number"></td>
-        </tr>
-        <tr>
-          <td></td>
-          <td class="trader-number">(B/i-1)</td>
-          <td class="trader-number">:</td>
-          <td class="trader-number"></td>
-          <td class="trader-number"><?php echo trader_get_gain_perc( $moneyflow_now, $deposit_history['total'] ); ?></td>
-          <td class="trader-number">%</td>
-        </tr>
-      </table>
-    </figure>
-    <?php
-  endif;
+    $moneyflow_now      = bcadd( $balance_exchange->amount_quote_total, $withdrawal_history['total'] );
+  }
+  ?>
+  <figure class="wp-block-table">
+    <table class="trader-balance-summary no-wrap" style="width:auto;">
+      <tr>
+        <td>Total deposited</td>
+        <td class="trader-number">(i)</td>
+        <td class="trader-number">:</td>
+        <td class="trader-number">€</td>
+        <td class="trader-number trader-total-deposited"><?php echo $balanced_passed ? number_format( $deposit_history['total'], 2 ) : '?'; ?></td>
+        <td class="trader-number"></td>
+      </tr>
+      <tr>
+        <td>Total withdrawn</td>
+        <td class="trader-number">(o)</td>
+        <td class="trader-number">:</td>
+        <td class="trader-number">€</td>
+        <td class="trader-number trader-total-withdrawn"><?php echo $balanced_passed ? number_format( $withdrawal_history['total'], 2 ) : '?'; ?></td>
+        <td class="trader-number"></td>
+      </tr>
+      <tr>
+        <td>Current balance</td>
+        <td class="trader-number">(b)</td>
+        <td class="trader-number">:</td>
+        <td class="trader-number">€</td>
+        <td class="trader-number trader-current-balance"><?php echo $balanced_passed ? number_format( $balance_exchange->amount_quote_total, 2 ) : '?'; ?></td>
+        <td class="trader-number"></td>
+      </tr>
+      <tr>
+        <td>Moneyflow</td>
+        <td class="trader-number">(B=o+b)</td>
+        <td class="trader-number">:</td>
+        <td class="trader-number">€</td>
+        <td class="trader-number trader-moneyflow"><?php echo $balanced_passed ? number_format( $moneyflow_now, 2 ) : '?'; ?></td>
+        <td class="trader-number"></td>
+      </tr>
+      <tr style="border-top-width:1px;">
+        <td>Total gain</td>
+        <td class="trader-number">(B-i)</td>
+        <td class="trader-number">:</td>
+        <td class="trader-number">€</td>
+        <td class="trader-number trader-total-gain-quote"><?php echo $balanced_passed ? number_format( bcsub( $moneyflow_now, $deposit_history['total'] ), 2 ) : '?'; ?></td>
+        <td class="trader-number"></td>
+      </tr>
+      <tr>
+        <td></td>
+        <td class="trader-number">(B/i-1)</td>
+        <td class="trader-number">:</td>
+        <td class="trader-number"></td>
+        <td class="trader-number trader-total-gain-perc"><?php echo $balanced_passed ? trader_get_gain_perc( $moneyflow_now, $deposit_history['total'], 2 ) : '?'; ?></td>
+        <td class="trader-number">%</td>
+      </tr>
+    </table>
+  </figure>
+  <?php
 }
 
 /**
  * Print html for a portfolio balance overview.
  *
- * @param \Trader\Balance $balance         The balance to print.
- * @param boolean         $show_current    Print current balance?
- * @param boolean         $show_rebalanced Print rebalanced situation?
+ * @param \Trader\Balance|null $balance         The balance to print.
+ * @param boolean              $show_current    Print current balance?
+ * @param boolean              $show_rebalanced Print rebalanced situation?
  */
-function trader_echo_portfolio( \Trader\Balance $balance, bool $show_current = true, bool $show_rebalanced = true )
+function trader_echo_portfolio( \Trader\Balance $balance = null, bool $show_current = true, bool $show_rebalanced = true )
 {
+  $balance = $balance ?? new \Trader\Balance();
   ?>
   <figure class="wp-block-table">
     <table class="trader-portfolio no-wrap" style="width:auto;">
@@ -88,16 +88,16 @@ function trader_echo_portfolio( \Trader\Balance $balance, bool $show_current = t
         <tr>
           <th><?php esc_html_e( 'Asset', 'trader' ); ?></th>
           <?php if ( $show_current ) : ?>
-          <th></th>
-          <th colspan="4" class="min-width"><?php esc_html_e( 'Current balance', 'trader' ); ?></th>
+            <th></th>
+            <th colspan="4" class="min-width"><?php esc_html_e( 'Current balance', 'trader' ); ?></th>
           <?php endif; ?>
           <?php if ( $show_rebalanced ) : ?>
-          <th></th>
-          <th colspan="4" class="min-width"><?php esc_html_e( 'Rebalanced situation', 'trader' ); ?></th>
+            <th></th>
+            <th colspan="4" class="min-width"><?php esc_html_e( 'Rebalanced situation', 'trader' ); ?></th>
           <?php endif; ?>
           <?php if ( $show_current && $show_rebalanced ) : ?>
-          <th></th>
-          <th colspan="2"><?php esc_html_e( 'Diff', 'trader' ); ?></th>
+            <th></th>
+            <th colspan="2"><?php esc_html_e( 'Diff', 'trader' ); ?></th>
           <?php endif; ?>
         </tr>
       </thead>
@@ -111,23 +111,23 @@ function trader_echo_portfolio( \Trader\Balance $balance, bool $show_current = t
           <tr>
             <td><?php echo esc_html( $asset->symbol ); ?></td>
             <?php if ( $show_current ) : ?>
-            <td class="trader-number"></td>
-            <td class="trader-number">€</td>
-            <td class="trader-number"><?php echo esc_html( number_format( $asset->amount_quote, 2 ) ); ?></td>
-            <td class="trader-number"><?php echo esc_html( number_format( $allocation_current, 2 ) ); ?></td>
-            <td class="trader-number">%</td>
+              <td class="trader-number"></td>
+              <td class="trader-number">€</td>
+              <td class="trader-number"><?php echo esc_html( number_format( $asset->amount_quote, 2 ) ); ?></td>
+              <td class="trader-number"><?php echo esc_html( number_format( $allocation_current, 2 ) ); ?></td>
+              <td class="trader-number">%</td>
             <?php endif; ?>
             <?php if ( $show_rebalanced ) : ?>
-            <td class="trader-number"></td>
-            <td class="trader-number">€</td>
-            <td class="trader-number"><?php echo esc_html( number_format( bcmul( reset( $asset->allocation_rebl ), $balance->amount_quote_total ), 2 ) ); ?></td>
-            <td class="trader-number"><?php echo esc_html( number_format( $allocation_rebl, 2 ) ); ?></td>
-            <td class="trader-number">%</td>
+              <td class="trader-number"></td>
+              <td class="trader-number">€</td>
+              <td class="trader-number"><?php echo esc_html( number_format( bcmul( reset( $asset->allocation_rebl ), $balance->amount_quote_total ), 2 ) ); ?></td>
+              <td class="trader-number"><?php echo esc_html( number_format( $allocation_rebl, 2 ) ); ?></td>
+              <td class="trader-number">%</td>
             <?php endif; ?>
             <?php if ( $show_current && $show_rebalanced ) : ?>
-            <td class="trader-number"></td>
-            <td class="trader-number"><?php echo esc_html( ( $diff >= 0 ? '+' : '-' ) . number_format( abs( $diff ), 2 ) ); ?></td>
-            <td class="trader-number">%</td>
+              <td class="trader-number"></td>
+              <td class="trader-number"><?php echo esc_html( ( $diff >= 0 ? '+' : '-' ) . number_format( abs( $diff ), 2 ) ); ?></td>
+              <td class="trader-number">%</td>
             <?php endif; ?>
           </tr>
         <?php endforeach; ?>

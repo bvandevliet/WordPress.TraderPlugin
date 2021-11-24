@@ -15,14 +15,14 @@ class Config_Editor extends File_Editor
     /**
      * Create file if not yet exists and insert php opening tag.
      */
-    if ( ! file_exists( TRADER_ABSPATH . '/config.php' ) ) {
-      if ( false !== $pointer = fopen( TRADER_ABSPATH . '/config.php', 'w' ) ) {
+    if ( ! file_exists( TRADER_ABSPATH . 'config.php' ) ) {
+      if ( false !== $pointer = fopen( TRADER_ABSPATH . 'config.php', 'w' ) ) {
         fwrite( $pointer, '<?php' . PHP_EOL );
         fclose( $pointer );
       }
     }
 
-    parent::__construct( TRADER_ABSPATH . '/config.php' );
+    parent::__construct( TRADER_ABSPATH . 'config.php' );
   }
 
   /**

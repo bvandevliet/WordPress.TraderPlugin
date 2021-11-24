@@ -21,6 +21,11 @@
 
 defined( 'ABSPATH' ) || exit;
 
+/**
+ * Define plugin constants.
+ */
+define( 'TRADER_ABSPATH', trailingslashit( __DIR__ ) );
+define( 'TRADER_URL', plugin_dir_url( __FILE__ ) );
 define( 'TRADER_PLUGIN_VERSION', '2021.11.19' );
 
 /**
@@ -35,12 +40,6 @@ ini_set( 'max_execution_time', 299 );
  */
 bcscale( 24 );
 ini_set( 'precision', 24 );
-
-
-/**
- * Define plugin root.
- */
-define( 'TRADER_ABSPATH', __DIR__ );
 
 
 /**
@@ -101,8 +100,9 @@ require __DIR__ . '/trader/class-indicator.php';
 require __DIR__ . '/trader/class-trader.php';
 
 /**
- * Load cron hooks.
+ * Load hooks.
  */
+require __DIR__ . '/inc/hooks-ajax.php';
 require __DIR__ . '/inc/hooks-cron.php';
 
 /**
@@ -133,14 +133,33 @@ register_deactivation_hook( __FILE__, array( 'Trader_Setup', 'on_deactivation' )
 register_uninstall_hook( __FILE__, array( 'Trader_Setup', 'on_uninstall' ) );
 
 /**
- * Enqueue styles and scripts
+ * Enqueue styles and scripts.
  */
 add_action(
   'wp_enqueue_scripts',
   function ()
   {
-    wp_enqueue_style( 'trader-plugin-styles', plugin_dir_url( __FILE__ ) . 'assets/css/style.css', array(), TRADER_PLUGIN_VERSION );
-    wp_enqueue_script( 'trader-plugin-script-forms', plugin_dir_url( __FILE__ ) . 'assets/js/forms.js', array( 'jquery' ), TRADER_PLUGIN_VERSION, true );
+    wp_enqueue_style( 'trader-plugin-styles', TRADER_URL . 'assets/css/style.css', array(), TRADER_PLUGIN_VERSION );
+    wp_enqueue_script( 'trader-plugin-script-forms', TRADER_URL . 'assets/js/forms.js', array( 'jquery' ), TRADER_PLUGIN_VERSION, true );
   },
   100
+);
+
+/**
+ * Enqueue AJAX script for blocks.
+ */
+add_action(
+  'enqueue_block_assets',
+  function ()
+  {
+    wp_enqueue_script( 'trader-plugin-script-ajax', TRADER_URL . 'assets/js/ajax.js', array( 'jquery' ), TRADER_PLUGIN_VERSION, false );
+    wp_localize_script(
+      'trader-plugin-script-ajax',
+      'ajax_obj',
+      array(
+        'ajax_url' => admin_url( 'admin-ajax.php' ),
+        'nonce'    => wp_create_nonce( 'trader_ajax' ),
+      )
+    );
+  }
 );

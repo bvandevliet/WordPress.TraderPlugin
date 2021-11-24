@@ -46,8 +46,8 @@ add_action(
       if ( ! is_user_logged_in() || 1 !== $result ) {
         if ( wp_doing_ajax() ) {
           wp_die( -1, 403 );
-        } else {
-          die( '-1' );}
+        }
+        die( '-1' );
       }
     }
   },

@@ -37,7 +37,7 @@ class Admin_Pages
      * Include admin pages.
      */
     foreach ( self::get_pages() as $page ) {
-      require_once TRADER_ABSPATH . '/admin/page-' . $page['slug'] . '.php';
+      require_once TRADER_ABSPATH . 'admin/page-' . $page['slug'] . '.php';
     }
 
     /**

@@ -60,17 +60,19 @@ class Configuration
   }
 
   /**
-   * Get rebalance parameters from request parameters.
+   * Get rebalance parameters from request parameters or a passed object.
+   *
+   * @param array|object $object An optional array or object to "cast" to an instance of Asset.
    *
    * @return Configuration
    */
-  public static function get_args_from_request_params() : Configuration
+  public static function get_configuration_from_environment( $object = array() ) : Configuration
   {
     $configuration = self::get();
 
     foreach ( (array) $configuration as $param => $default ) {
       // phpcs:ignore WordPress.Security
-      $req_value = $_POST[ $param ] ?? $_GET[ $param ] ?? null;
+      $req_value = ( (array) $object )[ $param ] ?? $_POST[ $param ] ?? $_GET[ $param ] ?? null;
       $req_value = null !== $req_value ? wp_unslash( $req_value ) : null;
       switch ( $param ) {
         case 'top_count':

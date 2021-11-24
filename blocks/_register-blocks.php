@@ -42,7 +42,7 @@ add_action(
         'description' => 'Shows current portfolio asset allocations.',
         'icon'        => 'editor-ol',
       ),
-      'trader/configuration'     => array(
+      'trader/configuration' => array(
         'title'       => 'Configuration',
         'description' => 'A form to configure trading parameters.',
         'icon'        => 'admin-generic',
@@ -69,11 +69,8 @@ add_action(
       '1',
       true
     );
-    wp_add_inline_script(
-      'trader-dynamic-blocks-editor-js',
-      'window.trader_dynamic_blocks = [];',
-      'before'
-    );
+
+    $trader_dynamic_blocks = array();
 
     /**
      * Register dynamic blocks.
@@ -83,11 +80,8 @@ add_action(
 
       require_once __DIR__ . '/' . $block_name . '.php';
 
-      wp_add_inline_script(
-        'trader-dynamic-blocks-editor-js',
-        'window.trader_dynamic_blocks.push(\'' . esc_js( $block_type ) . '\');',
-        'before'
-      );
+      $trader_dynamic_blocks[] = $block_type;
+
       register_block_type(
         $block_type,
         wp_parse_args(
@@ -103,5 +97,11 @@ add_action(
         )
       );
     }
+
+    wp_add_inline_script(
+      'trader-dynamic-blocks-editor-js',
+      'window.trader_dynamic_blocks = ' . wp_json_encode( $trader_dynamic_blocks ) . ';',
+      'before'
+    );
   }
 );
