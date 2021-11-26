@@ -163,18 +163,6 @@ function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
     </p>
   </form>
 
-  <script>
-    (() =>
-    {
-      /**
-       * MIGRATE HTML SNIPPETS TO WP BLOCKS AND
-       * MAKE SURE TO TRIGGER DEDICATED AJAX SCRIPTS AND TICKERS ONCE IF ONE OR MORE RELATED BLOCKS EXIST ON THE CURRENT PAGE !!
-       */
-      window.update_portfolio();
-      const ticker = () => { window.update_balance_summary(() => { setTimeout(ticker, 5000) }); }; ticker();
-    })();
-  </script>
-
   <?php
   return ob_get_clean();
 }

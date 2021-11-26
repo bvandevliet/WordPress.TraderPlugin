@@ -134,24 +134,17 @@ register_uninstall_hook( __FILE__, array( 'Trader_Setup', 'on_uninstall' ) );
 
 /**
  * Enqueue styles and scripts.
+ *
+ * HOW TO PROPERLY APPLY ALL THEME AND PLUGIN FRONT-END STYLES ALSO ON BLOCKS WHILE IN THE EDITOR ? !!
  */
 add_action(
   'wp_enqueue_scripts',
   function ()
   {
     wp_enqueue_style( 'trader-plugin-styles', TRADER_URL . 'assets/css/style.css', array(), TRADER_PLUGIN_VERSION );
-    wp_enqueue_script( 'trader-plugin-script-forms', TRADER_URL . 'assets/js/forms.js', array( 'jquery' ), TRADER_PLUGIN_VERSION, true );
-  },
-  100
-);
 
-/**
- * Enqueue AJAX script for blocks.
- */
-add_action(
-  'enqueue_block_assets',
-  function ()
-  {
+    wp_enqueue_script( 'trader-plugin-script-forms', TRADER_URL . 'assets/js/forms.js', array( 'jquery' ), TRADER_PLUGIN_VERSION, true );
+
     wp_enqueue_script( 'trader-plugin-script-ajax', TRADER_URL . 'assets/js/ajax.js', array( 'jquery' ), TRADER_PLUGIN_VERSION, false );
     wp_localize_script(
       'trader-plugin-script-ajax',
@@ -161,5 +154,6 @@ add_action(
         'nonce'    => wp_create_nonce( 'trader_ajax' ),
       )
     );
-  }
+  },
+  100
 );

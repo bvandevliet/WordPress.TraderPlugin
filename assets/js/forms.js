@@ -1,5 +1,12 @@
 ($ =>
 {
+  'use strict';
+
+  /**
+   * Determine a html input element value is empty or its default.
+   * 
+   * @param {Element|jQuery<HTMLInputElement>} input An html input element.
+   */
   const is_empty_or_default = input =>
   {
     let $input = $(input);
@@ -20,11 +27,16 @@
     }
   });
 
+  /**
+   * Determine whether at least one sibling element exists in which all input elements have an empty or default value.
+   * 
+   * @param {Element|JQuery<HTMLElement>} this_row 
+   */
   const empty_sibling_row_exists = this_row =>
   {
     let $this_row = $(this_row);
 
-    return $this_row.siblings('.form-row-cloneable').filter((i, row) =>
+    return 0 < $this_row.siblings('.form-row-cloneable').filter((i, row) =>
       $(row).find('input:not(.cloneable-ignore)').toArray().every(is_empty_or_default)).length
   }
 

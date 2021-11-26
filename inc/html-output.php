@@ -1,4 +1,7 @@
 <?php
+/**
+ * MIGRATE HTML SNIPPETS TO WP BLOCKS !!
+ */
 
 defined( 'ABSPATH' ) || exit;
 
