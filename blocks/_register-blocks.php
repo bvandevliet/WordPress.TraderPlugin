@@ -78,7 +78,7 @@ add_action(
     foreach ( $blocks as $block_type => $args ) {
       $block_name = explode( '/', $block_type )[1];
 
-      require_once __DIR__ . '/' . $block_name . '.php';
+      require_once __DIR__ . '/block-' . $block_name . '.php';
 
       $trader_dynamic_blocks[] = $block_type;
 
