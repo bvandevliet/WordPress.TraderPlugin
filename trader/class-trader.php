@@ -423,8 +423,10 @@ class Trader
      * Portfolio rebalancing: third loop adding amounts to scale to available balance.
      * No need to pass takeout value as it is already applied to the passed $balance.
      */
-    $balance      = ! $simulate ? self::merge_balance( $balance, \Trader\Exchanges\Bitvavo::get_balance() ) : $balance;
-    $to_buy_total = 0;
+    $config_without_takeout          = clone $configuration;
+    $config_without_takeout->takeout = 0;
+    $balance                         = ! $simulate ? self::merge_balance( $balance, \Trader\Exchanges\Bitvavo::get_balance(), $config_without_takeout ) : $balance;
+    $to_buy_total                    = 0;
     foreach ( $balance->assets as $asset ) {
 
       $amount_quote = bcmul( $balance->amount_quote_total, $asset->allocation_rebl[ $mode ] ?? 0 );
