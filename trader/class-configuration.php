@@ -62,38 +62,56 @@ class Configuration
   /**
    * Get rebalance parameters from request parameters or a passed object.
    *
-   * @param array|object $object An optional array or object to "cast" to an instance of Asset.
+   * @param array|object $object  An optional array or object to "cast" to an instance of Asset.
+   * @param int|null     $user_id Defaults to current user.
    *
    * @return Configuration
    */
-  public static function get_configuration_from_environment( $object = array() ) : Configuration
+  public static function get_configuration_from_environment( $object = array(), ?int $user_id = null ) : Configuration
   {
-    $configuration = self::get();
+    $configuration = self::get( $user_id );
+
+    /**
+     * If an object was passed or current request is a POST request, then reset default values to initial values.
+     * This is required since empty fields or checkboxes may not be serialized at all while their default values may be defined otherwise.
+     * Ideally, the form should explicitly set all of the below parameters to ensure expected outcome.
+     */
+    if ( count( (array) $object ) > 0 || 'POST' === $_SERVER['REQUEST_METHOD'] ) {
+      foreach ( array(
+        'top_count'                => 1,
+        'smoothing'                => 1,
+        'nth_root'                 => 1,
+        'dust_limit'               => 1,
+        'alloc_quote'              => 0,
+        'takeout'                  => 0,
+        'alloc_quote_fag_multiply' => false,
+        'automation_enabled'       => false,
+      ) as $param => $initial ) {
+        $configuration->$param = $initial;
+      }
+    }
 
     foreach ( (array) $configuration as $param => $default ) {
       // phpcs:ignore WordPress.Security
-      $req_value = ( (array) $object )[ $param ] ?? $_POST[ $param ] ?? $_GET[ $param ] ?? null;
-      $req_value = null !== $req_value ? wp_unslash( $req_value ) : null;
+      $req_value = wp_unslash( ( (array) $object )[ $param ] ?? $_POST[ $param ] ?? $_GET[ $param ] ?? null );
       switch ( $param ) {
         case 'top_count':
-          $configuration->$param = is_numeric( $req_value ) ? min( max( 1, intval( $req_value ) ), 100 ) : $default;
+          $configuration->$param = isset( $req_value ) ? min( max( 1, intval( $req_value ) ), 100 ) : $default;
           break;
         case 'smoothing':
         case 'nth_root':
         case 'dust_limit':
-          $configuration->$param = is_numeric( $req_value ) ? max( 1, intval( $req_value ) ) : $default;
+          $configuration->$param = isset( $req_value ) ? max( 1, intval( $req_value ) ) : $default;
           break;
         case 'alloc_quote':
-          $configuration->$param = is_numeric( $req_value ) ? trader_max( 0, floatstr( floatval( $req_value ) ) ) : $default;
-          break;
         case 'takeout':
-          $configuration->$param = is_numeric( $req_value ) ? trader_max( 0, floatstr( floatval( $req_value ) ) ) : $default;
+          $configuration->$param = is_numeric( $req_value ) ? trader_max( 0, floatstr( $req_value ) ) : $default;
           break;
         case 'alloc_quote_fag_multiply':
           $configuration->$param = ! empty( $req_value ) ? boolval( $req_value ) : $default;
           break;
         default:
-          $configuration->$param = is_numeric( $req_value ) ? floatstr( floatval( $req_value ) ) : $default;
+          $configuration->$param = is_numeric( $req_value ) && is_numeric( $default ) ? floatstr( $req_value ) : $default;
       }
     }
 
@@ -134,14 +152,14 @@ class Configuration
    *
    * @var int
    */
-  public int $smoothing = 14;
+  public int $smoothing = 7;
 
   /**
    * The nth root of Market Cap to use for allocation.
    *
    * @var int
    */
-  public int $nth_root = 4;
+  public int $nth_root = 3;
 
   /**
    * Minimum required allocation difference in quote currency.
@@ -155,7 +173,7 @@ class Configuration
    *
    * @var int|float|string
    */
-  public $alloc_quote = 0;
+  public $alloc_quote = 10;
 
   /**
    * Amount in quote currency to keep out / not re-invest.
@@ -169,7 +187,7 @@ class Configuration
    *
    * @var bool
    */
-  public bool $alloc_quote_fag_multiply = false;
+  public bool $alloc_quote_fag_multiply = true;
 
   /**
    * Rebalance period in hours.

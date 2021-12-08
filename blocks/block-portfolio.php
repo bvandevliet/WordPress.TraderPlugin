@@ -25,7 +25,7 @@ function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
 
   $errors = get_error_obj();
 
-  if ( isset( $_SERVER['REQUEST_METHOD'] ) && 'POST' === $_SERVER['REQUEST_METHOD'] ) {
+  if ( 'POST' === $_SERVER['REQUEST_METHOD'] ) {
     if ( isset( $_POST['action'] )
       && isset( $_POST['do-portfolio-rebalance-nonce'] ) && wp_verify_nonce( $_POST['do-portfolio-rebalance-nonce'], 'portfolio-rebalance-user_' . $current_user->ID )
     ) {
@@ -105,6 +105,7 @@ function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
         <input type="number" min="1" class="input-number" name="interval_hours" value="<?php echo esc_attr( $configuration->interval_hours ); ?>" />
       </label>
     </p> -->
+    <input type="hidden" name="dust_limit" value="<?php echo esc_attr( $configuration->dust_limit ); ?>" />
     <fieldset class="wp-block-columns">
       <div class="wp-block-column">
         <p class="form-row form-row-wide">

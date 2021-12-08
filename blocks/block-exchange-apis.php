@@ -19,7 +19,7 @@ function trader_dynamic_block_exchange_apis_cb( $block_attributes, $content )
     return;
   }
 
-  if ( isset( $_SERVER['REQUEST_METHOD'] ) && 'POST' === $_SERVER['REQUEST_METHOD'] ) {
+  if ( 'POST' === $_SERVER['REQUEST_METHOD'] ) {
     /**
      * Process form data ..
      */

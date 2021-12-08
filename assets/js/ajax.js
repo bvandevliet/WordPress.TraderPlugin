@@ -237,6 +237,12 @@
       // SET LOADER(S) ? !!
 
       /**
+       * Build the Configuration object to pass it as argument with the post request.
+       */
+      let config = {};
+      $('form.trader-rebalance').serializeArray().forEach(obj => config[obj.name] = obj.value);
+
+      /**
        * Get required data from server and call the html update functions.
        */
       $.when(
@@ -254,6 +260,7 @@
           ajax_obj.ajax_url, {
           _ajax_nonce: ajax_obj.nonce,
           action: 'trader_get_balance',
+          config: config,
         }),
       )
         .done((deposit_history, withdrawal_history, balance) =>
