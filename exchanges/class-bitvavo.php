@@ -47,61 +47,87 @@ class Bitvavo implements Exchange
 
 
   /**
-   * Retrieve API authentication from database.
+   * User ID this instance belongs to.
    *
-   * @return string[] The API key and secret for the current user.
+   * @var null|int
    */
-  private static function get_authentication() : array
-  {
-    $api_key    = \Trader\API_Keys::get_api_key( 'bitvavo_key' );
-    $api_secret = \Trader\API_Keys::get_api_key( 'bitvavo_secret' );
+  private ?int $user_id = null;
 
-    return compact( 'api_key', 'api_secret' );
+  /**
+   * {@inheritDoc}
+   */
+  public function __construct( ?int $user_id = null )
+  {
+    $this->user_id = $user_id;
   }
+
+
+  /**
+   * Container for the wrapper instance belonging to the current user.
+   *
+   * @var null|Bitvavo
+   */
+  private static ?Bitvavo $bitvavo_current_user = null;
+
+  /**
+   * {@inheritDoc}
+   *
+   * @return Bitvavo
+   */
+  public static function current_user() : Bitvavo
+  {
+    if ( null === self::$bitvavo_current_user ) {
+      self::$bitvavo_current_user = new Bitvavo();
+    }
+
+    return self::$bitvavo_current_user;
+  }
+
 
   /**
    * Container for the underlying parent instance of the class.
    *
    * @var null|\Bitvavo
    */
-  private static ?\Bitvavo $instance = null;
+  private ?\Bitvavo $instance = null;
 
   /**
    * {@inheritDoc}
    *
    * @return \Bitvavo
    */
-  public static function get_instance() : \Bitvavo
+  public function get_instance() : \Bitvavo
   {
-    /**
-     * ERROR HANDLING SOMEHOW !!
-     *
-     * @link https://github.com/ccxt/ccxt/blob/e7ad04747f72e601eead58b02899b75126dc619d/js/bitvavo.js#L146
-     * if( ! empty( $response['errorCode'] ) && in_array( $response['errorCode'], array() ) ) {}
-     */
-    if ( null === self::$instance ) {
-      $api_auth = self::get_authentication();
+    if ( null === $this->instance ) {
+      $api_key    = \Trader\API_Keys::get_api_key( 'bitvavo_key', $this->user_id );
+      $api_secret = \Trader\API_Keys::get_api_key( 'bitvavo_secret', $this->user_id );
 
-      self::$instance = new \Bitvavo(
+      /**
+       * ERROR HANDLING SOMEHOW !!
+       *
+       * @link https://github.com/ccxt/ccxt/blob/e7ad04747f72e601eead58b02899b75126dc619d/js/bitvavo.js#L146
+       * if( ! empty( $response['errorCode'] ) && in_array( $response['errorCode'], array() ) ) {}
+       */
+      $this->instance = new \Bitvavo(
         array(
-          'APIKEY'       => $api_auth['api_key'],
-          'APISECRET'    => $api_auth['api_secret'],
+          'APIKEY'       => $api_key,
+          'APISECRET'    => $api_secret,
           'ACCESSWINDOW' => 10000,
           'DEBUGGING'    => false,
         )
       );
     }
 
-    return self::$instance;
+    return $this->instance;
   }
 
 
   /**
    * {@inheritDoc}
    */
-  public static function candles( string $market, string $chart, array $args = array() ) : array
+  public function candles( string $market, string $chart, array $args = array() ) : array
   {
-    return self::get_instance()->candles( $market, $chart, $args );
+    return $this->get_instance()->candles( $market, $chart, $args );
   }
 
 
@@ -123,9 +149,9 @@ class Bitvavo implements Exchange
   /**
    * {@inheritDoc}
    */
-  public static function deposit_history( string $symbol = self::QUOTE_CURRENCY ) : array
+  public function deposit_history( string $symbol = self::QUOTE_CURRENCY ) : array
   {
-    $deposits = self::get_instance()->depositHistory( array( 'symbol' => $symbol ) );
+    $deposits = $this->get_instance()->depositHistory( array( 'symbol' => $symbol ) );
     $total    = 0;
 
     foreach ( $deposits as $deposit ) {
@@ -139,9 +165,9 @@ class Bitvavo implements Exchange
   /**
    * {@inheritDoc}
    */
-  public static function withdrawal_history( string $symbol = self::QUOTE_CURRENCY ) : array
+  public function withdrawal_history( string $symbol = self::QUOTE_CURRENCY ) : array
   {
-    $withdrawals = self::get_instance()->withdrawalHistory( array( 'symbol' => $symbol ) );
+    $withdrawals = $this->get_instance()->withdrawalHistory( array( 'symbol' => $symbol ) );
     $total       = 0;
 
     foreach ( $withdrawals as $withdrawal ) {
@@ -155,9 +181,9 @@ class Bitvavo implements Exchange
   /**
    * {@inheritDoc}
    */
-  public static function get_balance()
+  public function get_balance()
   {
-    $balance_exchange = self::get_instance()->balance( array() );
+    $balance_exchange = $this->get_instance()->balance( array() );
 
     if ( ! is_array( $balance_exchange ) || ! empty( $balance_exchange['errorCode'] ) ) {
       $errors = new \WP_Error();
@@ -183,7 +209,7 @@ class Bitvavo implements Exchange
         $asset->symbol = $balance_exchange[ $i ]['symbol'];
         $market        = $asset->symbol . '-' . self::QUOTE_CURRENCY;
 
-        $asset->price        = self::get_instance()->tickerPrice( array( 'market' => $market ) )['price'];
+        $asset->price        = $this->get_instance()->tickerPrice( array( 'market' => $market ) )['price'];
         $asset->amount_quote = floatstr( bcmul( $asset->amount, $asset->price ) );
       }
 
@@ -206,13 +232,13 @@ class Bitvavo implements Exchange
   /**
    * {@inheritDoc}
    */
-  public static function cancel_all_orders( array $ignore = array() ) : array
+  public function cancel_all_orders( array $ignore = array() ) : array
   {
     $result = array();
 
-    foreach ( self::get_instance()->ordersOpen( array() ) as $order ) {
+    foreach ( $this->get_instance()->ordersOpen( array() ) as $order ) {
       if ( ! in_array( explode( '-', $order['market'] )[0], $ignore, true ) ) {
-        $result[] = self::get_instance()->cancelOrder( $order['market'], $order['orderId'] );
+        $result[] = $this->get_instance()->cancelOrder( $order['market'], $order['orderId'] );
       }
     }
 
@@ -223,11 +249,11 @@ class Bitvavo implements Exchange
   /**
    * {@inheritDoc}
    */
-  public static function sell_whole_portfolio( array $ignore = array() ) : array
+  public function sell_whole_portfolio( array $ignore = array() ) : array
   {
     $result = self::cancel_all_orders( $ignore );
 
-    $balance = self::get_instance()->balance( array() );
+    $balance = $this->get_instance()->balance( array() );
 
     foreach ( $balance as $asset ) {
       if ( $asset['symbol'] === self::QUOTE_CURRENCY ) {
@@ -243,7 +269,7 @@ class Bitvavo implements Exchange
 
       $amount = floatstr( $asset['available'] );
 
-      $result[] = self::get_instance()->placeOrder(
+      $result[] = $this->get_instance()->placeOrder(
         $market,
         'sell',
         'market',
@@ -262,7 +288,7 @@ class Bitvavo implements Exchange
   /**
    * {@inheritDoc}
    */
-  public static function buy_asset( string $symbol, $amount_quote, bool $simulate = false ) : array
+  public function buy_asset( string $symbol, $amount_quote, bool $simulate = false ) : array
   {
     $market = $symbol . '-' . self::QUOTE_CURRENCY;
 
@@ -287,14 +313,14 @@ class Bitvavo implements Exchange
 
     $response['status'] = 'new';
 
-    // $market_info = self::get_instance()->markets( ['market' => $market] );
-    // $asset_info  = self::get_instance()->assets( ['symbol' => $symbol] );
+    // $market_info = $this->get_instance()->markets( ['market' => $market] );
+    // $asset_info  = $this->get_instance()->assets( ['symbol' => $symbol] );
 
     // $min_quote  = $market_info['minOrderInQuoteAsset'];
     // $min_amount = $market_info['minOrderInBaseAsset'];
 
-    $price = self::get_instance()->tickerPrice( array( 'market' => $market ) )['price'];
-    // $book  = self::get_instance()->tickerBook( ['market' => $market] );
+    $price = $this->get_instance()->tickerPrice( array( 'market' => $market ) )['price'];
+    // $book  = $this->get_instance()->tickerBook( ['market' => $market] );
 
     $amount_quote = trader_floor( $amount_quote, 2 );
     // $amount       = trader_floor( bcdiv( $amount_quote, $price ), $asset_info['decimals'] );
@@ -304,7 +330,7 @@ class Bitvavo implements Exchange
         ? array(
           'feePaid' => floatstr( bcmul( $amount_quote, self::TAKER_FEE ) ),
         )
-        : self::get_instance()->placeOrder(
+        : $this->get_instance()->placeOrder(
           $market,
           'buy',
           'market',
@@ -322,7 +348,7 @@ class Bitvavo implements Exchange
   /**
    * {@inheritDoc}
    */
-  public static function sell_asset( string $symbol, $amount_quote, bool $simulate = false ) : array
+  public function sell_asset( string $symbol, $amount_quote, bool $simulate = false ) : array
   {
     $market = $symbol . '-' . self::QUOTE_CURRENCY;
 
@@ -345,7 +371,7 @@ class Bitvavo implements Exchange
       return $response;
     }
 
-    $asset = self::get_instance()->balance( array( 'symbol' => $symbol ) )[0];
+    $asset = $this->get_instance()->balance( array( 'symbol' => $symbol ) )[0];
 
     // phpcs:ignore WordPress.PHP.StrictComparisons
     if ( $asset['available'] == 0 ) {
@@ -354,14 +380,14 @@ class Bitvavo implements Exchange
 
     $response['status'] = 'new';
 
-    // $market_info = self::get_instance()->markets( ['market' => $market] );
-    $asset_info = self::get_instance()->assets( array( 'symbol' => $symbol ) );
+    // $market_info = $this->get_instance()->markets( ['market' => $market] );
+    $asset_info = $this->get_instance()->assets( array( 'symbol' => $symbol ) );
 
     // $min_quote  = $market_info['minOrderInQuoteAsset'];
     // $min_amount = $market_info['minOrderInBaseAsset'];
 
-    $price = self::get_instance()->tickerPrice( array( 'market' => $market ) )['price'];
-    // $book  = self::get_instance()->tickerBook( ['market' => $market] );
+    $price = $this->get_instance()->tickerPrice( array( 'market' => $market ) )['price'];
+    // $book  = $this->get_instance()->tickerBook( ['market' => $market] );
 
     $amount_quote = trader_ceil( $amount_quote, 2 );
     $amount       = trader_min( $asset['available'], trader_floor( bcdiv( $amount_quote, $price ), $asset_info['decimals'] ) );
@@ -380,7 +406,7 @@ class Bitvavo implements Exchange
             'amountQuote' => floatstr( $amount_quote ),
             'feePaid'     => floatstr( bcmul( $amount_quote, self::TAKER_FEE ) ),
           )
-          : self::get_instance()->placeOrder(
+          : $this->get_instance()->placeOrder(
             $market,
             'sell',
             'market',
@@ -399,7 +425,7 @@ class Bitvavo implements Exchange
         ? array(
           'feePaid' => floatstr( bcmul( $amount_quote, self::TAKER_FEE ) ),
         )
-        : self::get_instance()->placeOrder(
+        : $this->get_instance()->placeOrder(
           $market,
           'sell',
           'market',
@@ -416,16 +442,16 @@ class Bitvavo implements Exchange
   /**
    * {@inheritDoc}
    */
-  public static function get_order( string $market, string $order_id ) : array
+  public function get_order( string $market, string $order_id ) : array
   {
-    return self::get_instance()->getOrder( $market, $order_id );
+    return $this->get_instance()->getOrder( $market, $order_id );
   }
 
   /**
    * {@inheritDoc}
    */
-  public static function cancel_order( string $market, string $order_id ) : array
+  public function cancel_order( string $market, string $order_id ) : array
   {
-    return self::get_instance()->cancelOrder( $market, $order_id );
+    return $this->get_instance()->cancelOrder( $market, $order_id );
   }
 }

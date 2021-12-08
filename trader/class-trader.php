@@ -10,14 +10,12 @@ class Trader
    *
    * @param \Trader\Balance|null|\WP_Error $balance          Existing balance.
    * @param \Trader\Balance|null|\WP_Error $balance_exchange Updated balance.
-   * @param \Trader\Configuration|null     $configuration    Rebalance configuration.
+   * @param \Trader\Configuration          $configuration    Rebalance configuration.
    *
    * @return \Trader\Balance $balance_merged Merged balance.
    */
-  public static function merge_balance( $balance, $balance_exchange = null, ?\Trader\Configuration $configuration = null ) : \Trader\Balance
+  public static function merge_balance( $balance, $balance_exchange, \Trader\Configuration $configuration ) : \Trader\Balance
   {
-    $configuration = $configuration ?? \Trader\Configuration::get();
-
     if ( is_wp_error( $balance ) || ! $balance instanceof \Trader\Balance ) {
       $balance_merged = new \Trader\Balance();
     } else {
@@ -143,14 +141,13 @@ class Trader
   /**
    * Construct a ranked $balance with rebalanced allocation data.
    *
-   * @param \Trader\Configuration|null $configuration Rebalance configuration.
+   * @param \Trader\Exchanges\Exchange $exchange      The exchange.
+   * @param \Trader\Configuration      $configuration Rebalance configuration.
    *
    * @return \Trader\Balance|\WP_Error
    */
-  public static function get_asset_allocations( ?\Trader\Configuration $configuration = null )
+  public static function get_asset_allocations( \Trader\Exchanges\Exchange $exchange, \Trader\Configuration $configuration )
   {
-    $configuration = $configuration ?? \Trader\Configuration::get();
-
     $alloc_quote = ! empty( $configuration->alloc_quote ) ? bcdiv( trader_max( 0, trader_min( 100, $configuration->alloc_quote ) ), 100 ) : '0';
     $alloc_quote = $configuration->alloc_quote_fag_multiply ? bcmul( $alloc_quote, bcdiv( \Trader\Metrics\Alternative_Me::fag_index_current(), 100 ) ) : $alloc_quote;
 
@@ -225,7 +222,7 @@ class Trader
       /**
        * Get candlesticks from exchange.
        */
-      $candles = \Trader\Exchanges\Bitvavo::candles(
+      $candles = $exchange->candles(
         $market,
         '4h',
         array(
@@ -239,7 +236,7 @@ class Trader
        */
       if ( empty( $candles ) || ! empty( $candles['error'] ) || ! is_array( $candles ) || count( $candles ) === 0 ) {
         /**
-         * ERROR HANDLING ? !!
+         * ERROR HANDLING ? ! !
          */
         continue;
       }
@@ -320,21 +317,23 @@ class Trader
   /**
    * Perform a portfolio rebalance.
    *
-   * @param \Trader\Balance            $balance       Portfolio.
-   * @param string                     $mode          Rebalance mode as defined by allocation in $balance->assets[$i]->allocation_rebl[$mode]
-   * @param \Trader\Configuration|null $configuration Rebalance configuration.
+   * @param \Trader\Exchanges\Exchange $exchange      The exchange.
+   * @param \Trader\Balance            $balance       Rebalanced portfolio.
+   * @param \Trader\Configuration      $configuration Rebalance configuration.
    * @param bool                       $simulate      Perform a fake rebalance, e.g. to determine expected fee amount.
    *
    * @return array Order details.
    */
-  public static function rebalance( \Trader\Balance $balance, string $mode = 'default', ?\Trader\Configuration $configuration = null, bool $simulate = false ) : array
+  public static function rebalance(
+    \Trader\Exchanges\Exchange $exchange, \Trader\Balance $balance, \Trader\Configuration $configuration, bool $simulate = false ) : array
   {
-    $configuration = $configuration ?? \Trader\Configuration::get();
-
     /**
      * Initiate array $result containing order data.
      */
-    $result = ! $simulate ? \Trader\Exchanges\Bitvavo::cancel_all_orders() : array();
+    $result = ! $simulate ? $exchange->cancel_all_orders() : array();
+
+    // back-compat
+    $mode = $configuration->rebalance_mode ?? 'default';
 
     /**
      * Portfolio rebalancing: first loop placing sell orders.
@@ -382,7 +381,7 @@ class Trader
       // else // ONLY BUYING MAY BE REQUIRED ..
 
       if ( floatval( $amount_quote_to_sell ) > 0 ) {
-        $result[] = $asset->rebl_sell_order = \Trader\Exchanges\Bitvavo::sell_asset( $asset->symbol, $amount_quote_to_sell, $simulate );
+        $result[] = $asset->rebl_sell_order = $exchange->sell_asset( $asset->symbol, $amount_quote_to_sell, $simulate );
       }
     }
 
@@ -410,10 +409,10 @@ class Trader
         $market = $asset->symbol . '-' . \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY;
 
         if ( $fill_checks <= 1 ) { // QUEUE THIS ASSET REBL INSTEAD OF ORDER CANCEL !!
-          \Trader\Exchanges\Bitvavo::cancel_order( $market, $asset->rebl_sell_order['orderId'] );
+          $exchange->cancel_order( $market, $asset->rebl_sell_order['orderId'] );
         }
 
-        $asset->rebl_sell_order = \Trader\Exchanges\Bitvavo::get_order( $market, $asset->rebl_sell_order['orderId'] );
+        $asset->rebl_sell_order = $exchange->get_order( $market, $asset->rebl_sell_order['orderId'] );
       }
 
       $fill_checks--;
@@ -425,7 +424,7 @@ class Trader
      */
     $config_without_takeout          = clone $configuration;
     $config_without_takeout->takeout = 0;
-    $balance                         = ! $simulate ? self::merge_balance( $balance, \Trader\Exchanges\Bitvavo::get_balance(), $config_without_takeout ) : $balance;
+    $balance                         = ! $simulate ? self::merge_balance( $balance, $exchange->get_balance(), $config_without_takeout ) : $balance;
     $to_buy_total                    = 0;
     foreach ( $balance->assets as $asset ) {
 
@@ -470,10 +469,95 @@ class Trader
       $amount_quote_to_buy = ! $simulate ? bcmul( $balance->assets[0]->available, trader_get_allocation( $asset->amount_quote_to_buy, $to_buy_total ) ) : $asset->amount_quote_to_buy;
 
       if ( floatval( $amount_quote_to_buy ) >= \Trader\Exchanges\Bitvavo::MIN_QUOTE ) {
-        $result[] = $asset->rebl_buy_order = \Trader\Exchanges\Bitvavo::buy_asset( $asset->symbol, $amount_quote_to_buy, $simulate );
+        $result[] = $asset->rebl_buy_order = $exchange->buy_asset( $asset->symbol, $amount_quote_to_buy, $simulate );
       }
     }
 
     return $result;
+  }
+
+
+  /**
+   * Rebalance all portfolio's that are automated and in turn.
+   *
+   * @return void
+   */
+  public static function do_automations()
+  {
+    foreach ( \Trader\Configuration::get_automations() as $user_id => $configurations ) {
+      // Check user permission.
+      if ( ! user_can( $user_id, 'trader_manage_portfolio' ) ) {
+        continue;
+      }
+
+      $errors = get_error_obj();
+      $now    = new DateTime();
+
+      $bitvavo          = new \Trader\Exchanges\Bitvavo( $user_id );
+      $balance_exchange = $bitvavo->get_balance();
+
+      if ( is_wp_error( $balance_exchange ) ) {
+        continue;
+        $errors->merge_from( $balance_exchange ); // !!
+      }
+
+      foreach ( $configurations as $configuration ) {
+        /**
+         * Check if rebalance interval is met.
+         */
+        if ( null !== $configuration->last_rebalance && $configuration->last_rebalance->diff( $now )->h < $configuration->interval_hours ) {
+          continue;
+        }
+
+        $balance_allocated = self::get_asset_allocations( $bitvavo, $configuration );
+        $balance           = self::merge_balance( $balance_allocated, $balance_exchange, $configuration );
+
+        if ( is_wp_error( $balance_allocated ) ) {
+          continue;
+          $errors->merge_from( $balance_allocated ); // !!
+        }
+
+        /**
+         * Check if rebalance threshold is met.
+         */
+        if ( ! array_some(
+          $balance->assets,
+          function ( $asset ) use ( $configuration )
+          {
+            $allocation_current = 100 * $asset->allocation_current;
+            $allocation_rebl    = 100 * ( $asset->allocation_rebl[ $configuration->rebalance_mode ] ?? 0 );
+            $diff               = $allocation_current - $allocation_rebl;
+
+            return $diff >= $configuration->rebalance_threshold;
+          }
+        ) ) {
+          continue;
+        }
+
+        /**
+         * Rebalance.
+         *
+         * MAKE ASYNC, REFER TO LINK BELOW !!
+         *
+         * @link https://github.com/spatie/async
+         */
+        foreach ( self::rebalance( $bitvavo, $balance, $configuration ) as $index => $order ) {
+          if ( ! empty( $order['errorCode'] ) ) {
+            $errors->add(
+              $order['errorCode'] . '-' . $index,
+              sprintf( __( 'Exchange error %1$s %2$s: ', 'trader' ), $order['side'], $order['market'] ) . ( $order['error'] ?? __( 'An unknown error occured.', 'trader' ) )
+            );
+          }
+        }
+
+        /**
+         * On success, update timestamp of last rebalance.
+         */
+        if ( ! $errors->has_errors() ) {
+          $configuration->last_rebalance = new DateTime();
+          $configuration->save( $user_id );
+        }
+      }
+    }
   }
 }

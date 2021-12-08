@@ -9,6 +9,11 @@ defined( 'ABSPATH' ) || exit;
 add_action( 'trader_cronjob_hourly_filtered', array( '\Trader\Metrics\CoinMarketCap', 'list_latest' ) );
 
 /**
+ * Rebalance all portfolio's that are automated and in turn.
+ */
+add_action( 'trader_cronjob_hourly_filtered', array( '\Trader', 'do_automations' ) );
+
+/**
  * Filter cronjob execution.
  */
 add_action(

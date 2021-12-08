@@ -16,7 +16,7 @@ add_action(
       wp_die( -1, 403 );
     }
 
-    wp_send_json_success( \Trader\Exchanges\Bitvavo::deposit_history() );
+    wp_send_json_success( \Trader\Exchanges\Bitvavo::current_user()->deposit_history() );
     wp_die();
   }
 );
@@ -34,7 +34,7 @@ add_action(
       wp_die( -1, 403 );
     }
 
-    wp_send_json_success( \Trader\Exchanges\Bitvavo::withdrawal_history() );
+    wp_send_json_success( \Trader\Exchanges\Bitvavo::current_user()->withdrawal_history() );
     wp_die();
   }
 );
@@ -54,7 +54,7 @@ add_action(
 
     $errors = get_error_obj();
 
-    $balance_exchange = \Trader\Exchanges\Bitvavo::get_balance();
+    $balance_exchange = \Trader\Exchanges\Bitvavo::current_user()->get_balance();
 
     if ( is_wp_error( $balance_exchange ) ) {
       $errors->merge_from( $balance_exchange );
@@ -87,9 +87,9 @@ add_action(
 
     $errors = get_error_obj();
 
-    $balance_allocated = \Trader::get_asset_allocations( $configuration );
+    $balance_allocated = \Trader::get_asset_allocations( \Trader\Exchanges\Bitvavo::current_user(), $configuration );
 
-    $balance_exchange = \Trader\Exchanges\Bitvavo::get_balance();
+    $balance_exchange = \Trader\Exchanges\Bitvavo::current_user()->get_balance();
     $balance          = \Trader::merge_balance( $balance_allocated, $balance_exchange, $configuration );
 
     if ( is_wp_error( $balance_allocated ) ) {
@@ -105,7 +105,7 @@ add_action(
     }
 
     $expected_fee = 0;
-    foreach ( \Trader::rebalance( $balance, 'default', $configuration, true ) as $fake_order ) {
+    foreach ( \Trader::rebalance( \Trader\Exchanges\Bitvavo::current_user(), $balance, $configuration, true ) as $fake_order ) {
       $expected_fee = bcadd( $expected_fee, trader_ceil( $fake_order['feePaid'] ?? 0, 2 ) );
     }
 

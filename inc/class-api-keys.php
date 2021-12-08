@@ -41,12 +41,12 @@ class API_Keys
   /**
    * Retrieve user specific API keys.
    *
-   * @param int  $user_id User ID, current user by default.
-   * @param bool $force   Force re-read.
+   * @param null|int $user_id User ID, current user by default.
+   * @param bool     $force   Force re-read.
    *
    * @return string[] The API keys.
    */
-  public static function get_api_keys_user( int $user_id = null, bool $force = false ) : array
+  public static function get_api_keys_user( ?int $user_id = null, bool $force = false ) : array
   {
     if ( ( null === $user_id || 0 >= $user_id ) && 0 === wp_get_current_user()->ID ) {
       return array();
@@ -60,12 +60,12 @@ class API_Keys
   }
 
   /**
-   * Retrieve API key.
+   * Retrieve API key for a given service.
    *
    * @return string The API key.
    */
-  public static function get_api_key( string $service ) : string
+  public static function get_api_key( string $service, ?int $user_id = null ) : string
   {
-    return array_merge( self::get_api_keys(), self::get_api_keys_user() ) [ $service ] ?? '';
+    return array_merge( self::get_api_keys(), self::get_api_keys_user( $user_id ) ) [ $service ] ?? '';
   }
 }

@@ -60,6 +60,55 @@ class Configuration
   }
 
   /**
+   * Get all configurations that have automaion enabled.
+   *
+   * @link https://developer.wordpress.org/reference/functions/update_meta_cache/
+   *
+   * @global wpdb $wpdb
+   *
+   * @return Configuration[][] Associative array of user ID's and their automated configurations.
+   */
+  public static function get_automations() : array
+  {
+    global $wpdb;
+
+    $table = _get_meta_table( 'user' );
+
+    // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+    $meta_list = $wpdb->get_results( "SELECT user_id, meta_value FROM $table WHERE meta_key = 'trader_configuration' ORDER BY umeta_id ASC", ARRAY_A );
+
+    if ( empty( $meta_list ) || ! is_array( $meta_list ) ) {
+      return array();
+    }
+
+    $automations = array();
+
+    foreach ( $meta_list as $metarow ) {
+      /**
+       * @var Configuration
+       */
+      $configuration = maybe_unserialize( $metarow['meta_value'] );
+
+      // Only add automated configurations.
+      if ( ! $configuration->automation_enabled ) {
+        continue;
+      }
+
+      $user_id = (int) $metarow['user_id'];
+
+      // Force subkeys to be array type.
+      if ( ! isset( $automations[ $user_id ] ) || ! is_array( $automations[ $user_id ] ) ) {
+        $automations[ $user_id ] = array();
+      }
+
+      // Add a value to the current pid/key.
+      $automations[ $user_id ][] = $configuration;
+    }
+
+    return $automations;
+  }
+
+  /**
    * Get rebalance parameters from request parameters or a passed object.
    *
    * @param array|object $object  An optional array or object to "cast" to an instance of Asset.
@@ -85,6 +134,9 @@ class Configuration
         'alloc_quote'              => 0,
         'takeout'                  => 0,
         'alloc_quote_fag_multiply' => false,
+        'interval_hours'           => 1,
+        'rebalance_threshold'      => 0,
+        'rebalance_mode'           => 'default',
         'automation_enabled'       => false,
       ) as $param => $initial ) {
         $configuration->$param = $initial;
@@ -101,13 +153,19 @@ class Configuration
         case 'smoothing':
         case 'nth_root':
         case 'dust_limit':
+        case 'interval_hours':
           $configuration->$param = isset( $req_value ) ? max( 1, intval( $req_value ) ) : $default;
           break;
         case 'alloc_quote':
         case 'takeout':
+        case 'rebalance_threshold':
           $configuration->$param = is_numeric( $req_value ) ? trader_max( 0, floatstr( $req_value ) ) : $default;
           break;
+        case 'rebalance_mode':
+          $configuration->$param = isset( $req_value ) ? sanitize_key( $req_value ) : $default;
+          break;
         case 'alloc_quote_fag_multiply':
+        case 'automation_enabled':
           $configuration->$param = ! empty( $req_value ) ? boolval( $req_value ) : $default;
           break;
         default:
@@ -194,7 +252,7 @@ class Configuration
    *
    * @var int
    */
-  public int $interval_hours = 96;
+  public int $interval_hours = 4;
 
   /**
    * Rebalance allocation percentage difference threshold.
@@ -204,9 +262,23 @@ class Configuration
   public $rebalance_threshold = '1';
 
   /**
+   * Rebalance mode.
+   *
+   * @var string
+   */
+  public string $rebalance_mode = 'default';
+
+  /**
    * Automatic periodic rebalancing.
    *
    * @var bool
    */
   public bool $automation_enabled = false;
+
+  /**
+   * Last rebalance timestamp.
+   *
+   * @var \DateTime|null
+   */
+  public ?\DateTime $last_rebalance = null;
 }

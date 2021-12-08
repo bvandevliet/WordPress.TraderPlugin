@@ -42,12 +42,28 @@ interface Exchange
    */
   // public const CANDLES_LIMIT;
 
+
+  /**
+   * Constructor.
+   *
+   * @param null|int $user_id
+   */
+  public function __construct( ?int $user_id = null );
+
+  /**
+   * Get wrapper instance belonging to the current user.
+   *
+   * @return Bitvavo
+   */
+  public static function current_user() : Bitvavo;
+
   /**
    * Get instance of a connected API object.
    *
-   * @return mixed
+   * @return \Bitvavo
    */
-  public static function get_instance();
+  public function get_instance() : \Bitvavo;
+
 
   /**
    * Get candlesticks from exchange.
@@ -63,7 +79,7 @@ interface Exchange
    *
    * @return array Candlestick data as returned by exchange.
    */
-  public static function candles( string $market, string $chart, array $args = array() ) : array;
+  public function candles( string $market, string $chart, array $args = array() ) : array;
 
   /**
    * Retrieve ohlcv arrays where first index is oldest and last index is latest data.
@@ -90,7 +106,7 @@ interface Exchange
    *   @type string  $total
    * }
    */
-  public static function deposit_history( string $symbol/* = self::QUOTE_CURRENCY*/ ) : array;
+  public function deposit_history( string $symbol/* = self::QUOTE_CURRENCY*/ ) : array;
 
   /**
    * Returns the withdrawal history.
@@ -105,14 +121,14 @@ interface Exchange
    *   @type string  $total
    * }
    */
-  public static function withdrawal_history( string $symbol/* = self::QUOTE_CURRENCY*/ ) : array;
+  public function withdrawal_history( string $symbol/* = self::QUOTE_CURRENCY*/ ) : array;
 
   /**
    * Get balance. First entry of $assets is quote currency.
    *
    * @return \Trader\Balance|\WP_Error
    */
-  public static function get_balance();
+  public function get_balance();
 
   /**
    * Cancel all existing open orders.
@@ -121,7 +137,7 @@ interface Exchange
    *
    * @return array List of order data.
    */
-  public static function cancel_all_orders( array $ignore = array() ) : array;
+  public function cancel_all_orders( array $ignore = array() ) : array;
 
   /**
    * Sell whole portfolio.
@@ -130,7 +146,7 @@ interface Exchange
    *
    * @return array List of order data.
    */
-  public static function sell_whole_portfolio( array $ignore = array() ) : array;
+  public function sell_whole_portfolio( array $ignore = array() ) : array;
 
   /**
    * Buy asset.
@@ -141,7 +157,7 @@ interface Exchange
    *
    * @return array List of order data.
    */
-  public static function buy_asset( string $symbol, $amount_quote, bool $simulate = false ) : array;
+  public function buy_asset( string $symbol, $amount_quote, bool $simulate = false ) : array;
 
   /**
    * Sell asset.
@@ -152,7 +168,7 @@ interface Exchange
    *
    * @return array List of order data.
    */
-  public static function sell_asset( string $symbol, $amount_quote, bool $simulate = false ) : array;
+  public function sell_asset( string $symbol, $amount_quote, bool $simulate = false ) : array;
 
   /**
    * Get order data.
@@ -162,7 +178,7 @@ interface Exchange
    *
    * @return array List of order data.
    */
-  public static function get_order( string $market, string $order_id ) : array;
+  public function get_order( string $market, string $order_id ) : array;
 
   /**
    * Cancel order.
@@ -172,5 +188,5 @@ interface Exchange
    *
    * @return array List of order data.
    */
-  public static function cancel_order( string $market, string $order_id ) : array;
+  public function cancel_order( string $market, string $order_id ) : array;
 }

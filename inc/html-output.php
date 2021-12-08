@@ -14,8 +14,8 @@ defined( 'ABSPATH' ) || exit;
 function trader_echo_balance_summary( $balance_exchange = null )
 {
   if ( $balanced_passed = $balance_exchange instanceof \Trader\Balance ) {
-    $deposit_history    = \Trader\Exchanges\Bitvavo::deposit_history();
-    $withdrawal_history = \Trader\Exchanges\Bitvavo::withdrawal_history();
+    $deposit_history    = \Trader\Exchanges\Bitvavo::current_user()->deposit_history();
+    $withdrawal_history = \Trader\Exchanges\Bitvavo::current_user()->withdrawal_history();
     $moneyflow_now      = bcadd( $balance_exchange->amount_quote_total, $withdrawal_history['total'] );
   }
   ?>
