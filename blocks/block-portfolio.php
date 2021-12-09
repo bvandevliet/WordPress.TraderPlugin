@@ -33,6 +33,10 @@ function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
 
         case 'save-configuration':
           $configuration->save();
+          ?>
+          <div class="updated notice is-dismissible"><p><?php esc_html_e( 'Configuration updated.', 'trader' ); ?></p></div>
+          <?php
+
           break;
 
         case 'do-portfolio-rebalance':
@@ -65,8 +69,15 @@ function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
            */
           if ( ! $errors->has_errors() ) {
             $configuration->last_rebalance = new DateTime();
+
+            ?>
+            <div class="updated notice is-dismissible"><p><?php esc_html_e( 'Portfolio was rebalanced successfully.', 'trader' ); ?></p></div>
+            <?php
           }
           $configuration->save();
+          ?>
+          <div class="updated notice is-dismissible"><p><?php esc_html_e( 'Configuration updated.', 'trader' ); ?></p></div>
+          <?php
 
           break;
 
@@ -77,6 +88,9 @@ function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
           $configuration->automation_enabled = false;
           $configuration->last_rebalance     = new DateTime();
           $configuration->save();
+          ?>
+          <div class="updated notice is-dismissible"><p><?php esc_html_e( 'Configuration updated.', 'trader' ); ?></p></div>
+          <?php
 
           foreach ( \Trader\Exchanges\Bitvavo::current_user()->sell_whole_portfolio() as $index => $order ) {
             if ( ! empty( $order['errorCode'] ) ) {
@@ -85,6 +99,12 @@ function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
                 sprintf( __( 'Exchange error %1$s %2$s: ', 'trader' ), $order['side'], $order['market'] ) . ( $order['error'] ?? __( 'An unknown error occured.', 'trader' ) )
               );
             }
+          }
+
+          if ( ! $errors->has_errors() ) {
+            ?>
+            <div class="updated notice is-dismissible"><p><?php esc_html_e( 'Whole portfolio was sold successfully.', 'trader' ); ?></p></div>
+            <?php
           }
 
           break;
@@ -97,7 +117,8 @@ function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
   ob_start();
 
   if ( $errors->has_errors() ) :
-    ?><div class="error"><p><?php echo implode( "</p>\n<p>", $errors->get_error_messages() ); ?></p></div>
+    ?>
+    <div class="error"><p><?php echo implode( "</p>\n<p>", $errors->get_error_messages() ); ?></p></div>
     <?php
   endif;
 
