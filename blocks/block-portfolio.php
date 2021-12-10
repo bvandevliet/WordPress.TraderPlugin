@@ -199,7 +199,7 @@ function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
       echo esc_html(
         sprintf(
           __( 'Last rebalance: %s', 'trader' ),
-          null != $configuration->last_rebalance ? $configuration->last_rebalance->format( 'Y-m-d H:i:s' ) : __( 'Never', 'trader' )
+          $configuration->last_rebalance instanceof DateTime ? $configuration->last_rebalance->setTimezone( wp_timezone() )->format( 'Y-m-d H:i:s' ) : __( 'Never', 'trader' )
         )
       );
       ?>
