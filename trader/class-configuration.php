@@ -151,10 +151,12 @@ class Configuration
           $configuration->$param = isset( $req_value ) ? min( max( 1, intval( $req_value ) ), 100 ) : $default;
           break;
         case 'smoothing':
-        case 'nth_root':
         case 'dust_limit':
         case 'interval_hours':
           $configuration->$param = isset( $req_value ) ? max( 1, intval( $req_value ) ) : $default;
+          break;
+        case 'nth_root':
+          $configuration->$param = is_numeric( $req_value ) ? trader_max( 1, floatstr( $req_value ) ) : $default;
           break;
         case 'alloc_quote':
         case 'takeout':
@@ -215,9 +217,9 @@ class Configuration
   /**
    * The nth root of Market Cap to use for allocation.
    *
-   * @var int
+   * @var int|float|string
    */
-  public int $nth_root = 3;
+  public $nth_root = '2.5';
 
   /**
    * Minimum required allocation difference in quote currency.
@@ -259,7 +261,7 @@ class Configuration
    *
    * @var int|float|string
    */
-  public $rebalance_threshold = '1';
+  public $rebalance_threshold = 1;
 
   /**
    * Rebalance mode.

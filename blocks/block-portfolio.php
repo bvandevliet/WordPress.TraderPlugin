@@ -153,7 +153,7 @@ function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
         <p class="form-row form-row-last">
           <label title="<?php esc_attr_e( 'nth root of Market Cap EMA, to dampen the effect an individual asset has on the portfolio.', 'trader' ); ?>">
             <?php esc_html_e( 'nth root ^(1/[n])', 'trader' ); ?>
-            <input type="number" min="1" class="input-number" name="nth_root" value="<?php echo esc_attr( $configuration->nth_root ); ?>" />
+            <input type="number" min="1" step=".01" class="input-number" name="nth_root" value="<?php echo esc_attr( $configuration->nth_root ); ?>" />
           </label>
         </p>
         <div class="clear"></div>
@@ -167,12 +167,12 @@ function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
             <?php echo esc_html( sprintf( __( '&#8226;~.%s', 'trader' ), \Trader\Metrics\Alternative_Me::fag_index_current() ) ); ?>
             <input type="checkbox" name="alloc_quote_fag_multiply" <?php checked( $configuration->alloc_quote_fag_multiply ); ?> />
           </label>
-          <input id="alloc_quote" type="number" min="0" class="input-number" name="alloc_quote" value="<?php echo esc_attr( $configuration->alloc_quote ); ?>" />
+          <input id="alloc_quote" type="number" min="0" max="100" class="input-number" name="alloc_quote" value="<?php echo esc_attr( $configuration->alloc_quote ); ?>" />
         </p>
         <p class="form-row form-row-last">
           <label title="<?php echo esc_attr( sprintf( __( 'Takeout a given amount of quote currency \'%s\'.', 'trader' ), \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY ) ); ?>">
             <?php esc_html_e( 'Quote takeout', 'trader' ); ?> [€]
-            <input type="number" min="0" class="input-number" name="takeout" value="<?php echo esc_attr( $configuration->takeout ); ?>" />
+            <input type="number" min="0" step=".01" class="input-number" name="takeout" value="<?php echo esc_attr( $configuration->takeout ); ?>" />
           </label>
         </p>
         <p class="form-row form-row-first">
@@ -188,7 +188,7 @@ function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
         <p class="form-row form-row-last">
           <label title="<?php esc_attr_e( 'Minimum required percentage difference to trigger an automated rebalance.', 'trader' ); ?>">
             <?php esc_html_e( 'Rebalance threshold', 'trader' ); ?> [%]
-            <input type="number" min="0" max="99" step=".05" class="input-number" name="rebalance_threshold" value="<?php echo esc_attr( $configuration->rebalance_threshold ); ?>" />
+            <input type="number" min="0" max="99" step=".01" class="input-number" name="rebalance_threshold" value="<?php echo esc_attr( $configuration->rebalance_threshold ); ?>" />
           </label>
         </p>
       </div>

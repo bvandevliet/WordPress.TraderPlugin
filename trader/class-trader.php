@@ -129,9 +129,9 @@ class Trader
    * @param mixed         $weighting  User defined adjusted weighting factor, usually 1.
    * @param \Trader\Asset $asset      The asset object.
    * @param mixed         $market_cap Smoothed Market Cap value.
-   * @param int           $nth_root   The nth root of Market Cap to use for allocation.
+   * @param mixed         $nth_root   The nth root of Market Cap to use for allocation.
    */
-  protected static function set_asset_allocations( $weighting, \Trader\Asset $asset, $market_cap, int $nth_root = 4 )
+  protected static function set_asset_allocations( $weighting, \Trader\Asset $asset, $market_cap, $nth_root )
   {
     $asset->allocation_rebl['default']  = trader_max( 0, bcmul( $weighting, pow( $market_cap, 1 / $nth_root ) ) );
     $asset->allocation_rebl['absolute'] = trader_max( 0, $weighting );
