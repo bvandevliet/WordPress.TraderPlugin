@@ -301,6 +301,8 @@
     {
       clearTimeout(this.rebalance_form_timer);
 
+      $('button[value="do-portfolio-rebalance"]').prop('disabled', true);
+
       this.rebalance_form_timer = setTimeout(() =>
       {
         get_portfolio_balance(echo_portfolio_balance);
