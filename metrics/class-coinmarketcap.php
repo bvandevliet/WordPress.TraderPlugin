@@ -201,11 +201,11 @@ class CoinMarketCap
    *   @type string $sort
    *   @type string $convert
    * }
-   * @param int   $limit Limit the fetched historical database records per asset, let it default to 1 if only a database update is needed.
+   * @param int   $limit Limit the fetched historical database records per asset.
    *
    * @return object[][]|object[]|\WP_Error Array of historical object[] per asset if 'sort' == 'market_cap', else object[] with assets.
    */
-  public static function list_latest( $query = array(), int $limit = 1 )
+  public static function list_latest( $query = array(), int $limit = 100 )
   {
     $endpoint = 'cryptocurrency/listings/latest';
 

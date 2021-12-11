@@ -147,7 +147,7 @@ function trader_dynamic_block_portfolio_cb( $block_attributes, $content )
         <p class="form-row form-row-first">
           <label title="<?php esc_attr_e( 'Exponential Moving Average period of Market Cap, to smooth out volatility.', 'trader' ); ?>">
             <?php esc_html_e( 'Smoothing [days]', 'trader' ); ?>
-            <input type="number" min="1" class="input-number" name="smoothing" value="<?php echo esc_attr( $configuration->smoothing ); ?>" />
+            <input type="number" min="1" max="100" class="input-number" name="smoothing" value="<?php echo esc_attr( $configuration->smoothing ); ?>" />
           </label>
         </p>
         <p class="form-row form-row-last">
