@@ -491,7 +491,7 @@ class Trader
       }
 
       $errors = get_error_obj();
-      $now    = new DateTime();
+      $now    = time();
 
       $bitvavo          = new \Trader\Exchanges\Bitvavo( $user_id );
       $balance_exchange = $bitvavo->get_balance();
@@ -504,8 +504,9 @@ class Trader
       foreach ( $configurations as $configuration ) {
         /**
          * Check if rebalance interval is met.
+         * Using timestamp to hours then rounded, to compensate DateTime diff for small variations.
          */
-        if ( null !== $configuration->last_rebalance && $configuration->last_rebalance->diff( $now )->h < $configuration->interval_hours ) {
+        if ( null !== $configuration->last_rebalance && round( ( $now - $configuration->last_rebalance->getTimestamp() ) / 60 / 60, 0, PHP_ROUND_HALF_DOWN ) < $configuration->interval_hours ) {
           continue;
         }
 
