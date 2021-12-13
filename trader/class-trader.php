@@ -529,7 +529,7 @@ class Trader
             $allocation_rebl    = 100 * ( $asset->allocation_rebl[ $configuration->rebalance_mode ] ?? 0 );
             $diff               = $allocation_current - $allocation_rebl;
 
-            return $diff >= $configuration->rebalance_threshold;
+            return bcabs( $diff ) >= $configuration->rebalance_threshold;
           }
         ) ) {
           continue;

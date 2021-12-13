@@ -5,7 +5,7 @@ Tags:
 Requires at least: 5.7
 Tested up to: 5.8
 Requires PHP: 7.2
-Stable tag: 2021.12.08
+Stable tag: 2021.12.12
 License: MIT
 
 Calculates and executes a crypto portfolio rebalance.
@@ -17,6 +17,9 @@ Connects to exchange API's, provides blocks for rendering exchange data and incl
 
 
 == Changelog ==
+
+= 2021.12.12 =
+* Added support for automated rebalancing.
 
 = 2021.12.08 =
 * Ajax portfolio overview update on form change.

@@ -48,9 +48,11 @@ if ( ! function_exists( 'bcabs' ) ) {
  */
 function trader_min( ...$values ) : string
 {
+  $values = array_map( 'floatstr', $values );
+
   sort( $values, SORT_NUMERIC );
 
-  return floatstr( $values[0] );
+  return $values[0];
 }
 
 /**
@@ -62,9 +64,11 @@ function trader_min( ...$values ) : string
  */
 function trader_max( ...$values ) : string
 {
+  $values = array_map( 'floatstr', $values );
+
   sort( $values, SORT_NUMERIC );
 
-  return floatstr( end( $values ) );
+  return end( $values );
 }
 
 /**
