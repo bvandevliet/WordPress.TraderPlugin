@@ -152,31 +152,32 @@
 
       let allocation_default = asset.allocation_rebl[Object.keys(asset.allocation_rebl)[0]] ?? 0;
 
+      let amount_balanced = allocation_default * balance.amount_quote_total;
       let allocation_current = 100 * asset.allocation_current;
       let allocation_rebl = 100 * allocation_default;
       let diff = allocation_current - allocation_rebl;
+      let diff_quote = asset.amount_quote - amount_balanced;
 
       $tr
         .append($('<td/>').text(asset.symbol));
 
       $tr
-        .append($('<td class="trader-number"/>'))
-        .append($('<td class="trader-number"/>').text('€'))
-        .append($('<td class="trader-number"/>').text(number_format(asset.amount_quote, 2)))
-        .append($('<td class="trader-number"/>').text(number_format(allocation_current, 2)))
-        .append($('<td class="trader-number"/>').text('%'));
+        .append($('<td class="trader-number trader-no-padd-right"/>').text('€ '))
+        .append($('<td class="trader-number trader-no-padd-left"/>').text(number_format(asset.amount_quote, 2)))
+        .append($('<td class="trader-number trader-no-padd-right"/>').text(number_format(allocation_current, 2)))
+        .append($('<td class="trader-number trader-no-padd-left"/>').text(' %'));
 
       $tr
-        .append($('<td class="trader-number"/>'))
-        .append($('<td class="trader-number"/>').text('€'))
-        .append($('<td class="trader-number"/>').text(number_format(allocation_default * balance.amount_quote_total, 2)))
-        .append($('<td class="trader-number"/>').text(number_format(allocation_rebl, 2)))
-        .append($('<td class="trader-number"/>').text('%'));
+        .append($('<td class="trader-number trader-no-padd-right"/>').text('€ '))
+        .append($('<td class="trader-number trader-no-padd-left"/>').text(number_format(amount_balanced, 2)))
+        .append($('<td class="trader-number trader-no-padd-right"/>').text(number_format(allocation_rebl, 2)))
+        .append($('<td class="trader-number trader-no-padd-left"/>').text(' %'));
 
       $tr
-        .append($('<td class="trader-number"/>'))
-        .append($('<td class="trader-number"/>').text((diff >= 0 ? '+' : '-') + number_format(Math.abs(diff), 2)))
-        .append($('<td class="trader-number"/>').text('%'));
+        .append($('<td class="trader-number trader-no-padd-right"/>').text('€ ' + (diff_quote >= 0 ? '+' : '-')))
+        .append($('<td class="trader-number trader-no-padd-left"/>').text(number_format(Math.abs(diff_quote), 2)))
+        .append($('<td class="trader-number trader-no-padd-right"/>').text((diff >= 0 ? '+' : '-') + number_format(Math.abs(diff), 2)))
+        .append($('<td class="trader-number trader-no-padd-left"/>').text(' %'));
 
       $tbody.append($tr);
     });

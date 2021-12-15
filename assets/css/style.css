@@ -33,6 +33,19 @@ var,
   white-space: pre;
 }
 
+.trader-no-padd-left {
+  padding-left: 0 !important;
+}
+
+.trader-no-padd-right {
+  padding-right: 0 !important;
+}
+
+.trader-no-padd-both {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
 table tr.trader-number th,
 table tr.trader-number td,
 table th.trader-number,
