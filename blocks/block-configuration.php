@@ -4,8 +4,6 @@ defined( 'ABSPATH' ) || exit;
 
 
 /**
- * Dynamic block Configuration output.
- *
  * @param [type] $block_attributes
  * @param [type] $content
  */
@@ -18,6 +16,8 @@ function trader_dynamic_block_configuration_cb( $block_attributes, $content )
   if ( ! current_user_can( 'trader_manage_portfolio' ) ) {
     return;
   }
+
+  ob_start();
 
   if ( 'POST' === $_SERVER['REQUEST_METHOD'] ) {
     /**
@@ -61,9 +61,7 @@ function trader_dynamic_block_configuration_cb( $block_attributes, $content )
   ksort( $configuration->asset_weightings );
   arsort( $configuration->asset_weightings );
 
-  ob_start();
   ?>
-
   <form action="<?php echo esc_attr( get_permalink() ); ?>" method="post">
     <?php wp_nonce_field( 'update-user_' . $current_user->ID, 'save-trader-configuration-nonce' ); ?>
 
@@ -71,32 +69,28 @@ function trader_dynamic_block_configuration_cb( $block_attributes, $content )
       <div class="updated notice is-dismissible"><p><?php esc_html_e( 'Configuration updated.', 'trader' ); ?></p></div>
     <?php endif; ?>
 
-    <fieldset class="wp-block-columns">
-      <div class="wp-block-column">
-        <legend>
-          <?php
-          _e(
-            'Alternative asset allocation weighting factors.<br>
-            To configure, specify the asset symbol in the left field (e.g. BTC) and its weighting factor in the right field.
-            Default is 1, set to 0 to exclude the asset (e.g. shitcoins).',
-            'trader'
-          );
-          ?>
-        </legend>
-        <?php foreach ( array_merge( $configuration->asset_weightings, array( '' => 1 ) ) as $asset => $weighting ) : ?>
-          <p class="form-row form-row-wide form-row-cloneable">
-            <input type="text" class="input-text form-row-first" name="assets[]" autocomplete="off" value="<?php echo esc_attr( $asset ); ?>" />
-            <input type="number" min="0" step=".01" class="input-number form-row-last" name="weightings[]" value="<?php echo esc_attr( $weighting ); ?>" default="1" />
-          </p>
-        <?php endforeach; ?>
-      </div>
-      <div class="wp-block-column"></div>
+    <fieldset>
+      <legend>
+        <?php
+        _e(
+          'Alternative asset allocation weighting factors.<br>
+          To configure, specify the asset symbol in the left field (e.g. BTC) and its weighting factor in the right field.
+          Default is 1, set to 0 to exclude the asset (e.g. shitcoins).',
+          'trader'
+        );
+        ?>
+      </legend>
+      <?php foreach ( array_merge( $configuration->asset_weightings, array( '' => 1 ) ) as $asset => $weighting ) : ?>
+        <p class="form-row form-row-wide form-row-cloneable">
+          <input type="text" class="input-text form-row-first" name="assets[]" autocomplete="off" value="<?php echo esc_attr( $asset ); ?>" />
+          <input type="number" min="0" step=".01" class="input-number form-row-last" name="weightings[]" value="<?php echo esc_attr( $weighting ); ?>" default="1" />
+        </p>
+      <?php endforeach; ?>
     </fieldset>
 
     <p>
       <button type="submit" class="button" value="<?php esc_attr_e( 'Save changes', 'trader' ); ?>"><?php esc_html_e( 'Save changes', 'trader' ); ?></button>
     </p>
-
   </form>
 
   <?php

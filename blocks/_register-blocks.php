@@ -37,22 +37,37 @@ add_action(
      * Dynamic blocks to be registered.
      */
     $blocks = array(
-      'trader/portfolio'     => array(
+      'trader/portfolio'       => array(
         'title'       => 'Portfolio',
-        'description' => 'Shows current portfolio asset allocations.',
-        'icon'        => 'editor-ol',
+        'description' => 'Shows current and rebalanced portfolio asset allocations.',
+        'icon'        => 'chart-pie',
       ),
-      'trader/configuration' => array(
-        'title'       => 'Configuration',
-        'description' => 'A form to configure trading parameters.',
-        'icon'        => 'admin-generic',
+      'trader/rebalance-form'  => array(
+        'title'       => 'Rebalance form',
+        'description' => 'A form to configure and trigger portfolio rebalance.',
+        'icon'        => 'admin-settings',
       ),
-      'trader/edit-account'  => array(
-        'title'       => 'Edit account',
+      'trader/configuration'   => array(
+        'title'       => 'Configuration form',
+        'description' => 'A form to configure additional rebalance parameters.',
+        'icon'        => 'admin-settings',
+      ),
+      'trader/balance-summary' => array(
+        'title'       => 'Balance summary',
+        'description' => 'Shows basic balance information.',
+        'icon'        => 'money-alt',
+      ),
+      'trader/onchain-summary' => array(
+        'title'       => 'Onchain summary',
+        'description' => 'Shows basic onchain indicator information.',
+        'icon'        => 'chart-line',
+      ),
+      'trader/edit-account'    => array(
+        'title'       => 'Edit account form',
         'description' => 'A form to edit account details.',
         'icon'        => 'admin-users',
       ),
-      'trader/exchange-apis' => array(
+      'trader/exchange-apis'   => array(
         'title'       => 'Exchange API keys',
         'description' => 'A form to edit API keys for the current user\'s exchanges.',
         'icon'        => 'admin-network',

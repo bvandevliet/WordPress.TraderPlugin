@@ -148,7 +148,6 @@ function trader_echo_portfolio( \Trader\Balance $balance = null, bool $show_curr
 function trader_echo_onchain_summary( ?array $market_cap = null )
 {
   $market_cap = $market_cap ?? \Trader\Metrics\CoinMetrics::market_cap( 'BTC' );
-
   ?>
   <figure class="wp-block-table">
     <table class="trader-onchain-summary no-wrap" style="width:auto;">

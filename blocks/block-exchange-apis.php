@@ -4,8 +4,6 @@ defined( 'ABSPATH' ) || exit;
 
 
 /**
- * Dynamic block Exchange API's output.
- *
  * @param [type] $block_attributes
  * @param [type] $content
  */
@@ -18,6 +16,8 @@ function trader_dynamic_block_exchange_apis_cb( $block_attributes, $content )
   if ( ! current_user_can( 'trader_manage_portfolio' ) ) {
     return;
   }
+
+  ob_start();
 
   if ( 'POST' === $_SERVER['REQUEST_METHOD'] ) {
     /**
@@ -43,9 +43,7 @@ function trader_dynamic_block_exchange_apis_cb( $block_attributes, $content )
 
   $keys = \Trader\API_Keys::get_api_keys_user( null, true );
 
-  ob_start();
   ?>
-
   <form action="<?php echo esc_attr( get_permalink() ); ?>" method="post">
     <?php wp_nonce_field( 'update-user_' . $current_user->ID, 'save-exchange-apis-nonce' ); ?>
 
@@ -85,7 +83,6 @@ function trader_dynamic_block_exchange_apis_cb( $block_attributes, $content )
     <p>
       <button type="submit" class="button" value="<?php esc_attr_e( 'Save changes', 'trader' ); ?>"><?php esc_html_e( 'Save changes', 'trader' ); ?></button>
     </p>
-
   </form>
 
   <?php

@@ -4,8 +4,6 @@ defined( 'ABSPATH' ) || exit;
 
 
 /**
- * Dynamic block Edit account output.
- *
  * @param [type] $block_attributes
  * @param [type] $content
  */
@@ -18,6 +16,8 @@ function trader_dynamic_block_edit_account_cb( $block_attributes, $content )
   if ( 0 >= $current_user->ID ) {
     return;
   }
+
+  ob_start();
 
   if ( 'POST' === $_SERVER['REQUEST_METHOD'] ) {
     /**
@@ -93,9 +93,7 @@ function trader_dynamic_block_edit_account_cb( $block_attributes, $content )
     }
   }
 
-  ob_start();
   ?>
-
   <form action="<?php echo esc_attr( get_permalink() ); ?>" method="post">
     <?php wp_nonce_field( 'update-user_' . $current_user->ID, 'save-account-details-nonce' ); ?>
 
@@ -144,7 +142,6 @@ function trader_dynamic_block_edit_account_cb( $block_attributes, $content )
     <p>
       <button type="submit" class="button" value="<?php esc_attr_e( 'Save changes', 'trader' ); ?>"><?php esc_html_e( 'Save changes', 'trader' ); ?></button>
     </p>
-
   </form>
 
   <?php
