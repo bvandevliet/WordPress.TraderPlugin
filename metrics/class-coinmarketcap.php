@@ -203,6 +203,8 @@ class CoinMarketCap
    * }
    * @param int   $limit Limit the fetched historical database records per asset.
    *
+   * @hooked trader_cronjob_hourly_filtered
+   *
    * @return object[][]|object[]|\WP_Error Array of historical object[] per asset if 'sort' == 'market_cap', else object[] with assets.
    */
   public static function list_latest( $query = array(), int $limit = 100 )

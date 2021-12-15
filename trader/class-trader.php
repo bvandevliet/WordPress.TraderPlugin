@@ -480,6 +480,8 @@ class Trader
   /**
    * Rebalance all portfolio's that are automated and in turn.
    *
+   * @hooked trader_cronjob_hourly_filtered
+   *
    * @return void
    */
   public static function do_automations()
