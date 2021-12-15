@@ -505,7 +505,7 @@ class Trader
 
       foreach ( $configurations as $configuration ) {
         /**
-         * Check if rebalance interval is met.
+         * Check if rebalance interval has elapsed.
          * Using timestamp to hours then rounded, to compensate DateTime diff for small variations.
          */
         if ( null !== $configuration->last_rebalance && round( ( $now - $configuration->last_rebalance->getTimestamp() ) / 60 / 60, 0, PHP_ROUND_HALF_DOWN ) < $configuration->interval_hours ) {
@@ -521,7 +521,7 @@ class Trader
         }
 
         /**
-         * Check if rebalance threshold is met.
+         * Check if rebalance threshold is reached.
          */
         if ( ! array_some(
           $balance->assets,
@@ -531,7 +531,14 @@ class Trader
             $allocation_rebl    = 100 * ( $asset->allocation_rebl[ $configuration->rebalance_mode ] ?? 0 );
             $diff               = $allocation_current - $allocation_rebl;
 
-            return bcabs( $diff ) >= $configuration->rebalance_threshold;
+            return (
+              // if configured rebalance threshold is reached
+              ( bcabs( $diff ) >= $configuration->rebalance_threshold )
+              ||
+              // or if the asset should not be allocated at all
+              // phpcs:ignore WordPress.PHP.StrictComparisons
+              ( $allocation_current > $allocation_rebl && 0 == $allocation_rebl )
+            );
           }
         ) ) {
           continue;
