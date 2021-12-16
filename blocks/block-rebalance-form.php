@@ -144,7 +144,7 @@ function trader_dynamic_block_rebalance_form_cb( $block_attributes, $content )
       </p>
       <div class="clear"></div>
       <p class="form-row form-row-first">
-        <label for="alloc_quote" title="<?php echo esc_attr( sprintf( __( 'Allocate a given percentage to quote currency \'%s\'.', 'trader' ), \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY ) ); ?>">
+        <label for="alloc_quote" title="<?php echo esc_attr( sprintf( __( 'Allocate a given percentage to quote currency \'%s\'.', 'trader' ), $configuration->quote_currency ) ); ?>">
           <?php esc_html_e( 'Quote allocation', 'trader' ); ?> [%]
         </label>
         <label style="float:right;" title="<?php esc_attr_e( 'Multiply quote allocation by Fear and Greed index.', 'trader' ); ?>">
@@ -154,7 +154,7 @@ function trader_dynamic_block_rebalance_form_cb( $block_attributes, $content )
         <input id="alloc_quote" type="number" min="0" max="100" class="input-number" name="alloc_quote" value="<?php echo esc_attr( $configuration->alloc_quote ); ?>" />
       </p>
       <p class="form-row form-row-last">
-        <label title="<?php echo esc_attr( sprintf( __( 'Takeout a given amount of quote currency \'%s\'.', 'trader' ), \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY ) ); ?>">
+        <label title="<?php echo esc_attr( sprintf( __( 'Takeout a given amount of quote currency \'%s\'.', 'trader' ), $configuration->quote_currency ) ); ?>">
           <?php esc_html_e( 'Quote takeout', 'trader' ); ?> [€]
           <input type="number" min="0" step=".01" class="input-number" name="takeout" value="<?php echo esc_attr( $configuration->takeout ); ?>" />
         </label>

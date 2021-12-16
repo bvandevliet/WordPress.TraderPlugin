@@ -18,6 +18,16 @@ class Bitvavo implements Exchange
   public const QUOTE_CURRENCY = 'EUR';
 
   /**
+   * Supported to trade against.
+   *
+   * @var string[]
+   */
+  public const QUOTES_SUPPORTED = array(
+    'BTC',
+    'EUR', // self::QUOTE_CURRENCY
+  );
+
+  /**
    * The minimum amount quote for market orders.
    *
    * @var int
@@ -302,9 +312,11 @@ class Bitvavo implements Exchange
   /**
    * {@inheritDoc}
    */
-  public function buy_asset( string $symbol, $amount_quote, bool $simulate = false ) : array
+  public function buy_asset( string $market, $amount_quote, bool $simulate = false ) : array
   {
-    $market = $symbol . '-' . self::QUOTE_CURRENCY;
+    $symbol_quote   = explode( '-', $market );
+    $symbol         = $symbol_quote[0];
+    $quote_currency = $symbol_quote[1];
 
     $response = array(
       'orderId'           => null,
@@ -317,7 +329,7 @@ class Bitvavo implements Exchange
       'feePaid'           => '0',
     );
 
-    if ( $symbol === self::QUOTE_CURRENCY ) {
+    if ( $symbol === $quote_currency ) {
       return $response;
     }
 
@@ -362,9 +374,11 @@ class Bitvavo implements Exchange
   /**
    * {@inheritDoc}
    */
-  public function sell_asset( string $symbol, $amount_quote, bool $simulate = false ) : array
+  public function sell_asset( string $market, $amount_quote, bool $simulate = false ) : array
   {
-    $market = $symbol . '-' . self::QUOTE_CURRENCY;
+    $symbol_quote   = explode( '-', $market );
+    $symbol         = $symbol_quote[0];
+    $quote_currency = $symbol_quote[1];
 
     $response = array(
       'orderId'           => null,
@@ -377,7 +391,7 @@ class Bitvavo implements Exchange
       'feePaid'           => '0',
     );
 
-    if ( $symbol === self::QUOTE_CURRENCY ) {
+    if ( $symbol === $quote_currency ) {
       return $response;
     }
 

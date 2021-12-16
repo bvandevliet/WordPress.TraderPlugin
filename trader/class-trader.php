@@ -48,7 +48,7 @@ class Trader
             if ( $takeout_alloc > 0 ) {
               foreach ( $asset->allocation_rebl as $mode => $allocation ) {
                 $asset->allocation_rebl[ $mode ] = bcmul( $allocation, bcsub( 1, $takeout_alloc ) );
-                if ( $asset->symbol === \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY ) {
+                if ( $asset->symbol === $configuration->quote_currency ) {
                   $asset->allocation_rebl[ $mode ] = bcadd( $asset->allocation_rebl[ $mode ], $takeout_alloc );
                 }
               }
@@ -174,7 +174,7 @@ class Trader
      */
     $balance             = new \Trader\Balance();
     $asset_quote         = new \Trader\Asset();
-    $asset_quote->symbol = \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY;
+    $asset_quote->symbol = $configuration->quote_currency;
 
     /**
      * Loop through the asset ranking and retrieve Market Cap EMA.
@@ -217,7 +217,8 @@ class Trader
       /**
        * Define market.
        */
-      $market = $asset_cmc_arr[0]->symbol . '-' . \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY;
+      $market = $asset_cmc_arr[0]->symbol . '-'
+      . ( in_array( $configuration->quote_currency, \Trader\Exchanges\Bitvavo::QUOTES_SUPPORTED, true ) ? $configuration->quote_currency : \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY );
 
       /**
        * Get candlesticks from exchange.
@@ -341,10 +342,15 @@ class Trader
     foreach ( $balance->assets as $asset ) {
       /**
        * Skip if is quote currency.
+       *
+       * THIS OKE ? !!
        */
       if ( $asset->symbol === \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY ) {
         continue;
       }
+
+      $market = $asset->symbol . '-'
+      . ( in_array( $configuration->quote_currency, \Trader\Exchanges\Bitvavo::QUOTES_SUPPORTED, true ) ? $configuration->quote_currency : \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY );
 
       $amount_quote = bcmul( $balance->amount_quote_total, $asset->allocation_rebl[ $mode ] ?? 0 );
 
@@ -381,7 +387,7 @@ class Trader
       // else // ONLY BUYING MAY BE REQUIRED ..
 
       if ( floatval( $amount_quote_to_sell ) > 0 ) {
-        $result[] = $asset->rebl_sell_order = $exchange->sell_asset( $asset->symbol, $amount_quote_to_sell, $simulate );
+        $result[] = $asset->rebl_sell_order = $exchange->sell_asset( $market, $amount_quote_to_sell, $simulate );
       }
     }
 
@@ -406,7 +412,8 @@ class Trader
 
         $all_filled = false;
 
-        $market = $asset->symbol . '-' . \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY;
+        $market = $asset->symbol . '-'
+        . ( in_array( $configuration->quote_currency, \Trader\Exchanges\Bitvavo::QUOTES_SUPPORTED, true ) ? $configuration->quote_currency : \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY );
 
         if ( $fill_checks <= 1 ) { // QUEUE THIS ASSET REBL INSTEAD OF ORDER CANCEL !!
           $exchange->cancel_order( $market, $asset->rebl_sell_order['orderId'] );
@@ -432,8 +439,11 @@ class Trader
 
       /**
        * Only append absolute allocation to total buy value if is quote currency.
+       *
+       * QUOTE ASSET SHOULD SOMEHOW BE HANDLED THE SAME WAY AS ANY OTHER ASSET,
+       * BUT POTENTIAL SWAPS SHOULD RUN THROUGH QUOTE WITH RESPECT TO LIMITED TRADING PAIRS !!
        */
-      if ( $asset->symbol === \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY ) {
+      if ( $asset->symbol === $configuration->quote_currency ) {
         $to_buy_total = bcadd( $to_buy_total, $amount_quote );
         continue;
       }
@@ -454,6 +464,8 @@ class Trader
     foreach ( $balance->assets as $asset ) {
       /**
        * Skip if is quote currency as it is the currency we buy with, not we can buy.
+       *
+       * THIS OKE ? !!
        */
       if ( $asset->symbol === \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY ) {
         continue;
@@ -469,7 +481,7 @@ class Trader
       $amount_quote_to_buy = ! $simulate ? bcmul( $balance->assets[0]->available, trader_get_allocation( $asset->amount_quote_to_buy, $to_buy_total ) ) : $asset->amount_quote_to_buy;
 
       if ( floatval( $amount_quote_to_buy ) >= \Trader\Exchanges\Bitvavo::MIN_QUOTE ) {
-        $result[] = $asset->rebl_buy_order = $exchange->buy_asset( $asset->symbol, $amount_quote_to_buy, $simulate );
+        $result[] = $asset->rebl_buy_order = $exchange->buy_asset( $market, $amount_quote_to_buy, $simulate );
       }
     }
 

@@ -127,6 +127,7 @@ class Configuration
      */
     if ( count( (array) $object ) > 0 || 'POST' === $_SERVER['REQUEST_METHOD'] ) {
       foreach ( array(
+        'quote_currency'           => \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY,
         'top_count'                => 1,
         'smoothing'                => 1,
         'nth_root'                 => 1,
@@ -165,6 +166,9 @@ class Configuration
         case 'takeout':
           $configuration->$param = is_numeric( $req_value ) ? trader_max( 0, floatstr( $req_value ) ) : $default;
           break;
+        case 'quote_currency':
+          $configuration->$param = isset( $req_value ) ? strtoupper( sanitize_key( $req_value ) ) : $default;
+          break;
         case 'rebalance_mode':
           $configuration->$param = isset( $req_value ) ? sanitize_key( $req_value ) : $default;
           break;
@@ -194,6 +198,13 @@ class Configuration
 
     update_user_meta( $user_id, 'trader_configuration', $this );
   }
+
+  /**
+   * Quote currency.
+   *
+   * @var string
+   */
+  public string $quote_currency = \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY;
 
   /**
    * Alternative asset allocation weighting factors.
