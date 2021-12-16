@@ -19,6 +19,7 @@ Connects to exchange API's, provides blocks for rendering exchange data and incl
 == Changelog ==
 
 = 2021.12.16 =
+* Email notification for triggered automations.
 * Various improvements.
 
 = 2021.12.12 =

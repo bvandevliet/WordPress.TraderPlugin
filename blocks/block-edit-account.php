@@ -43,6 +43,9 @@ function trader_dynamic_block_edit_account_cb( $block_attributes, $content )
       $user->nickname     = $current_user->nickname     = $first_name . ' ' . $last_name;
       $user->display_name = $current_user->display_name = $first_name . ' ' . $last_name;
 
+      // Update user notification preferences.
+      update_user_meta( $user->ID, 'trader_optout_email_automation_triggered', ! empty( $_POST['trader_optout_email_automation_triggered'] ) );
+
       // Handle required fields.
       $required_fields = array(
         'account_first_name' => __( 'First name', 'trader' ),
@@ -119,6 +122,18 @@ function trader_dynamic_block_edit_account_cb( $block_attributes, $content )
       <p class="form-row form-row-wide">
         <label for="account_email"><?php esc_html_e( 'Email address', 'trader' ); ?>&nbsp;<span class="required">*</span></label>
         <input type="email" class="input-text" name="account_email" id="account_email" autocomplete="email" value="<?php echo esc_attr( $current_user->user_email ); ?>" />
+      </p>
+    </fieldset>
+
+    <fieldset>
+      <legend><?php esc_html_e( 'Notification preferences', 'trader' ); ?></legend>
+      <p class="form-row form-row-wide">
+        <label>
+          <input type="checkbox" name="trader_optout_email_automation_triggered"
+          <?php checked( ! empty( get_user_meta( $current_user->ID, 'trader_optout_email_automation_triggered', true ) ) ); ?> />
+          <?php esc_html_e( 'Don\'t bother me per email with successful automations.', 'trader' ); ?>
+        </label><br>
+        <span class="description"><?php esc_html_e( 'We will always notify you about failed automations.', 'trader' ); ?></span>
       </p>
     </fieldset>
 

@@ -94,13 +94,18 @@ require __DIR__ . '/exchanges/interface-exchange.php';
 require __DIR__ . '/exchanges/class-bitvavo.php';
 
 /**
+ * Load hooks called by trader logic.
+ */
+require __DIR__ . '/inc/hooks-notifications.php';
+
+/**
  * Load trader classes and functions.
  */
 require __DIR__ . '/trader/class-indicator.php';
 require __DIR__ . '/trader/class-trader.php';
 
 /**
- * Load hooks.
+ * Load hooks calling trader logic.
  */
 require __DIR__ . '/inc/hooks-ajax.php';
 require __DIR__ . '/inc/hooks-cron.php';

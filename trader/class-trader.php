@@ -494,15 +494,23 @@ class Trader
         continue;
       }
 
-      $errors = get_error_obj();
-      $now    = time();
+      $errors    = new \WP_Error();
+      $timestamp = new DateTime();
 
       $bitvavo          = new \Trader\Exchanges\Bitvavo( $user_id );
       $balance_exchange = $bitvavo->get_balance();
 
       if ( is_wp_error( $balance_exchange ) ) {
+        $errors->merge_from( $balance_exchange );
+        /**
+         * Fires on each triggered automation.
+         *
+         * @param int       $user_id   The ID of the user to which the automation belongs.
+         * @param DateTime  $timestamp The timestamp of when the automation was triggered.
+         * @param \WP_Error $errors    Errors if any.
+         */
+        do_action( 'trader_automation_triggered', array( $user_id, $timestamp, $errors ) );
         continue;
-        $errors->merge_from( $balance_exchange ); // !!
       }
 
       foreach ( $configurations as $configuration ) {
@@ -510,7 +518,7 @@ class Trader
          * Check if rebalance interval has elapsed.
          * Using timestamp to hours then rounded, to compensate DateTime diff for small variations.
          */
-        if ( null !== $configuration->last_rebalance && round( ( $now - $configuration->last_rebalance->getTimestamp() ) / 60 / 60, 0, PHP_ROUND_HALF_DOWN ) < $configuration->interval_hours ) {
+        if ( null !== $configuration->last_rebalance && round( ( $timestamp->getTimestamp() - $configuration->last_rebalance->getTimestamp() ) / 60 / 60, 0, PHP_ROUND_HALF_DOWN ) < $configuration->interval_hours ) {
           continue;
         }
 
@@ -518,8 +526,16 @@ class Trader
         $balance           = self::merge_balance( $balance_allocated, $balance_exchange, $configuration );
 
         if ( is_wp_error( $balance_allocated ) ) {
+          $errors->merge_from( $balance_allocated );
+          /**
+           * Fires on each triggered automation.
+           *
+           * @param int       $user_id   The ID of the user to which the automation belongs.
+           * @param DateTime  $timestamp The timestamp of when the automation was triggered.
+           * @param \WP_Error $errors    Errors if any.
+           */
+          do_action( 'trader_automation_triggered', array( $user_id, $timestamp, $errors ) );
           continue;
-          $errors->merge_from( $balance_allocated ); // !!
         }
 
         /**
@@ -569,10 +585,20 @@ class Trader
         /**
          * On success, update timestamp of last rebalance.
          */
+        $timestamp = new DateTime(); // refresh
         if ( ! $errors->has_errors() ) {
-          $configuration->last_rebalance = new DateTime();
+          $configuration->last_rebalance = $timestamp;
           $configuration->save( $user_id );
         }
+
+        /**
+         * Fires on each triggered automation.
+         *
+         * @param int       $user_id   The ID of the user to which the automation belongs.
+         * @param DateTime  $timestamp The timestamp of when the automation was triggered.
+         * @param \WP_Error $errors    Errors if any.
+         */
+        do_action( 'trader_automation_triggered', array( $user_id, $timestamp, $errors ) );
       }
     }
   }
