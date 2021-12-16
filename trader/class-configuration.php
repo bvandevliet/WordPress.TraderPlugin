@@ -132,8 +132,8 @@ class Configuration
         'nth_root'                 => 1,
         'dust_limit'               => 1,
         'alloc_quote'              => 0,
-        'takeout'                  => 0,
         'alloc_quote_fag_multiply' => false,
+        'takeout'                  => 0,
         'interval_hours'           => 1,
         'rebalance_threshold'      => 0,
         'rebalance_mode'           => 'default',
@@ -159,8 +159,10 @@ class Configuration
           $configuration->$param = is_numeric( $req_value ) ? trader_max( 1, floatstr( $req_value ) ) : $default;
           break;
         case 'alloc_quote':
-        case 'takeout':
         case 'rebalance_threshold':
+          $configuration->$param = is_numeric( $req_value ) ? trader_min( trader_max( 0, floatstr( $req_value ) ), 100 ) : $default;
+          break;
+        case 'takeout':
           $configuration->$param = is_numeric( $req_value ) ? trader_max( 0, floatstr( $req_value ) ) : $default;
           break;
         case 'rebalance_mode':
