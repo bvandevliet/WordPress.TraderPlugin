@@ -2,6 +2,7 @@
 	"require": {
 		"lupecode/php-trader-native": "^1.2.1",
 		"defuse/php-encryption": "^2.3",
-		"bitvavo/php-bitvavo-api": "^1.2"
+		"bitvavo/php-bitvavo-api": "^1.2",
+		"spatie/async": "^1.5"
 	}
 }
