@@ -527,17 +527,21 @@ class Trader
           $balance->assets,
           function ( $asset ) use ( $configuration )
           {
-            $allocation_current = 100 * $asset->allocation_current;
-            $allocation_rebl    = 100 * ( $asset->allocation_rebl[ $configuration->rebalance_mode ] ?? 0 );
-            $diff               = $allocation_current - $allocation_rebl;
+            $allocation_rebl    = $asset->allocation_rebl[ $configuration->rebalance_mode ] ?? 0;
+            $amount_balanced    = bcmul( reset( $asset->allocation_rebl ), $balance->amount_quote_total );
+            $alloc_perc_current = 100 * $asset->allocation_current;
+            $alloc_perc_rebl    = 100 * $allocation_rebl;
+            $diff               = $alloc_perc_current - $alloc_perc_rebl;
+            $diff_quote         = $asset->amount_quote - $amount_balanced;
 
-            return (
+            return // at least the dust limit should be exceeded
+              $diff_quote >= $configuration->dust_limit && (
               // if configured rebalance threshold is reached
               ( bcabs( $diff ) >= $configuration->rebalance_threshold )
               ||
               // or if the asset should not be allocated at all
               // phpcs:ignore WordPress.PHP.StrictComparisons
-              ( $allocation_current > $allocation_rebl && 0 == $allocation_rebl )
+              ( $alloc_perc_current > $alloc_perc_rebl && 0 == $alloc_perc_rebl )
             );
           }
         ) ) {
