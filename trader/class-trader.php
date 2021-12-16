@@ -408,11 +408,13 @@ class Trader
 
         $market = $asset->symbol . '-' . \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY;
 
-        if ( $fill_checks <= 1 ) { // QUEUE THIS ASSET REBL INSTEAD OF ORDER CANCEL !!
+        if ( $fill_checks <= 1 ) {
+          // QUEUE THIS ASSET REBL INSTEAD OF ORDER CANCEL !!
           $exchange->cancel_order( $market, $asset->rebl_sell_order['orderId'] );
+          $asset->rebl_sell_order['status'] = 'canceled';
+        } else {
+          $asset->rebl_sell_order = $exchange->get_order( $market, $asset->rebl_sell_order['orderId'] );
         }
-
-        $asset->rebl_sell_order = $exchange->get_order( $market, $asset->rebl_sell_order['orderId'] );
       }
 
       $fill_checks--;
