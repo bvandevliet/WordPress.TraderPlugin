@@ -96,8 +96,6 @@ interface Exchange
   /**
    * Returns the deposit history.
    *
-   * @param string $symbol
-   *
    * @return array $history {.
    *   @type array   $deposits {.
    *     @type string  $symbol
@@ -106,12 +104,10 @@ interface Exchange
    *   @type string  $total
    * }
    */
-  public function deposit_history( string $symbol/* = self::QUOTE_CURRENCY*/ ) : array;
+  public function deposit_history() : array;
 
   /**
    * Returns the withdrawal history.
-   *
-   * @param string $symbol
    *
    * @return array $history {.
    *   @type array   $withdrawals {.
@@ -121,7 +117,7 @@ interface Exchange
    *   @type string  $total
    * }
    */
-  public function withdrawal_history( string $symbol/* = self::QUOTE_CURRENCY*/ ) : array;
+  public function withdrawal_history() : array;
 
   /**
    * Get balance. First entry of $assets is quote currency.

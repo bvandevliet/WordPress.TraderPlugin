@@ -149,13 +149,20 @@ class Bitvavo implements Exchange
   /**
    * {@inheritDoc}
    */
-  public function deposit_history( string $symbol = self::QUOTE_CURRENCY ) : array
+  public function deposit_history() : array
   {
-    $deposits = $this->get_instance()->depositHistory( array( 'symbol' => $symbol ) );
+    $deposits = $this->get_instance()->depositHistory( array() );
     $total    = 0;
+    $prices   = array( self::QUOTE_CURRENCY => 1 );
 
     foreach ( $deposits as $deposit ) {
-      $total = bcadd( $total, $deposit['amount'] );
+      if ( $deposit['symbol'] !== self::QUOTE_CURRENCY && ! array_key_exists( $deposit['symbol'], $prices ) ) {
+        $market                       = $deposit['symbol'] . '-' . self::QUOTE_CURRENCY;
+        $prices[ $deposit['symbol'] ] = $this->get_instance()->tickerPrice( array( 'market' => $market ) )['price'];
+      }
+      $amount_quote = floatstr( bcmul( $deposit['amount'], $prices[ $deposit['symbol'] ] ) );
+
+      $total = bcadd( $total, $amount_quote );
     }
 
     return compact( 'deposits', 'total' );
@@ -165,13 +172,20 @@ class Bitvavo implements Exchange
   /**
    * {@inheritDoc}
    */
-  public function withdrawal_history( string $symbol = self::QUOTE_CURRENCY ) : array
+  public function withdrawal_history() : array
   {
-    $withdrawals = $this->get_instance()->withdrawalHistory( array( 'symbol' => $symbol ) );
+    $withdrawals = $this->get_instance()->withdrawalHistory( array() );
     $total       = 0;
+    $prices      = array( self::QUOTE_CURRENCY => 1 );
 
     foreach ( $withdrawals as $withdrawal ) {
-      $total = bcadd( $total, $withdrawal['amount'] );
+      if ( $withdrawal['symbol'] !== self::QUOTE_CURRENCY && ! array_key_exists( $withdrawal['symbol'], $prices ) ) {
+        $market                          = $withdrawal['symbol'] . '-' . self::QUOTE_CURRENCY;
+        $prices[ $withdrawal['symbol'] ] = $this->get_instance()->tickerPrice( array( 'market' => $market ) )['price'];
+      }
+      $amount_quote = floatstr( bcmul( $withdrawal['amount'], $prices[ $withdrawal['symbol'] ] ) );
+
+      $total = bcadd( $total, $amount_quote );
     }
 
     return compact( 'withdrawals', 'total' );
