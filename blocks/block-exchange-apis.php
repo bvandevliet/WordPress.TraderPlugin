@@ -64,7 +64,7 @@ function trader_dynamic_block_exchange_apis_cb( $block_attributes, $content )
       <div class="updated notice is-dismissible"><p><?php esc_html_e( 'API keys updated.', 'trader' ); ?></p></div>
     <?php endif; ?>
     <?php if ( isset( $errors ) && is_wp_error( $errors ) && $errors->has_errors() ) : ?>
-      <div class="error"><p><?php echo implode( "</p>\n<p>", $errors->get_error_messages() ); ?></p></div>
+      <div class="error"><p><?php echo implode( "</p>\n<p>", esc_html( $errors->get_error_messages() ) ); ?></p></div>
     <?php endif; ?>
 
     <fieldset>
