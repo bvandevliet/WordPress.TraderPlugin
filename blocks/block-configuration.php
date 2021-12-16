@@ -17,6 +17,8 @@ function trader_dynamic_block_configuration_cb( $block_attributes, $content )
     return;
   }
 
+  $configuration = \Trader\Configuration::get();
+
   ob_start();
 
   if ( 'POST' === $_SERVER['REQUEST_METHOD'] ) {
@@ -47,16 +49,11 @@ function trader_dynamic_block_configuration_cb( $block_attributes, $content )
           }
         }
 
-        $configuration = \Trader\Configuration::get();
-
         $configuration->asset_weightings = $asset_weightings;
-
         $configuration->save();
       }
     }
   }
-
-  $configuration = \Trader\Configuration::get();
 
   ksort( $configuration->asset_weightings );
   arsort( $configuration->asset_weightings );
