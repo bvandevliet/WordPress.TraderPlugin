@@ -104,40 +104,6 @@ add_filter(
 
 
 /**
- * Change the login url.
- *
- * MAKE DYNAMIC USING A SPECIFICALLY ASSIGNED LOGIN PAGE !!
- * NOW THE THEME MUST PROVIDE A TEMPLATE FOR THE "/login" PAGE !!
- */
-add_filter(
-  'login_url',
-  /**
-   * Filters the login URL.
-   *
-   * @param string $login_url    The login URL. Not HTML-encoded.
-   * @param string $redirect     The path to redirect to on login, if supplied.
-   * @param bool   $force_reauth Whether to force reauthorization, even if a cookie is present.
-   */
-  function ( $login_url, $redirect, $force_reauth )
-  {
-    $login_url = home_url( 'login', 'login' );
-
-    if ( ! empty( $redirect ) ) {
-      $login_url = add_query_arg( 'redirect_to', rawurlencode( $redirect ), $login_url );
-    }
-
-    if ( $force_reauth ) {
-      $login_url = add_query_arg( 'reauth', '1', $login_url );
-    }
-
-    return $login_url;
-  },
-  10,
-  3
-);
-
-
-/**
  * Handle #loginout# menu item placeholders.
  *
  * @param array $items An array of menu item post objects.
