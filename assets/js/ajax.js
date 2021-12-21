@@ -18,7 +18,16 @@
    */
   const get_balance_summary = cb =>
   {
-    // SET LOADER ? !!
+    /**
+     * Activate loaders.
+     */
+    // elem_deposited
+    //   .add(elem_withdrawn)
+    //   .add(elem_cur_balance)
+    //   .add(elem_moneyflow)
+    //   .add(elem_gain_quote)
+    //   .add(elem_gain_perc)
+    //   .addClass('loading');
 
     $.when(
       $.post(
@@ -78,6 +87,17 @@
     $('.trader-moneyflow').text(number_format(moneyflow_now, 2));
     $('.trader-total-gain-quote').text(number_format(moneyflow_now - deposit_history.total, 2));
     $('.trader-total-gain-perc').text(get_gain_perc(moneyflow_now, deposit_history.total, 2));
+
+    /**
+     * De-activate loaders.
+     */
+    elem_deposited
+      .add(elem_withdrawn)
+      .add(elem_cur_balance)
+      .add(elem_moneyflow)
+      .add(elem_gain_quote)
+      .add(elem_gain_perc)
+      .removeClass('loading');
   }
 
   /**
@@ -87,9 +107,11 @@
    */
   const get_portfolio_balance = cb =>
   {
-    // SET LOADER !!
-
+    /**
+     * Disable the rebalance button(s) and activate loaders.
+     */
     $('button[value="do-portfolio-rebalance"]').prop('disabled', true);
+    table_portfolio.parent().addClass('loading');
 
     /**
      * Build the Configuration object to pass it as argument with the post request.
@@ -141,7 +163,8 @@
 
     $('.trader-expected-fee').text(balance.expected_fee);
 
-    let $tbody = $('table.trader-portfolio>tbody').empty();
+    let $tbody_old = $('table.trader-portfolio>tbody');
+    let $tbody_new = $('<tbody/>');
 
     /**
      * Loop through the assets and rebuild the portfolio table.
@@ -179,12 +202,18 @@
         .append($('<td class="trader-number trader-no-padd-right"/>').text((diff >= 0 ? '+' : '-') + number_format(Math.abs(diff), 2)))
         .append($('<td class="trader-number trader-no-padd-left"/>').text(' %'));
 
-      $tbody.append($tr);
+      $tbody_new.append($tr);
     });
 
     /**
-     * (Re-)enable the rebalance button(s).
+     * Replace tbody at once to prevent flickering.
      */
+    $tbody_old.replaceWith($tbody_new);
+
+    /**
+     * (Re-)enable the rebalance button(s) and de-activate loaders.
+     */
+    table_portfolio.parent().removeClass('loading');
     $('button[value="do-portfolio-rebalance"]').prop('disabled', false);
   }
 
@@ -203,6 +232,18 @@
     this.elem_moneyflow = $('.trader-moneyflow');
     this.elem_gain_quote = $('.trader-total-gain-quote');
     this.elem_gain_perc = $('.trader-total-gain-perc');
+
+    /**
+     * Activate loaders.
+     */
+    table_portfolio.parent()
+      .add(elem_deposited)
+      .add(elem_withdrawn)
+      .add(elem_cur_balance)
+      .add(elem_moneyflow)
+      .add(elem_gain_quote)
+      .add(elem_gain_perc)
+      .addClass('loading');
 
     /**
      * Determine whether these elements are printed on the current page.
@@ -235,8 +276,6 @@
      */
     if (has_portfolio_table && has_balance_fields)
     {
-      // SET LOADER(S) ? !!
-
       /**
        * Build the Configuration object to pass it as argument with the post request.
        */
@@ -298,11 +337,28 @@
     /**
      * Handle rebalance form input events.
      */
-    $('form.trader-rebalance').on('input', () =>
+    $('form.trader-rebalance').on('input', e =>
     {
+      /**
+       * Ignore inputs that do not affect allocations.
+       */
+      let input_name = $(e.target).attr('name');
+      if ([
+        'automation_enabled',
+        'interval_hours',
+        'rebalance_threshold',
+      ].some(name => name === input_name))
+      {
+        return;
+      }
+
       clearTimeout(this.rebalance_form_timer);
 
+      /**
+       * Disable the rebalance button(s) and activate loaders.
+       */
       $('button[value="do-portfolio-rebalance"]').prop('disabled', true);
+      table_portfolio.parent().addClass('loading');
 
       this.rebalance_form_timer = setTimeout(() =>
       {

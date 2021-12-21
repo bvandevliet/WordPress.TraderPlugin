@@ -5,7 +5,7 @@ Tags:
 Requires at least: 5.7
 Tested up to: 5.8
 Requires PHP: 7.2
-Stable tag: 2021.12.16
+Stable tag: 2021.12.21
 License: MIT
 
 Calculates and executes a crypto portfolio rebalance.
@@ -17,6 +17,10 @@ Connects to exchange API's, provides blocks for rendering exchange data and incl
 
 
 == Changelog ==
+
+= 2021.12.21 =
+* Added support for Wordfence 2FA plugin.
+* Better UX using loaders on form input event.
 
 = 2021.12.16 =
 * Email notification for triggered automations.
