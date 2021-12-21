@@ -353,7 +353,7 @@ class Trader
       $amount_quote_to_sell = 0;
 
       /**
-       * RECUDE allocation ..
+       * REDUCE allocation ..
        */
       if ( floatval( $diff ) <= -$configuration->dust_limit ) {
         if ( floatval( bcabs( $diff ) ) < \Trader\Exchanges\Bitvavo::MIN_QUOTE ) {
@@ -548,7 +548,7 @@ class Trader
               function ( $asset ) use ( $balance, $configuration )
               {
                 $allocation_rebl    = $asset->allocation_rebl[ $configuration->rebalance_mode ] ?? 0;
-                $amount_balanced    = bcmul( reset( $asset->allocation_rebl ), $balance->amount_quote_total );
+                $amount_balanced    = bcmul( $allocation_rebl, $balance->amount_quote_total );
                 $alloc_perc_current = 100 * $asset->allocation_current;
                 $alloc_perc_rebl    = 100 * $allocation_rebl;
                 $diff               = $alloc_perc_current - $alloc_perc_rebl;

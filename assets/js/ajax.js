@@ -153,9 +153,9 @@
       let allocation_default = asset.allocation_rebl[Object.keys(asset.allocation_rebl)[0]] ?? 0;
 
       let amount_balanced = allocation_default * balance.amount_quote_total;
-      let allocation_current = 100 * asset.allocation_current;
-      let allocation_rebl = 100 * allocation_default;
-      let diff = allocation_current - allocation_rebl;
+      let alloc_perc_current = 100 * asset.allocation_current;
+      let alloc_perc_rebl = 100 * allocation_default;
+      let diff = alloc_perc_current - alloc_perc_rebl;
       let diff_quote = asset.amount_quote - amount_balanced;
 
       $tr
@@ -164,13 +164,13 @@
       $tr
         .append($('<td class="trader-number trader-no-padd-right"/>').text('€ '))
         .append($('<td class="trader-number trader-no-padd-left"/>').text(number_format(asset.amount_quote, 2)))
-        .append($('<td class="trader-number trader-no-padd-right"/>').text(number_format(allocation_current, 2)))
+        .append($('<td class="trader-number trader-no-padd-right"/>').text(number_format(alloc_perc_current, 2)))
         .append($('<td class="trader-number trader-no-padd-left"/>').text(' %'));
 
       $tr
         .append($('<td class="trader-number trader-no-padd-right"/>').text('€ '))
         .append($('<td class="trader-number trader-no-padd-left"/>').text(number_format(amount_balanced, 2)))
-        .append($('<td class="trader-number trader-no-padd-right"/>').text(number_format(allocation_rebl, 2)))
+        .append($('<td class="trader-number trader-no-padd-right"/>').text(number_format(alloc_perc_rebl, 2)))
         .append($('<td class="trader-number trader-no-padd-left"/>').text(' %'));
 
       $tr
