@@ -205,10 +205,10 @@ class Trader
      */
     foreach ( $cmc_latest as $asset_cmc_arr ) {
       /**
-       * Skip if is stablecoin or weighting is set to zero.
+       * Skip if is stablecoin, one of its tags are excluded or weighting is set to zero.
        */
       if (
-        in_array( 'stablecoin', $asset_cmc_arr[0]->tags, true ) ||
+        count( array_intersect( array_merge( array( 'stablecoin' ), $configuration->excluded_tags ), $asset_cmc_arr[0]->tags ) ) > 0 ||
         ( array_key_exists( $asset_cmc_arr[0]->symbol, $configuration->asset_weightings ) && $configuration->asset_weightings[ $asset_cmc_arr[0]->symbol ] <= 0 )
       ) {
         continue;
