@@ -412,15 +412,12 @@ class Trader
 
         $all_filled = false;
 
-        $market = $asset->symbol . '-'
-        . ( in_array( $configuration->quote_currency, \Trader\Exchanges\Bitvavo::QUOTES_SUPPORTED, true ) ? $configuration->quote_currency : \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY );
-
         if ( $fill_checks <= 1 ) {
           // QUEUE THIS ASSET REBL INSTEAD OF ORDER CANCEL !!
-          $exchange->cancel_order( $market, $asset->rebl_sell_order['orderId'] );
+          $exchange->cancel_order( $asset->rebl_sell_order['market'], $asset->rebl_sell_order['orderId'] );
           $asset->rebl_sell_order['status'] = 'canceled';
         } else {
-          $asset->rebl_sell_order = $exchange->get_order( $market, $asset->rebl_sell_order['orderId'] );
+          $asset->rebl_sell_order = $exchange->get_order( $asset->rebl_sell_order['market'], $asset->rebl_sell_order['orderId'] );
         }
       }
 
