@@ -348,17 +348,20 @@ class Trader
 
       $amount_quote = bcmul( $balance->amount_quote_total, $asset->allocation_rebl[ $mode ] ?? 0 );
 
-      $diff = bcsub( $amount_quote, $asset->amount_quote );
+      $diff            = bcsub( $amount_quote, $asset->amount_quote );
+      $diff_float      = floatval( $diff );
+      $diff_float_abs  = floatval( bcabs( $diff ) );
+      $diff_spread_abs = trader_max( bcabs( bcsub( $amount_quote, bcmul( $asset->amount_quote, '0.99' ) ) ), bcabs( bcsub( $amount_quote, bcmul( $asset->amount_quote, '1.01' ) ) ) );
 
       $amount_quote_to_sell = 0;
 
       /**
        * REDUCE allocation ..
        */
-      if ( floatval( $diff ) <= -$configuration->dust_limit ) {
-        if ( floatval( bcabs( $diff ) ) < \Trader\Exchanges\Bitvavo::MIN_QUOTE ) {
+      if ( $diff_float < 0 && $configuration->dust_limit <= $diff_float_abs ) {
+        if ( $diff_float_abs < \Trader\Exchanges\Bitvavo::MIN_QUOTE ) {
           // REBUY REQUIRED ..
-          $amount_quote_to_sell = bcadd( bcabs( $diff ), \Trader\Exchanges\Bitvavo::MIN_QUOTE + 1 );
+          $amount_quote_to_sell = bcadd( $diff_spread_abs, \Trader\Exchanges\Bitvavo::MIN_QUOTE );
 
           $amount_quote_to_sell = bcdiv( $amount_quote_to_sell, bcsub( 1, \Trader\Exchanges\Bitvavo::TAKER_FEE ) ); // COMPENSATE FOR FEE IN SELL ORDER ..
           // $amount_quote_to_sell = bcmul( $amount_quote_to_sell, bcadd( 1, \Trader\Exchanges\Bitvavo::TAKER_FEE ) ); // COMPENSATE FOR FEE IN REBUY ORDER ..
@@ -371,12 +374,14 @@ class Trader
       /**
        * INCREASE allocation ..
        */
-      elseif ( floatval( $diff ) >= $configuration->dust_limit && floatval( $diff ) < \Trader\Exchanges\Bitvavo::MIN_QUOTE + 1 ) {
-        // REBUY REQUIRED ..
-        $amount_quote_to_sell = \Trader\Exchanges\Bitvavo::MIN_QUOTE;
+      elseif ( $diff_float > 0 && $configuration->dust_limit <= $diff_float_abs ) {
+        if ( $diff_float_abs < \Trader\Exchanges\Bitvavo::MIN_QUOTE + floatval( bcsub( $diff_spread_abs, $diff ) ) ) {
+          // REBUY REQUIRED ..
+          $amount_quote_to_sell = \Trader\Exchanges\Bitvavo::MIN_QUOTE;
 
-        // $amount_quote_to_sell = bcdiv( $amount_quote_to_sell, bcsub( 1, \Trader\Exchanges\Bitvavo::TAKER_FEE ) ); // COMPENSATE FOR FEE IN SELL ORDER ..
-        // $amount_quote_to_sell = bcmul( $amount_quote_to_sell, bcadd( 1, \Trader\Exchanges\Bitvavo::TAKER_FEE ) ); // COMPENSATE FOR FEE IN REBUY ORDER ..
+          // $amount_quote_to_sell = bcdiv( $amount_quote_to_sell, bcsub( 1, \Trader\Exchanges\Bitvavo::TAKER_FEE ) ); // COMPENSATE FOR FEE IN SELL ORDER ..
+          // $amount_quote_to_sell = bcmul( $amount_quote_to_sell, bcadd( 1, \Trader\Exchanges\Bitvavo::TAKER_FEE ) ); // COMPENSATE FOR FEE IN REBUY ORDER ..
+        }
       }
       // else // ONLY BUYING MAY BE REQUIRED ..
 
@@ -429,7 +434,6 @@ class Trader
     $balance                         = ! $simulate ? self::merge_balance( $balance, $exchange->get_balance(), $config_without_takeout ) : $balance;
     $to_buy_total                    = 0;
     foreach ( $balance->assets as $asset ) {
-
       $amount_quote = bcmul( $balance->amount_quote_total, $asset->allocation_rebl[ $mode ] ?? 0 );
 
       /**
