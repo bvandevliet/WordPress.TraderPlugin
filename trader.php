@@ -7,7 +7,7 @@
  *
  * @wordpress-plugin
  * Plugin Name:       Trader
- * Version:           2021.12.12
+ * Version:           2021.12.21
  * Requires at least: 5.7
  * Requires PHP:      7.4
  * Description:       Connects to exchange API's and provides blocks for rendering exchange data.
@@ -26,7 +26,7 @@ defined( 'ABSPATH' ) || exit;
  */
 define( 'TRADER_ABSPATH', trailingslashit( __DIR__ ) );
 define( 'TRADER_URL', plugin_dir_url( __FILE__ ) );
-define( 'TRADER_PLUGIN_VERSION', '2021.12.12' );
+define( 'TRADER_PLUGIN_VERSION', '2021.12.21' );
 
 /**
  * Increase execution times allowing some headroom to wait for order fills.
@@ -94,13 +94,18 @@ require __DIR__ . '/exchanges/interface-exchange.php';
 require __DIR__ . '/exchanges/class-bitvavo.php';
 
 /**
+ * Load hooks called by trader logic.
+ */
+require __DIR__ . '/inc/hooks-notifications.php';
+
+/**
  * Load trader classes and functions.
  */
 require __DIR__ . '/trader/class-indicator.php';
 require __DIR__ . '/trader/class-trader.php';
 
 /**
- * Load hooks.
+ * Load hooks calling trader logic.
  */
 require __DIR__ . '/inc/hooks-ajax.php';
 require __DIR__ . '/inc/hooks-cron.php';

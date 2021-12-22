@@ -232,7 +232,7 @@ class Configuration
    *
    * @var int|float|string
    */
-  public $nth_root = '2.5';
+  public $nth_root = '2.25';
 
   /**
    * Minimum required allocation difference in quote currency.
@@ -260,21 +260,21 @@ class Configuration
    *
    * @var bool
    */
-  public bool $alloc_quote_fag_multiply = true;
+  public bool $alloc_quote_fag_multiply = false;
 
   /**
    * Rebalance period in hours.
    *
    * @var int
    */
-  public int $interval_hours = 4;
+  public int $interval_hours = 8;
 
   /**
    * Rebalance allocation percentage difference threshold.
    *
    * @var int|float|string
    */
-  public $rebalance_threshold = 1;
+  public $rebalance_threshold = '1.25';
 
   /**
    * Rebalance mode.

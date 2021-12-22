@@ -38,10 +38,13 @@ function trader_dynamic_block_edit_account_cb( $block_attributes, $content )
       // New user data.
       $user               = new stdClass();
       $user->ID           = $current_user->ID;
-      $user->first_name   = $first_name;
-      $user->last_name    = $last_name;
-      $user->nickname     = $first_name . ' ' . $last_name;
-      $user->display_name = $first_name . ' ' . $last_name;
+      $user->first_name   = $current_user->first_name   = $first_name;
+      $user->last_name    = $current_user->last_name    = $last_name;
+      $user->nickname     = $current_user->nickname     = $first_name . ' ' . $last_name;
+      $user->display_name = $current_user->display_name = $first_name . ' ' . $last_name;
+
+      // Update user notification preferences.
+      update_user_meta( $user->ID, 'trader_optout_email_automation_triggered', ! empty( $_POST['trader_optout_email_automation_triggered'] ) );
 
       // Handle required fields.
       $required_fields = array(
@@ -101,7 +104,7 @@ function trader_dynamic_block_edit_account_cb( $block_attributes, $content )
       <div class="updated notice is-dismissible"><p><?php esc_html_e( 'Account updated.', 'trader' ); ?></p></div>
     <?php endif; ?>
     <?php if ( isset( $errors ) && is_wp_error( $errors ) && $errors->has_errors() ) : ?>
-      <div class="error"><p><?php echo implode( "</p>\n<p>", $errors->get_error_messages() ); ?></p></div>
+      <div class="error"><p><?php echo implode( "</p>\n<p>", esc_html( $errors->get_error_messages() ) ); ?></p></div>
     <?php endif; ?>
 
     <fieldset>
@@ -119,6 +122,18 @@ function trader_dynamic_block_edit_account_cb( $block_attributes, $content )
       <p class="form-row form-row-wide">
         <label for="account_email"><?php esc_html_e( 'Email address', 'trader' ); ?>&nbsp;<span class="required">*</span></label>
         <input type="email" class="input-text" name="account_email" id="account_email" autocomplete="email" value="<?php echo esc_attr( $current_user->user_email ); ?>" />
+      </p>
+    </fieldset>
+
+    <fieldset>
+      <legend><?php esc_html_e( 'Notification preferences', 'trader' ); ?></legend>
+      <p class="form-row form-row-wide">
+        <label>
+          <input type="checkbox" name="trader_optout_email_automation_triggered"
+          <?php checked( ! empty( get_user_meta( $current_user->ID, 'trader_optout_email_automation_triggered', true ) ) ); ?> />
+          <?php esc_html_e( 'Don\'t bother me per email with successful automations.', 'trader' ); ?>
+        </label><br>
+        <span class="description"><?php esc_html_e( 'We will always notify you about failed automations.', 'trader' ); ?></span>
       </p>
     </fieldset>
 
@@ -141,6 +156,22 @@ function trader_dynamic_block_edit_account_cb( $block_attributes, $content )
 
     <p>
       <button type="submit" class="button" value="<?php esc_attr_e( 'Save changes', 'trader' ); ?>"><?php esc_html_e( 'Save changes', 'trader' ); ?></button>
+      <?php
+      /**
+       * Support for the Wordfence Login Security plugin's 2FA functionality.
+       */
+      $WFLS_plugin = 'wordfence-login-security/wordfence-login-security.php';
+      /**
+       * The below function is not available from the front-end, so we embedded its body.
+       *
+       * @link https://developer.wordpress.org/reference/functions/is_plugin_active/
+       */
+      if ( in_array( $WFLS_plugin, (array) get_option( 'active_plugins', array() ), true ) || ( is_multisite() && isset( get_site_option( 'active_sitewide_plugins' )[ $WFLS_plugin ] ) ) ) :
+        ?>
+        &nbsp;
+        <a href="<?php echo esc_attr( admin_url( 'admin.php?page=WFLS' ) ); ?>" target="_blank" rel="noopener noreferrer"
+        ><?php esc_html_e( 'Manage two factor authentication (2FA)', 'trader' ); ?></a>
+      <?php endif; ?>
     </p>
   </form>
 

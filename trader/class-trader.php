@@ -359,7 +359,7 @@ class Trader
       $amount_quote_to_sell = 0;
 
       /**
-       * RECUDE allocation ..
+       * REDUCE allocation ..
        */
       if ( floatval( $diff ) <= -$configuration->dust_limit ) {
         if ( floatval( bcabs( $diff ) ) < \Trader\Exchanges\Bitvavo::MIN_QUOTE ) {
@@ -415,11 +415,13 @@ class Trader
         $market = $asset->symbol . '-'
         . ( in_array( $configuration->quote_currency, \Trader\Exchanges\Bitvavo::QUOTES_SUPPORTED, true ) ? $configuration->quote_currency : \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY );
 
-        if ( $fill_checks <= 1 ) { // QUEUE THIS ASSET REBL INSTEAD OF ORDER CANCEL !!
+        if ( $fill_checks <= 1 ) {
+          // QUEUE THIS ASSET REBL INSTEAD OF ORDER CANCEL !!
           $exchange->cancel_order( $market, $asset->rebl_sell_order['orderId'] );
+          $asset->rebl_sell_order['status'] = 'canceled';
+        } else {
+          $asset->rebl_sell_order = $exchange->get_order( $market, $asset->rebl_sell_order['orderId'] );
         }
-
-        $asset->rebl_sell_order = $exchange->get_order( $market, $asset->rebl_sell_order['orderId'] );
       }
 
       $fill_checks--;
@@ -498,92 +500,135 @@ class Trader
    */
   public static function do_automations()
   {
+    /**
+     * Run each automation in an asyncronous thread when possible.
+     */
+    $pool = \Spatie\Async\Pool::create()->concurrency( 20 )->timeout( 299 );
+
     foreach ( \Trader\Configuration::get_automations() as $user_id => $configurations ) {
-      // Check user permission.
-      if ( ! user_can( $user_id, 'trader_manage_portfolio' ) ) {
-        continue;
-      }
+      $pool->add(
+        function () use ( $user_id, $configurations )
+        {
+          $automations_triggered = array();
 
-      $errors = get_error_obj();
-      $now    = time();
+          $errors    = new \WP_Error();
+          $timestamp = new DateTime();
 
-      $bitvavo          = new \Trader\Exchanges\Bitvavo( $user_id );
-      $balance_exchange = $bitvavo->get_balance();
-
-      if ( is_wp_error( $balance_exchange ) ) {
-        continue;
-        $errors->merge_from( $balance_exchange ); // !!
-      }
-
-      foreach ( $configurations as $configuration ) {
-        /**
-         * Check if rebalance interval has elapsed.
-         * Using timestamp to hours then rounded, to compensate DateTime diff for small variations.
-         */
-        if ( null !== $configuration->last_rebalance && round( ( $now - $configuration->last_rebalance->getTimestamp() ) / 60 / 60, 0, PHP_ROUND_HALF_DOWN ) < $configuration->interval_hours ) {
-          continue;
-        }
-
-        $balance_allocated = self::get_asset_allocations( $bitvavo, $configuration );
-        $balance           = self::merge_balance( $balance_allocated, $balance_exchange, $configuration );
-
-        if ( is_wp_error( $balance_allocated ) ) {
-          continue;
-          $errors->merge_from( $balance_allocated ); // !!
-        }
-
-        /**
-         * Check if rebalance threshold is reached.
-         */
-        if ( ! array_some(
-          $balance->assets,
-          function ( $asset ) use ( $configuration )
-          {
-            $allocation_rebl    = $asset->allocation_rebl[ $configuration->rebalance_mode ] ?? 0;
-            $amount_balanced    = bcmul( reset( $asset->allocation_rebl ), $balance->amount_quote_total );
-            $alloc_perc_current = 100 * $asset->allocation_current;
-            $alloc_perc_rebl    = 100 * $allocation_rebl;
-            $diff               = $alloc_perc_current - $alloc_perc_rebl;
-            $diff_quote         = $asset->amount_quote - $amount_balanced;
-
-            return // at least the dust limit should be exceeded
-              $diff_quote >= $configuration->dust_limit && (
-              // if configured rebalance threshold is reached
-              ( bcabs( $diff ) >= $configuration->rebalance_threshold )
-              ||
-              // or if the asset should not be allocated at all
-              // phpcs:ignore WordPress.PHP.StrictComparisons
-              ( $alloc_perc_current > $alloc_perc_rebl && 0 == $alloc_perc_rebl )
-            );
+          // Check user permission.
+          if ( ! user_can( $user_id, 'trader_manage_portfolio' ) ) {
+            return array();
           }
-        ) ) {
-          continue;
-        }
 
-        /**
-         * Rebalance.
-         *
-         * MAKE ASYNC, REFER TO LINK BELOW !!
-         *
-         * @link https://github.com/spatie/async
-         */
-        foreach ( self::rebalance( $bitvavo, $balance, $configuration ) as $index => $order ) {
-          if ( ! empty( $order['errorCode'] ) ) {
-            $errors->add(
-              $order['errorCode'] . '-' . $index,
-              sprintf( __( 'Exchange error %1$s %2$s: ', 'trader' ), $order['side'], $order['market'] ) . ( $order['error'] ?? __( 'An unknown error occured.', 'trader' ) )
-            );
+          $bitvavo          = new \Trader\Exchanges\Bitvavo( $user_id );
+          $balance_exchange = $bitvavo->get_balance();
+
+          if ( is_wp_error( $balance_exchange ) ) {
+            $errors->merge_from( $balance_exchange );
+            return array( array( $user_id, $timestamp, $errors ) );
+          }
+
+          foreach ( $configurations as $configuration ) {
+            /**
+             * Only automation-enabled configurations should be passed, but can do no harm to double-check.
+             */
+            if ( ! $configuration->automation_enabled ) {
+              continue;
+            }
+
+            /**
+             * Check if rebalance interval has elapsed.
+             * Using timestamp to hours then rounded, to compensate DateTime diff for small variations.
+             */
+            if ( null !== $configuration->last_rebalance && round( ( $timestamp->getTimestamp() - $configuration->last_rebalance->getTimestamp() ) / 60 / 60, 0, PHP_ROUND_HALF_DOWN ) < $configuration->interval_hours ) {
+              continue;
+            }
+
+            $balance_allocated = self::get_asset_allocations( $bitvavo, $configuration );
+            $balance           = self::merge_balance( $balance_allocated, $balance_exchange, $configuration );
+
+            if ( is_wp_error( $balance_allocated ) ) {
+              $errors->merge_from( $balance_allocated );
+              $automations_triggered[] = array( $user_id, $timestamp, $errors );
+              continue;
+            }
+
+            /**
+             * Check if rebalance threshold is reached.
+             */
+            if ( ! array_some(
+              $balance->assets,
+              function ( $asset ) use ( $balance, $configuration )
+              {
+                $allocation_rebl    = $asset->allocation_rebl[ $configuration->rebalance_mode ] ?? 0;
+                $amount_balanced    = bcmul( $allocation_rebl, $balance->amount_quote_total );
+                $alloc_perc_current = 100 * $asset->allocation_current;
+                $alloc_perc_rebl    = 100 * $allocation_rebl;
+                $diff               = $alloc_perc_current - $alloc_perc_rebl;
+                $diff_quote         = $asset->amount_quote - $amount_balanced;
+
+                return // at least the dust limit should be exceeded
+                  $diff_quote >= $configuration->dust_limit && (
+                  // if configured rebalance threshold is reached
+                  ( bcabs( $diff ) >= $configuration->rebalance_threshold )
+                  ||
+                  // or if the asset should not be allocated at all
+                  // phpcs:ignore WordPress.PHP.StrictComparisons
+                  ( $alloc_perc_current > $alloc_perc_rebl && 0 == $alloc_perc_rebl )
+                );
+              }
+            ) ) {
+              continue;
+            }
+
+            /**
+             * Rebalance.
+             */
+            foreach ( self::rebalance( $bitvavo, $balance, $configuration ) as $index => $order ) {
+              if ( ! empty( $order['errorCode'] ) ) {
+                $errors->add(
+                  $order['errorCode'] . '-' . $index,
+                  sprintf( __( 'Exchange error %1$s %2$s: ', 'trader' ), $order['side'], $order['market'] ) . ( $order['error'] ?? __( 'An unknown error occured.', 'trader' ) )
+                );
+              }
+            }
+
+            /**
+             * On success, update timestamp of last rebalance.
+             */
+            $timestamp = new DateTime(); // refresh
+            if ( ! $errors->has_errors() ) {
+              $configuration->last_rebalance = $timestamp;
+              $configuration->save( $user_id );
+            }
+
+            $automations_triggered[] = array( $user_id, $timestamp, $errors );
+          }
+
+          return $automations_triggered;
+        }
+      )->then(
+        function ( array $automations_triggered )
+        {
+          foreach ( $automations_triggered as $automation_triggered ) {
+            /**
+             * Fires on each triggered automation.
+             *
+             * @param int       $user_id   The ID of the user to which the automation belongs.
+             * @param DateTime  $timestamp The timestamp of when the automation was triggered.
+             * @param \WP_Error $errors    Errors if any.
+             */
+            do_action( 'trader_automation_triggered', $automation_triggered );
           }
         }
-
-        /**
-         * On success, update timestamp of last rebalance.
-         */
-        if ( ! $errors->has_errors() ) {
-          $configuration->last_rebalance = new DateTime();
-          $configuration->save( $user_id );
-        }
-      }
+      )->catch(
+        function ( Throwable $exception )
+        {}
+      )->timeout(
+        function ()
+        {}
+      );
     }
+
+    $pool->wait();
   }
 }
