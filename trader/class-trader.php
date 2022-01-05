@@ -558,8 +558,10 @@ class Trader
                 $diff               = $alloc_perc_current - $alloc_perc_rebl;
                 $diff_quote         = $asset->amount_quote - $amount_balanced;
 
-                return // at least the dust limit should be exceeded
-                  $diff_quote >= $configuration->dust_limit && (
+                return // at least the dust- and minimum order amount should be reached
+                  $diff_quote >= $configuration->dust_limit &&
+                  $diff_quote >= \Trader\Exchanges\Bitvavo::MIN_QUOTE
+                  && (
                   // if configured rebalance threshold is reached
                   ( bcabs( $diff ) >= $configuration->rebalance_threshold )
                   ||
