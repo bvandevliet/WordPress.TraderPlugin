@@ -90,7 +90,7 @@ add_action(
     $balance_allocated = \Trader::get_asset_allocations( \Trader\Exchanges\Bitvavo::current_user(), $configuration );
 
     $balance_exchange = \Trader\Exchanges\Bitvavo::current_user()->get_balance();
-    $balance          = \Trader::merge_balance( $balance_allocated, $balance_exchange, $configuration );
+    $balance          = \Trader\Balance::merge_balance( $balance_allocated, $balance_exchange, $configuration );
 
     if ( is_wp_error( $balance_allocated ) ) {
       $errors->merge_from( $balance_allocated );
