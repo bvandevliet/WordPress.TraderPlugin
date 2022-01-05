@@ -194,19 +194,19 @@
         .append($('<td/>').text(asset.symbol));
 
       $tr
-        .append($('<td class="trader-number trader-no-padd-right"/>').text('€ '))
+        .append($('<td class="trader-number trader-no-padd-right"/>').text(config.quote_currency + ' '))
         .append($('<td class="trader-number trader-no-padd-left"/>').text(number_format(asset.amount_quote, 2)))
         .append($('<td class="trader-number trader-no-padd-right"/>').text(number_format(alloc_perc_current, 2)))
         .append($('<td class="trader-number trader-no-padd-left"/>').text(' %'));
 
       $tr
-        .append($('<td class="trader-number trader-no-padd-right"/>').text('€ '))
+        .append($('<td class="trader-number trader-no-padd-right"/>').text(config.quote_currency + ' '))
         .append($('<td class="trader-number trader-no-padd-left"/>').text(number_format(amount_balanced, 2)))
         .append($('<td class="trader-number trader-no-padd-right"/>').text(number_format(alloc_perc_rebl, 2)))
         .append($('<td class="trader-number trader-no-padd-left"/>').text(' %'));
 
       $tr
-        .append($('<td class="trader-number trader-no-padd-right"/>').text('€ ' + (diff_quote >= 0 ? '+' : '-')))
+        .append($('<td class="trader-number trader-no-padd-right"/>').text(config.quote_currency + ' ' + (diff_quote >= 0 ? '+' : '-')))
         .append($('<td class="trader-number trader-no-padd-left"/>').text(number_format(Math.abs(diff_quote), 2)))
         .append($('<td class="trader-number trader-no-padd-right"/>').text((diff >= 0 ? '+' : '-') + number_format(Math.abs(diff), 2)))
         .append($('<td class="trader-number trader-no-padd-left"/>').text(' %'));
