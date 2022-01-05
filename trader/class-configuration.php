@@ -214,6 +214,13 @@ class Configuration
   public array $asset_weightings = array();
 
   /**
+   * Exclude assets that have at least one of these tags.
+   *
+   * @var string[]
+   */
+  public array $excluded_tags = array();
+
+  /**
    * Amount of assets from the top market cap ranking.
    *
    * @var int

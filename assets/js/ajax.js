@@ -2,6 +2,8 @@
 {
   'use strict';
 
+  let config = {};
+
   const number_format = (number, decimals = 2) =>
     parseFloat(number).toLocaleString(undefined, {
       minimumFractionDigits: decimals,
@@ -18,6 +20,12 @@
    */
   const get_balance_summary = cb =>
   {
+    /**
+     * Rebuild the Configuration object to allow reading up-to-date parameter values.
+     */
+    config = {};
+    $('form.trader-rebalance').serializeArray().forEach(obj => config[obj.name] = obj.value);
+
     /**
      * Activate loaders.
      */
@@ -87,6 +95,7 @@
     $('.trader-moneyflow').text(number_format(moneyflow_now, 2));
     $('.trader-total-gain-quote').text(number_format(moneyflow_now - deposit_history.total, 2));
     $('.trader-total-gain-perc').text(get_gain_perc(moneyflow_now, deposit_history.total, 2));
+    $('.trader-threshold-absolute').text(number_format(config.rebalance_threshold / 100 * balance_exchange.amount_quote_total, 2));
 
     /**
      * De-activate loaders.
@@ -116,7 +125,7 @@
     /**
      * Build the Configuration object to pass it as argument with the post request.
      */
-    let config = {};
+    config = {};
     $('form.trader-rebalance').serializeArray().forEach(obj => config[obj.name] = obj.value);
 
     /**
@@ -274,12 +283,12 @@
     /**
      * Initial ajax trigger when all elements are printed on the current page.
      */
-    if (has_portfolio_table && has_balance_fields)
+    if (has_portfolio_table/* && has_balance_fields*/)
     {
       /**
        * Build the Configuration object to pass it as argument with the post request.
        */
-      let config = {};
+      config = {};
       $('form.trader-rebalance').serializeArray().forEach(obj => config[obj.name] = obj.value);
 
       /**
@@ -321,10 +330,10 @@
     /**
      * Initial ajax trigger when just the portfolio table is printed on the current page.
      */
-    else if (has_portfolio_table)
-    {
-      get_portfolio_balance(echo_portfolio_balance);
-    }
+    // else if (has_portfolio_table)
+    // {
+    //   get_portfolio_balance(echo_portfolio_balance);
+    // }
 
     /**
      * Initial ajax trigger when just one or more of the balance summary fields are printed on the current page.

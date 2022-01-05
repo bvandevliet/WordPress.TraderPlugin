@@ -172,6 +172,7 @@ function trader_dynamic_block_rebalance_form_cb( $block_attributes, $content )
       <p class="form-row form-row-last">
         <label title="<?php esc_attr_e( 'Minimum required percentage difference to trigger an automated rebalance.', 'trader' ); ?>">
           <?php esc_html_e( 'Rebalance threshold', 'trader' ); ?> [%]
+          <span style="float:right;">(€~<span class="trader-threshold-absolute"></span>)</span>
           <input type="number" min="0" max="99" step=".01" class="input-number" name="rebalance_threshold" value="<?php echo esc_attr( $configuration->rebalance_threshold ); ?>" />
         </label>
       </p>

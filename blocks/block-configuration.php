@@ -32,8 +32,8 @@ function trader_dynamic_block_configuration_cb( $block_attributes, $content )
       ) {
         $asset_weightings = array();
 
-        $assets     = wp_unslash( $_POST['assets'] );
-        $weightings = wp_unslash( $_POST['weightings'] );
+        $assets     = /*wp_unslash( */$_POST['assets'];// );
+        $weightings = /*wp_unslash( */$_POST['weightings'];// );
 
         $length = min( count( $assets ), count( $weightings ) );
 
@@ -50,6 +50,12 @@ function trader_dynamic_block_configuration_cb( $block_attributes, $content )
         }
 
         $configuration->asset_weightings = $asset_weightings;
+        $configuration->save();
+      }
+
+      if ( isset( $_POST['excluded_tags'] ) && is_array( $_POST['excluded_tags'] ) ) {
+
+        $configuration->excluded_tags = array_filter( $_POST['excluded_tags'], fn( $excluded_tag) => null !== $excluded_tag && '' !== $excluded_tag );
         $configuration->save();
       }
     }
@@ -81,6 +87,22 @@ function trader_dynamic_block_configuration_cb( $block_attributes, $content )
         <p class="form-row form-row-wide form-row-cloneable">
           <input type="text" class="input-text form-row-first" name="assets[]" autocomplete="off" value="<?php echo esc_attr( $asset ); ?>" />
           <input type="number" min="0" step=".01" class="input-number form-row-last" name="weightings[]" value="<?php echo esc_attr( $weighting ); ?>" default="1" />
+        </p>
+      <?php endforeach; ?>
+    </fieldset>
+
+    <fieldset>
+      <legend>
+        <?php
+        _e(
+          'Tags to exclude.',
+          'trader'
+        );
+        ?>
+      </legend>
+      <?php foreach ( array_merge( $configuration->excluded_tags, array( '' ) ) as $excluded_tag ) : ?>
+        <p class="form-row form-row-wide form-row-cloneable">
+          <input type="text" class="input-text" name="excluded_tags[]" autocomplete="off" value="<?php echo esc_attr( $excluded_tag ); ?>" />
         </p>
       <?php endforeach; ?>
     </fieldset>
