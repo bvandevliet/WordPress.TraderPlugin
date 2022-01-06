@@ -6,122 +6,6 @@ defined( 'ABSPATH' ) || exit;
 class Trader
 {
   /**
-   * Update an existing balance with actual values from an exchange balance.
-   *
-   * @param \Trader\Balance|null|\WP_Error $balance          Existing balance.
-   * @param \Trader\Balance|null|\WP_Error $balance_exchange Updated balance.
-   * @param \Trader\Configuration          $configuration    Rebalance configuration.
-   *
-   * @return \Trader\Balance $balance_merged Merged balance.
-   */
-  public static function merge_balance( $balance, $balance_exchange, \Trader\Configuration $configuration ) : \Trader\Balance
-  {
-    if ( is_wp_error( $balance ) || ! $balance instanceof \Trader\Balance ) {
-      $balance_merged = new \Trader\Balance();
-    } else {
-      // Clone the object to prevent making changes to the original.
-      $balance_merged = clone $balance;
-    }
-    if ( is_wp_error( $balance_exchange ) || ! $balance_exchange instanceof \Trader\Balance ) {
-      $balance_exchange = new \Trader\Balance();
-    }
-
-    $configuration->takeout = ! empty( $configuration->takeout ) ? trader_max( 0, trader_min( $balance_exchange->amount_quote_total, $configuration->takeout ) ) : 0;
-    $takeout_alloc          = $configuration->takeout > 0 ? trader_get_allocation( $configuration->takeout, $balance_exchange->amount_quote_total ) : 0;
-
-    /**
-     * Get current allocations.
-     */
-    foreach ( $balance_merged->assets as $asset ) {
-      if ( ! empty( $balance_exchange->assets ) ) {
-        foreach ( $balance_exchange->assets as $asset_exchange ) {
-          if ( $asset_exchange->symbol === $asset->symbol ) {
-            // we cannot use wp_parse_args() as we have to re-assign $asset which breaks the reference to the original object
-            // $asset = (object) wp_parse_args( $asset_exchange, (array) $asset );
-            foreach ( (array) $asset_exchange as $key => $value ) {
-              // don't override value of rebalance allocations
-              if ( $key !== 'allocation_rebl' ) {
-                $asset->$key = $value;
-              }
-            }
-            // only modify rebalance allocations if a takeout value is set
-            if ( $takeout_alloc > 0 ) {
-              foreach ( $asset->allocation_rebl as $mode => $allocation ) {
-                $asset->allocation_rebl[ $mode ] = bcmul( $allocation, bcsub( 1, $takeout_alloc ) );
-                if ( $asset->symbol === $configuration->quote_currency ) {
-                  $asset->allocation_rebl[ $mode ] = bcadd( $asset->allocation_rebl[ $mode ], $takeout_alloc );
-                }
-              }
-            }
-            break;
-          }
-        }
-      }
-    }
-
-    /**
-     * Append missing allocations.
-     */
-    if ( ! empty( $balance_exchange->assets ) ) {
-      foreach ( $balance_exchange->assets as $asset_exchange ) {
-        foreach ( $balance_merged->assets as $asset ) {
-          if ( $asset_exchange->symbol === $asset->symbol ) {
-            continue 2;
-          }
-        }
-
-        $balance_merged->assets[] = clone $asset_exchange;
-      }
-    }
-
-    /**
-     * Set total amount of quote currency and return $balance_merged.
-     */
-    $balance_merged->amount_quote_total = $balance_exchange->amount_quote_total ?? 0;
-    return $balance_merged;
-  }
-
-
-  /**
-   * Retrieve Market Cap EMA.
-   *
-   * Subject to change: more indicators may be added in later versions.
-   *
-   * @param array $asset_cmc_arr  Array of historical cmc asset objects of a single asset.
-   * @param array $market_cap_ema Out. Smoothed Market Cap values.
-   * @param int   $smoothing      The period to use for smoothing Market Cap.
-   */
-  protected static function retrieve_market_cap_ema( array $asset_cmc_arr, &$market_cap_ema, int $smoothing = 14 )
-  {
-    /**
-     * Calculate Exponential Moving Average of Market Cap.
-     */
-    $market_cap_arr = array();
-
-    foreach ( $asset_cmc_arr as $index => $asset_cmc ) {
-      $quote = ( (array) $asset_cmc->quote )[ \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY ];
-
-      $market_cap_arr[] = $quote->market_cap ?? 0;
-
-      /**
-       * Break if required amount for smoothing period is reached OR if next iteration is of more than 1 days offset.
-       */
-      if ( empty( $quote->market_cap ) ||
-        $index + 1 >= $smoothing || $index + 1 <= trader_offset_days( $quote->last_updated )
-      ) {
-        break;
-      }
-    }
-
-    $real   = array_reverse( $market_cap_arr );
-    $period = count( $market_cap_arr );
-
-    // calculate EMA
-    $market_cap_ema = $period > 1 ? \LupeCode\phpTraderNative\Trader::ema( $real, $period ) : /*array_reverse( */$market_cap_arr;/* )*/
-  }
-
-
-  /**
    * Sets absolute asset allocation values into $asset.
    *
    * Subject to change: more indicators may be added in later versions.
@@ -183,7 +67,7 @@ class Trader
       /**
        * Get Market Cap EMA.
        */
-      self::retrieve_market_cap_ema( $asset_cmc_arr, $market_cap_ema, $configuration->smoothing );
+      \Trader\Indicator::retrieve_market_cap_ema( $asset_cmc_arr, $market_cap_ema, $configuration->smoothing );
       $asset_cmc_arr[0]->indicators                 = new \stdClass();
       $asset_cmc_arr[0]->indicators->market_cap_ema = end( $market_cap_ema );
     }
@@ -435,7 +319,7 @@ class Trader
      */
     $config_without_takeout          = clone $configuration;
     $config_without_takeout->takeout = 0;
-    $balance                         = ! $simulate ? self::merge_balance( $balance, $exchange->get_balance(), $config_without_takeout ) : $balance;
+    $balance                         = ! $simulate ? \Trader\Balance::merge_balance( $balance, $exchange->get_balance(), $config_without_takeout ) : $balance;
     $to_buy_total                    = 0;
     foreach ( $balance->assets as $asset ) {
       $amount_quote = bcmul( $balance->amount_quote_total, $asset->allocation_rebl[ $mode ] ?? 0 );
@@ -545,7 +429,7 @@ class Trader
             }
 
             $balance_allocated = self::get_asset_allocations( $bitvavo, $configuration );
-            $balance           = self::merge_balance( $balance_allocated, $balance_exchange, $configuration );
+            $balance           = \Trader\Balance::merge_balance( $balance_allocated, $balance_exchange, $configuration );
 
             if ( is_wp_error( $balance_allocated ) ) {
               $errors->merge_from( $balance_allocated );

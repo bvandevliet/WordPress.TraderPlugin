@@ -11,6 +11,111 @@ defined( 'ABSPATH' ) || exit;
 class Configuration
 {
   /**
+   * Quote currency.
+   *
+   * @var string
+   */
+  public string $quote_currency = \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY;
+
+  /**
+   * Alternative asset allocation weighting factors.
+   *
+   * @var array
+   */
+  public array $asset_weightings = array();
+
+  /**
+   * Exclude assets that have at least one of these tags.
+   *
+   * @var string[]
+   */
+  public array $excluded_tags = array();
+
+  /**
+   * Amount of assets from the top market cap ranking.
+   *
+   * @var int
+   */
+  public int $top_count = 30;
+
+  /**
+   * The period to use for smoothing Market Cap.
+   *
+   * @var int
+   */
+  public int $smoothing = 7;
+
+  /**
+   * The nth root of Market Cap to use for allocation.
+   *
+   * @var int|float|string
+   */
+  public $nth_root = '2.25';
+
+  /**
+   * Minimum required allocation difference in quote currency.
+   *
+   * @var int
+   */
+  public int $dust_limit = 2;
+
+  /**
+   * Allocation percentage to keep in quote currency.
+   *
+   * @var int|float|string
+   */
+  public $alloc_quote = 10;
+
+  /**
+   * Amount in quote currency to keep out / not re-invest.
+   *
+   * @var int|float|string
+   */
+  public $takeout = 0;
+
+  /**
+   * Multiply quote allocation by Fear and Greed index.
+   *
+   * @var bool
+   */
+  public bool $alloc_quote_fag_multiply = false;
+
+  /**
+   * Rebalance period in hours.
+   *
+   * @var int
+   */
+  public int $interval_hours = 8;
+
+  /**
+   * Rebalance allocation percentage difference threshold.
+   *
+   * @var int|float|string
+   */
+  public $rebalance_threshold = '1.25';
+
+  /**
+   * Rebalance mode.
+   *
+   * @var string
+   */
+  public string $rebalance_mode = 'default';
+
+  /**
+   * Automatic periodic rebalancing.
+   *
+   * @var bool
+   */
+  public bool $automation_enabled = false;
+
+  /**
+   * Last rebalance timestamp.
+   *
+   * @var \DateTime|null
+   */
+  public ?\DateTime $last_rebalance = null;
+
+  /**
    * Creates an instance and optionally pre-define properties.
    * Use the get() method instead if you intend to save() this configuration, to avoid overwrites.
    *
@@ -198,109 +303,4 @@ class Configuration
 
     update_user_meta( $user_id, 'trader_configuration', $this );
   }
-
-  /**
-   * Quote currency.
-   *
-   * @var string
-   */
-  public string $quote_currency = \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY;
-
-  /**
-   * Alternative asset allocation weighting factors.
-   *
-   * @var array
-   */
-  public array $asset_weightings = array();
-
-  /**
-   * Exclude assets that have at least one of these tags.
-   *
-   * @var string[]
-   */
-  public array $excluded_tags = array();
-
-  /**
-   * Amount of assets from the top market cap ranking.
-   *
-   * @var int
-   */
-  public int $top_count = 30;
-
-  /**
-   * The period to use for smoothing Market Cap.
-   *
-   * @var int
-   */
-  public int $smoothing = 7;
-
-  /**
-   * The nth root of Market Cap to use for allocation.
-   *
-   * @var int|float|string
-   */
-  public $nth_root = '2.25';
-
-  /**
-   * Minimum required allocation difference in quote currency.
-   *
-   * @var int
-   */
-  public int $dust_limit = 2;
-
-  /**
-   * Allocation percentage to keep in quote currency.
-   *
-   * @var int|float|string
-   */
-  public $alloc_quote = 10;
-
-  /**
-   * Amount in quote currency to keep out / not re-invest.
-   *
-   * @var int|float|string
-   */
-  public $takeout = 0;
-
-  /**
-   * Multiply quote allocation by Fear and Greed index.
-   *
-   * @var bool
-   */
-  public bool $alloc_quote_fag_multiply = false;
-
-  /**
-   * Rebalance period in hours.
-   *
-   * @var int
-   */
-  public int $interval_hours = 8;
-
-  /**
-   * Rebalance allocation percentage difference threshold.
-   *
-   * @var int|float|string
-   */
-  public $rebalance_threshold = '1.25';
-
-  /**
-   * Rebalance mode.
-   *
-   * @var string
-   */
-  public string $rebalance_mode = 'default';
-
-  /**
-   * Automatic periodic rebalancing.
-   *
-   * @var bool
-   */
-  public bool $automation_enabled = false;
-
-  /**
-   * Last rebalance timestamp.
-   *
-   * @var \DateTime|null
-   */
-  public ?\DateTime $last_rebalance = null;
 }

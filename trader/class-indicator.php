@@ -8,6 +8,42 @@ defined( 'ABSPATH' ) || exit;
 class Indicator extends \LupeCode\phpTraderNative\Trader
 {
   /**
+   * Retrieve Market Cap EMA. This function is specific to the rebalance algorithm.
+   *
+   * @param array $asset_cmc_arr  Array of historical cmc asset objects of a single asset.
+   * @param array $market_cap_ema Out. Smoothed Market Cap values.
+   * @param int   $smoothing      The period to use for smoothing Market Cap.
+   */
+  public static function retrieve_market_cap_ema( array $asset_cmc_arr, &$market_cap_ema, int $smoothing = 14 )
+  {
+    /**
+     * Calculate Exponential Moving Average of Market Cap.
+     */
+    $market_cap_arr = array();
+
+    foreach ( $asset_cmc_arr as $index => $asset_cmc ) {
+      $quote = ( (array) $asset_cmc->quote )[ \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY ];
+
+      $market_cap_arr[] = $quote->market_cap ?? 0;
+
+      /**
+       * Break if required amount for smoothing period is reached OR if next iteration is of more than 1 days offset.
+       */
+      if ( empty( $quote->market_cap ) ||
+        $index + 1 >= $smoothing || $index + 1 <= trader_offset_days( $quote->last_updated )
+      ) {
+        break;
+      }
+    }
+
+    $real   = array_reverse( $market_cap_arr );
+    $period = count( $market_cap_arr );
+
+    // calculate EMA
+    $market_cap_ema = $period > 1 ? self::ema( $real, $period ) : /*array_reverse( */$market_cap_arr;/* )*/
+  }
+
+  /**
    * Volume Weighted Moving Average
    *
    * @param array $close      Closing price, array of real values.
