@@ -157,16 +157,19 @@ function trader_dynamic_block_edit_account_cb( $block_attributes, $content )
     <p>
       <button type="submit" class="button" value="<?php esc_attr_e( 'Save changes', 'trader' ); ?>"><?php esc_html_e( 'Save changes', 'trader' ); ?></button>
       <?php
-      /**
-       * Support for the Wordfence Login Security plugin's 2FA functionality.
-       */
-      $WFLS_plugin = 'wordfence-login-security/wordfence-login-security.php';
-      /**
-       * The below function is not available from the front-end, so we embedded its body.
-       *
-       * @link https://developer.wordpress.org/reference/functions/is_plugin_active/
-       */
-      if ( in_array( $WFLS_plugin, (array) get_option( 'active_plugins', array() ), true ) || ( is_multisite() && isset( get_site_option( 'active_sitewide_plugins' )[ $WFLS_plugin ] ) ) ) :
+        /**
+         * 2FA support for the Two Factor Authentication Service Inc. plugin.
+         */
+      if ( trader_is_plugin_active( '2fas-light/twofas_light.php' ) ) :
+        ?>
+        &nbsp;
+        <a href="<?php echo esc_attr( admin_url( 'admin.php?page=twofas-light-personal-settings' ) ); ?>" target="_blank" rel="noopener noreferrer"
+        ><?php esc_html_e( 'Manage two factor authentication (2FA)', 'trader' ); ?></a>
+        <?php
+        /**
+         * 2FA support for the Wordfence Login Security plugin.
+         */
+      elseif ( trader_is_plugin_active( 'wordfence-login-security/wordfence-login-security.php' ) ) :
         ?>
         &nbsp;
         <a href="<?php echo esc_attr( admin_url( 'admin.php?page=WFLS' ) ); ?>" target="_blank" rel="noopener noreferrer"

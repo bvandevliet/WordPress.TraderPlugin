@@ -224,3 +224,19 @@ function trader_enable_wp_cron( bool $enable = true ) : bool
 
   return $wp_config_editor->write();
 }
+
+/**
+ * Determines whether a plugin is active.
+ *
+ * @param string $plugin Path to the plugin file relative to the plugins directory.
+ *
+ * The below function is not available from the front-end, so we embedded its body.
+ *
+ * @link https://developer.wordpress.org/reference/functions/is_plugin_active/
+ *
+ * @return bool True, if in the active plugins list. False, not in the list.
+ */
+function trader_is_plugin_active( string $plugin ) : bool
+{
+  return in_array( $plugin, (array) get_option( 'active_plugins', array() ), true ) || ( is_multisite() && isset( get_site_option( 'active_sitewide_plugins' )[ $plugin ] ) );
+}
