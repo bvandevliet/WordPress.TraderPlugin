@@ -431,7 +431,7 @@ class Trader
              */
             if ( ! array_some(
               $balance->assets,
-              function ( $asset ) use ( $balance, $configuration )
+              function ( \Trader\Asset $asset ) use ( $balance, $configuration )
               {
                 $allocation_rebl    = $asset->allocation_rebl[ $configuration->rebalance_mode ] ?? 0;
                 $amount_balanced    = bcmul( $allocation_rebl, $balance->amount_quote_total );
@@ -441,11 +441,11 @@ class Trader
                 $diff_quote         = $asset->amount_quote - $amount_balanced;
 
                 return // at least the dust- and minimum order amount should be reached
-                  $diff_quote >= $configuration->dust_limit &&
-                  $diff_quote >= \Trader\Exchanges\Bitvavo::MIN_QUOTE
+                  abs( $diff_quote ) >= $configuration->dust_limit &&
+                  abs( $diff_quote ) >= \Trader\Exchanges\Bitvavo::MIN_QUOTE
                   && (
                   // if configured rebalance threshold is reached
-                  ( bcabs( $diff ) >= $configuration->rebalance_threshold )
+                  bcabs( $diff ) >= $configuration->rebalance_threshold
                   ||
                   // or if the asset should not be allocated at all
                   // phpcs:ignore WordPress.PHP.StrictComparisons
