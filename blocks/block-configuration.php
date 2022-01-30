@@ -42,9 +42,8 @@ function trader_dynamic_block_configuration_cb( $block_attributes, $content )
 
         foreach ( $assets as $index => $asset ) {
           $asset     = strtoupper( sanitize_key( $asset ) );
-          $weighting = is_numeric( $weightings[ $index ] ) ? trader_max( 0, floatstr( $weightings[ $index ] ) ) : 1;
 
-          if ( '' !== $asset ) {
+          if ( '' !== $asset && false !== $weighting = is_numeric( $weightings[ $index ] ) ? trader_max( 0, floatstr( $weightings[ $index ] ) ) : false ) {
             $asset_weightings[ $asset ] = $weighting;
           }
         }
