@@ -42,7 +42,7 @@ function trader_admin_page_cronjobs( $page )
     null,                      // $title
     function ()                // $callback
     {},
-    'trader_cronjobs' // $page_slug
+    'trader_cronjobs'          // $page_slug
   );
 
   /**

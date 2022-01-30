@@ -72,7 +72,7 @@ add_filter(
    *
    * @link https://developer.wordpress.org/reference/functions/wp_get_nocache_headers/
    */
-  function( $headers )
+  function ( $headers )
   {
     return wp_parse_args(
       array(
@@ -96,7 +96,7 @@ add_filter(
    * @param string[] $headers Associative array of headers to be sent.
    * @param WP       $wp      Current WordPress environment instance.
    */
-  function( $headers/*, $wp*/ )
+  function ( $headers/*, $wp*/ )
   {
     return wp_parse_args( wp_get_nocache_headers(), $headers );
   }
