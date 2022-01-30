@@ -41,7 +41,7 @@ function trader_dynamic_block_configuration_cb( $block_attributes, $content )
         $weightings = array_slice( $weightings, 0, $length );
 
         foreach ( $assets as $index => $asset ) {
-          $asset     = strtoupper( sanitize_key( $asset ) );
+          $asset = strtoupper( sanitize_key( $asset ) );
 
           if ( '' !== $asset && false !== $weighting = is_numeric( $weightings[ $index ] ) ? trader_max( 0, floatstr( $weightings[ $index ] ) ) : false ) {
             $asset_weightings[ $asset ] = $weighting;
@@ -54,7 +54,8 @@ function trader_dynamic_block_configuration_cb( $block_attributes, $content )
 
       if ( isset( $_POST['excluded_tags'] ) && is_array( $_POST['excluded_tags'] ) ) {
 
-        $configuration->excluded_tags = array_filter( $_POST['excluded_tags'], fn( $excluded_tag) => null !== $excluded_tag && '' !== $excluded_tag );
+        $configuration->excluded_tags =
+          array_map( fn( $excluded_tag ) => strtolower( trim( $excluded_tag ) ), array_filter( $_POST['excluded_tags'], fn( $excluded_tag ) => '' !== $excluded_tag ) );
         $configuration->save();
       }
     }
