@@ -70,13 +70,7 @@ class CoinMetrics
       );
     }
 
-    return array_map(
-      function ( $item )
-      {
-        return (array) $item;
-      },
-      $result->data
-    );
+    return array_map( fn( $item ) => (array) $item, $result->data );
   }
 
   /**

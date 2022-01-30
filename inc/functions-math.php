@@ -206,17 +206,5 @@ function trader_st_dev( array $values ) : string
   $length = count( $values );
   $mean   = array_sum( $values ) / $length;
 
-  return floatstr(
-    sqrt(
-      array_sum(
-        array_map(
-          function ( $val ) use ( $mean )
-          {
-            return pow( $val - $mean, 2 );
-          },
-          $values
-        )
-      ) / $length
-    )
-  );
+  return floatstr( sqrt( array_sum( array_map( fn( $val ) => pow( $val - $mean, 2 ), $values ) ) / $length ) );
 }

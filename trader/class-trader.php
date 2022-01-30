@@ -75,13 +75,7 @@ class Trader
     /**
      * Sort again based on EMA value then handle top count.
      */
-    usort(
-      $cmc_latest,
-      function ( $a, $b )
-      {
-        return $b[0]->indicators->market_cap_ema <=> $a[0]->indicators->market_cap_ema;
-      }
-    );
+    usort( $cmc_latest, fn( $a, $b ) => $b[0]->indicators->market_cap_ema <=> $a[0]->indicators->market_cap_ema );
     $cmc_latest = array_slice( $cmc_latest, 0, $configuration->top_count );
 
     /**
