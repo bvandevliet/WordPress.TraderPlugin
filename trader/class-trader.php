@@ -395,10 +395,9 @@ class Trader
     /**
      * Run each automation in an asyncronous thread when possible.
      */
-    $pool = \Spatie\Async\Pool::create()->concurrency( 8 )->timeout( 299 );
-
+    $pool_automations = \Spatie\Async\Pool::create()->concurrency( 8 )->timeout( 299 );
     foreach ( \Trader\Configuration::get_automations() as $user_id => $configurations ) {
-      $pool->add(
+      $pool_automations->add(
         function () use ( $user_id, $configurations )
         {
           $automations_triggered = array();
@@ -528,6 +527,6 @@ class Trader
       );
     }
 
-    $pool->wait();
+    $pool_automations->wait();
   }
 }
