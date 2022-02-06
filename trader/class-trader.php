@@ -216,87 +216,104 @@ class Trader
     /**
      * Portfolio rebalancing: first loop placing sell orders.
      */
+    $pool_selling = \Spatie\Async\Pool::create()->concurrency( 20 )->timeout( 299 );
     foreach ( $balance->assets as $asset ) {
-      /**
-       * Skip if is quote currency.
-       */
-      if ( $asset->symbol === \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY ) {
-        continue;
-      }
+      $pool_selling->add(
+        function () use ( $exchange, $balance, $configuration, $asset, &$simulate, &$mode, &$result )
+        {
+          /**
+           * Skip if is quote currency.
+           */
+          if ( $asset->symbol === \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY ) {
+            return;
+          }
 
-      $amount_quote = bcmul( $balance->amount_quote_total, $asset->allocation_rebl[ $mode ] ?? 0 );
+          $amount_quote = bcmul( $balance->amount_quote_total, $asset->allocation_rebl[ $mode ] ?? 0 );
 
-      $diff            = bcsub( $amount_quote, $asset->amount_quote );
-      $diff_float      = floatval( $diff );
-      $diff_float_abs  = floatval( bcabs( $diff ) );
-      $diff_spread_abs = trader_max( bcabs( bcsub( $amount_quote, bcmul( $asset->amount_quote, '0.99' ) ) ), bcabs( bcsub( $amount_quote, bcmul( $asset->amount_quote, '1.01' ) ) ) );
+          $diff            = bcsub( $amount_quote, $asset->amount_quote );
+          $diff_float      = floatval( $diff );
+          $diff_float_abs  = floatval( bcabs( $diff ) );
+          $diff_spread_abs = trader_max( bcabs( bcsub( $amount_quote, bcmul( $asset->amount_quote, '0.99' ) ) ), bcabs( bcsub( $amount_quote, bcmul( $asset->amount_quote, '1.01' ) ) ) );
 
-      $amount_quote_to_sell = 0;
+          $amount_quote_to_sell = 0;
 
-      /**
-       * REDUCE allocation ..
-       */
-      if ( $diff_float < 0 && $configuration->dust_limit <= $diff_float_abs ) {
-        if ( $diff_float_abs < \Trader\Exchanges\Bitvavo::MIN_QUOTE ) {
-          // REBUY REQUIRED ..
-          $amount_quote_to_sell = bcadd( $diff_spread_abs, \Trader\Exchanges\Bitvavo::MIN_QUOTE );
+          /**
+           * REDUCE allocation ..
+           */
+          if ( $diff_float < 0 && $configuration->dust_limit <= $diff_float_abs ) {
+            if ( $diff_float_abs < \Trader\Exchanges\Bitvavo::MIN_QUOTE ) {
+              // REBUY REQUIRED ..
+              $amount_quote_to_sell = bcadd( $diff_spread_abs, \Trader\Exchanges\Bitvavo::MIN_QUOTE );
 
-          $amount_quote_to_sell = bcdiv( $amount_quote_to_sell, bcsub( 1, \Trader\Exchanges\Bitvavo::TAKER_FEE ) ); // COMPENSATE FOR FEE IN SELL ORDER ..
-          // $amount_quote_to_sell = bcmul( $amount_quote_to_sell, bcadd( 1, \Trader\Exchanges\Bitvavo::TAKER_FEE ) ); // COMPENSATE FOR FEE IN REBUY ORDER ..
-        } else {
-          // NOTHING TO REBUY ..
-          $amount_quote_to_sell = bcabs( $diff );
+              $amount_quote_to_sell = bcdiv( $amount_quote_to_sell, bcsub( 1, \Trader\Exchanges\Bitvavo::TAKER_FEE ) ); // COMPENSATE FOR FEE IN SELL ORDER ..
+              // $amount_quote_to_sell = bcmul( $amount_quote_to_sell, bcadd( 1, \Trader\Exchanges\Bitvavo::TAKER_FEE ) ); // COMPENSATE FOR FEE IN REBUY ORDER ..
+            } else {
+              // NOTHING TO REBUY ..
+              $amount_quote_to_sell = bcabs( $diff );
+            }
+          }
+
+          /**
+           * INCREASE allocation ..
+           */
+          elseif ( $diff_float > 0 && $configuration->dust_limit <= $diff_float_abs ) {
+            if ( $diff_float_abs < \Trader\Exchanges\Bitvavo::MIN_QUOTE + floatval( bcsub( $diff_spread_abs, $diff ) ) ) {
+              // REBUY REQUIRED ..
+              $amount_quote_to_sell = \Trader\Exchanges\Bitvavo::MIN_QUOTE;
+
+              // $amount_quote_to_sell = bcdiv( $amount_quote_to_sell, bcsub( 1, \Trader\Exchanges\Bitvavo::TAKER_FEE ) ); // COMPENSATE FOR FEE IN SELL ORDER ..
+              // $amount_quote_to_sell = bcmul( $amount_quote_to_sell, bcadd( 1, \Trader\Exchanges\Bitvavo::TAKER_FEE ) ); // COMPENSATE FOR FEE IN REBUY ORDER ..
+            }
+          }
+          // else // ONLY BUYING MAY BE REQUIRED ..
+
+          if ( floatval( $amount_quote_to_sell ) > 0 ) {
+            $result[] = $asset->rebl_sell_order = $exchange->sell_asset( $asset->symbol, $amount_quote_to_sell, $simulate );
+          }
         }
-      }
-
-      /**
-       * INCREASE allocation ..
-       */
-      elseif ( $diff_float > 0 && $configuration->dust_limit <= $diff_float_abs ) {
-        if ( $diff_float_abs < \Trader\Exchanges\Bitvavo::MIN_QUOTE + floatval( bcsub( $diff_spread_abs, $diff ) ) ) {
-          // REBUY REQUIRED ..
-          $amount_quote_to_sell = \Trader\Exchanges\Bitvavo::MIN_QUOTE;
-
-          // $amount_quote_to_sell = bcdiv( $amount_quote_to_sell, bcsub( 1, \Trader\Exchanges\Bitvavo::TAKER_FEE ) ); // COMPENSATE FOR FEE IN SELL ORDER ..
-          // $amount_quote_to_sell = bcmul( $amount_quote_to_sell, bcadd( 1, \Trader\Exchanges\Bitvavo::TAKER_FEE ) ); // COMPENSATE FOR FEE IN REBUY ORDER ..
-        }
-      }
-      // else // ONLY BUYING MAY BE REQUIRED ..
-
-      if ( floatval( $amount_quote_to_sell ) > 0 ) {
-        $result[] = $asset->rebl_sell_order = $exchange->sell_asset( $asset->symbol, $amount_quote_to_sell, $simulate );
-      }
+      );
     }
+    $pool_selling->wait();
 
     /**
      * Portfolio rebalancing: second loop to verify all sell orders are filled.
      * OPTIMIZALBLE IF USING ordersOpen() ENDPOINT INSTEAD => LESS API CALLS => BUT HAS A REQUEST RATE LIMITING WEIGHT OF 25 ..
      */
     $all_filled  = false;
-    $fill_checks = 60; // multiply by sleep seconds ..
+    $fill_checks = 60; // multiply by sleep() seconds ..
     while ( ! $simulate && ! $all_filled && $fill_checks > 0 ) {
       sleep( 1 ); // multiply by $fill_checks ..
-
       $all_filled = true;
+
+      /**
+       * Run each sell order verification in an asyncronous thread when possible.
+       */
+      $pool_sell_verify = \Spatie\Async\Pool::create()->concurrency( 20 )->timeout( 299 );
       foreach ( $balance->assets as $asset ) {
-        // Only (re)request non-filled orders.
-        if (
-          empty( $asset->rebl_sell_order['orderId'] ) ||
-          substr( $asset->rebl_sell_order['status'], 0, 6 ) === 'cancel' || in_array( $asset->rebl_sell_order['status'], array( 'filled', 'expired', 'rejected' ), true )
-        ) {
-          continue;
-        }
+        $pool_sell_verify->add(
+          function () use ( $exchange, $asset, &$all_filled, &$fill_checks )
+          {
+            // Only (re)request non-filled orders.
+            if (
+              empty( $asset->rebl_sell_order['orderId'] ) ||
+              substr( $asset->rebl_sell_order['status'], 0, 6 ) === 'cancel' || in_array( $asset->rebl_sell_order['status'], array( 'filled', 'expired', 'rejected' ), true )
+            ) {
+              return;
+            }
 
-        $all_filled = false;
+            $all_filled = false;
 
-        if ( $fill_checks <= 1 ) {
-          // QUEUE THIS ASSET REBL INSTEAD OF ORDER CANCEL !!
-          $exchange->cancel_order( $asset->rebl_sell_order['market'], $asset->rebl_sell_order['orderId'] );
-          $asset->rebl_sell_order['status'] = 'canceled';
-        } else {
-          $asset->rebl_sell_order = $exchange->get_order( $asset->rebl_sell_order['market'], $asset->rebl_sell_order['orderId'] );
-        }
+            if ( $fill_checks <= 1 ) {
+              // QUEUE THIS ASSET REBL INSTEAD OF ORDER CANCEL !!
+              $exchange->cancel_order( $asset->rebl_sell_order['market'], $asset->rebl_sell_order['orderId'] );
+              $asset->rebl_sell_order['status'] = 'canceled';
+            } else {
+              $asset->rebl_sell_order = $exchange->get_order( $asset->rebl_sell_order['market'], $asset->rebl_sell_order['orderId'] );
+            }
+          }
+        );
       }
+      $pool_sell_verify->wait();
 
       $fill_checks--;
     }
@@ -333,27 +350,34 @@ class Trader
     /**
      * Portfolio rebalancing: fourth loop (re)buying assets.
      */
+    $pool_buying = \Spatie\Async\Pool::create()->concurrency( 20 )->timeout( 299 );
     foreach ( $balance->assets as $asset ) {
-      /**
-       * Skip if is quote currency as it is the currency we buy with, not we can buy.
-       */
-      if ( $asset->symbol === \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY ) {
-        continue;
-      }
+      $pool_buying->add(
+        function () use ( $exchange, $balance, $configuration, $asset, &$simulate, &$mode, &$result, &$to_buy_total )
+        {
+          /**
+           * Skip if is quote currency as it is the currency we buy with, not we can buy.
+           */
+          if ( $asset->symbol === \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY ) {
+            return;
+          }
 
-      /**
-       * Skip if amount is below dust threshold.
-       */
-      if ( floatval( $asset->amount_quote_to_buy ) < $configuration->dust_limit ) {
-        continue;
-      }
+          /**
+           * Skip if amount is below dust threshold.
+           */
+          if ( floatval( $asset->amount_quote_to_buy ) < $configuration->dust_limit ) {
+            return;
+          }
 
-      $amount_quote_to_buy = ! $simulate ? bcmul( $balance->assets[0]->available, trader_get_allocation( $asset->amount_quote_to_buy, $to_buy_total ) ) : $asset->amount_quote_to_buy;
+          $amount_quote_to_buy = ! $simulate ? bcmul( $balance->assets[0]->available, trader_get_allocation( $asset->amount_quote_to_buy, $to_buy_total ) ) : $asset->amount_quote_to_buy;
 
-      if ( floatval( $amount_quote_to_buy ) >= \Trader\Exchanges\Bitvavo::MIN_QUOTE ) {
-        $result[] = $asset->rebl_buy_order = $exchange->buy_asset( $asset->symbol, $amount_quote_to_buy, $simulate );
-      }
+          if ( floatval( $amount_quote_to_buy ) >= \Trader\Exchanges\Bitvavo::MIN_QUOTE ) {
+            $result[] = $asset->rebl_buy_order = $exchange->buy_asset( $asset->symbol, $amount_quote_to_buy, $simulate );
+          }
+        }
+      );
     }
+    $pool_buying->wait();
 
     return $result;
   }
@@ -371,7 +395,7 @@ class Trader
     /**
      * Run each automation in an asyncronous thread when possible.
      */
-    $pool = \Spatie\Async\Pool::create()->concurrency( 20 )->timeout( 299 );
+    $pool = \Spatie\Async\Pool::create()->concurrency( 8 )->timeout( 299 );
 
     foreach ( \Trader\Configuration::get_automations() as $user_id => $configurations ) {
       $pool->add(
