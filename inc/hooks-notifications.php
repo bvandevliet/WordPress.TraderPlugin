@@ -57,7 +57,7 @@ function trader_email_automation_triggered( int $user_id, DateTime $timestamp, \
     ?>
     <p>
       An automatic portfolio rebalance was triggered at
-      <?php echo esc_html( ( new DateTime() )->setTimezone( wp_timezone() )->format( 'Y-m-d H:i:s' ) ); ?>
+      <?php echo esc_html( $timestamp->setTimezone( wp_timezone() )->format( 'Y-m-d H:i:s' ) ); ?>
       but failed.
       We will try again within an hour.
     </p>

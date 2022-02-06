@@ -487,7 +487,7 @@ class Trader
              * @param DateTime  $timestamp The timestamp of when the automation was triggered.
              * @param \WP_Error $errors    Errors if any.
              */
-            do_action( 'trader_automation_triggered', $automation_triggered );
+            do_action( 'trader_automation_triggered', $automation_triggered[0], $automation_triggered[1], $automation_triggered[2] );
           }
         }
       )->catch(
