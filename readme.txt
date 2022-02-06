@@ -5,7 +5,7 @@ Tags:
 Requires at least: 5.7
 Tested up to: 5.8
 Requires PHP: 7.2
-Stable tag: 2022.02.06
+Stable tag: 2022.02.07
 License: MIT
 
 Calculates and executes a crypto portfolio rebalance.
@@ -18,30 +18,19 @@ Connects to exchange API's, provides blocks for rendering exchange data and incl
 
 == Changelog ==
 
-= 2022.02.06 =
+= 2022.02.07 =
+* Painful bugfix that caused automations to potentially execute on the wrong portfolio.
 * Important bugfix that caused the action hook for emailing triggered automations to fail.
 * Placing rebalance orders asyncronously to reduce server page load.
 * More reliable rebalance success verification by testing if all orders were filled.
-
-= 2022.01.12 =
 * Improved sanitazion of excluded tags and better feature description.
-
-= 2022.01.12 =
 * Important automation threshold bugfix.
-
-= 2022.01.05 =
 * Added support to exclude assets based on tags.
 * Various improvements.
-
-= 2021.12.21 =
 * Added support for Wordfence 2FA plugin.
 * Better UX using loaders on form input event.
-
-= 2021.12.16 =
 * Email notification for triggered automations.
 * Various improvements.
-
-= 2021.12.12 =
 * Added support for automated rebalancing.
 
 = 2021.12.08 =

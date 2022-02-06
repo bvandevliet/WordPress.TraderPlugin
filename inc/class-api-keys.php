@@ -17,9 +17,9 @@ class API_Keys
   /**
    * Holds the user API keys.
    *
-   * @var string[]
+   * @var string[][]
    */
-  private static ?array $keys_user = null;
+  private static ?array $keys_user = array();
 
   /**
    * Retrieve API keys.
@@ -48,15 +48,18 @@ class API_Keys
    */
   public static function get_api_keys_user( ?int $user_id = null, bool $force = false ) : array
   {
-    if ( ( null === $user_id || 0 >= $user_id ) && 0 === wp_get_current_user()->ID ) {
+    $user_id = $user_id ?? wp_get_current_user()->ID;
+
+    if ( 0 >= $user_id ) {
       return array();
     }
-    if ( null === self::$keys_user || $force ) {
-      $keys_user       = get_user_meta( $user_id ?? wp_get_current_user()->ID, 'api_keys', true );
-      self::$keys_user = is_array( $keys_user ) ? array_map( 'trader_decrypt_key', $keys_user ) : array();
+
+    if ( $force || empty( self::$keys_user[ $user_id ] ) ) {
+      $keys_user                   = get_user_meta( $user_id, 'api_keys', true );
+      self::$keys_user[ $user_id ] = is_array( $keys_user ) ? array_map( 'trader_decrypt_key', $keys_user ) : array();
     }
 
-    return self::$keys_user;
+    return self::$keys_user[ $user_id ];
   }
 
   /**
