@@ -250,11 +250,21 @@ class Bitvavo implements Exchange
   {
     $result = array();
 
+    /**
+     * Run each sell order in an asyncronous thread when possible.
+     */
+    $pool_selloff = \Spatie\Async\Pool::create()->concurrency( 8 )->timeout( 299 );
     foreach ( $this->get_instance()->ordersOpen( array() ) as $order ) {
-      if ( ! in_array( explode( '-', $order['market'] )[0], $ignore, true ) ) {
-        $result[] = $this->get_instance()->cancelOrder( $order['market'], $order['orderId'] );
-      }
+      $pool_automations->add(
+        function () use ( &$order, &$ignore, &$result )
+        {
+          if ( ! in_array( explode( '-', $order['market'] )[0], $ignore, true ) ) {
+            $result[] = $this->get_instance()->cancelOrder( $order['market'], $order['orderId'] );
+          }
+        }
+      );
     }
+    $pool_selloff->wait();
 
     return $result;
   }
