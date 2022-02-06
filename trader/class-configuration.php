@@ -43,7 +43,7 @@ class Configuration
    *
    * @var int|float|string
    */
-  public $nth_root = '2.25';
+  public $nth_root = '2.45';
 
   /**
    * Minimum required allocation difference in quote currency.
@@ -85,7 +85,7 @@ class Configuration
    *
    * @var int|float|string
    */
-  public $rebalance_threshold = '1.25';
+  public $rebalance_threshold = '1.35';
 
   /**
    * Rebalance mode.
