@@ -106,10 +106,10 @@ function trader_echo_portfolio( \Trader\Balance $balance = null, bool $show_curr
         foreach ( $balance->assets as $asset ) :
           $allocation_rebl    = reset( $asset->allocation_rebl ) ?? 0;
           $amount_balanced    = bcmul( $allocation_rebl, $balance->amount_quote_total );
-          $alloc_perc_current = 100 * $asset->allocation_current;
-          $alloc_perc_rebl    = 100 * $allocation_rebl;
-          $diff               = $alloc_perc_current - $alloc_perc_rebl;
-          $diff_quote         = $asset->amount_quote - $amount_balanced;
+          $alloc_perc_current = bcmul( 100, $asset->allocation_current );
+          $alloc_perc_rebl    = bcmul( 100, $allocation_rebl );
+          $diff               = bcsub( $alloc_perc_current, $alloc_perc_rebl );
+          $diff_quote         = bcsub( $asset->amount_quote, $amount_balanced );
           ?>
           <tr>
             <td><?php echo esc_html( $asset->symbol ); ?></td>

@@ -450,19 +450,19 @@ class Trader
               $balance->assets,
               function ( \Trader\Asset $asset ) use ( $balance, $configuration )
               {
-                $allocation_rebl    = $asset->allocation_rebl[ $configuration->rebalance_mode ] ?? 0;
+                $allocation_rebl    = reset( $asset->allocation_rebl ) ?? 0;
                 $amount_balanced    = bcmul( $allocation_rebl, $balance->amount_quote_total );
-                $alloc_perc_current = 100 * $asset->allocation_current;
-                $alloc_perc_rebl    = 100 * $allocation_rebl;
-                $diff               = $alloc_perc_current - $alloc_perc_rebl;
-                $diff_quote         = $asset->amount_quote - $amount_balanced;
+                $alloc_perc_current = bcmul( 100, $asset->allocation_current );
+                $alloc_perc_rebl    = bcmul( 100, $allocation_rebl );
+                $diff               = bcsub( $alloc_perc_current, $alloc_perc_rebl );
+                $diff_quote         = bcsub( $asset->amount_quote, $amount_balanced );
 
                 return // at least the dust- and minimum order amount should be reached
-                  abs( $diff_quote ) >= $configuration->dust_limit &&
-                  abs( $diff_quote ) >= \Trader\Exchanges\Bitvavo::MIN_QUOTE
+                  floatval( bcabs( $diff_quote ) ) >= $configuration->dust_limit &&
+                  floatval( bcabs( $diff_quote ) ) >= \Trader\Exchanges\Bitvavo::MIN_QUOTE
                   && (
                   // if configured rebalance threshold is reached
-                  bcabs( $diff ) >= $configuration->rebalance_threshold
+                  floatval( bcabs( $diff ) ) >= $configuration->rebalance_threshold
                   ||
                   // or if the asset should not be allocated at all
                   // phpcs:ignore WordPress.PHP.StrictComparisons
