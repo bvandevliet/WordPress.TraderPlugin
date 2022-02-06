@@ -410,8 +410,8 @@ class Trader
             return array();
           }
 
-          $bitvavo          = new \Trader\Exchanges\Bitvavo( $user_id );
-          $balance_exchange = $bitvavo->get_balance();
+          $exchange         = new \Trader\Exchanges\Bitvavo( $user_id );
+          $balance_exchange = $exchange->get_balance();
 
           if ( is_wp_error( $balance_exchange ) ) {
             $errors->merge_from( $balance_exchange );
@@ -434,7 +434,7 @@ class Trader
               continue;
             }
 
-            $balance_allocated = self::get_asset_allocations( $bitvavo, $configuration );
+            $balance_allocated = self::get_asset_allocations( $exchange, $configuration );
             $balance           = \Trader\Balance::merge_balance( $balance_allocated, $balance_exchange, $configuration );
 
             if ( is_wp_error( $balance_allocated ) ) {
@@ -476,7 +476,7 @@ class Trader
             /**
              * Rebalance.
              */
-            foreach ( self::rebalance( $bitvavo, $balance, $configuration ) as $index => $order ) {
+            foreach ( self::rebalance( $exchange, $balance, $configuration ) as $index => $order ) {
               if ( ! empty( $order['errorCode'] ) ) {
                 $errors->add(
                   $order['errorCode'] . '-' . $index,
