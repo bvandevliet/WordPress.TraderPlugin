@@ -228,52 +228,11 @@ class Trader
           }
 
           $amount_quote = bcmul( $balance->amount_quote_total, $asset->allocation_rebl[ $mode ] ?? 0 );
+          $diff         = bcsub( $amount_quote, $asset->amount_quote );
 
-          $diff            = bcsub( $amount_quote, $asset->amount_quote );
-          $diff_float      = floatval( $diff );
-          $diff_float_abs  = floatval( bcabs( $diff ) );
-          $diff_spread_abs = trader_max( bcabs( bcsub( $amount_quote, bcmul( $asset->amount_quote, '0.99' ) ) ), bcabs( bcsub( $amount_quote, bcmul( $asset->amount_quote, '1.01' ) ) ) );
+          $amount_quote_to_sell = floatval( $diff ) < 0 ? bcabs( $diff ) : 0;
 
-          $amount_quote_to_sell = 0;
-
-          /**
-           * Do nothing if dust limit is not reached.
-           */
-          if ( $configuration->dust_limit <= $diff_float_abs ) {
-
-            /**
-             * REDUCE allocation ..
-             */
-            if ( $diff_float < 0 ) {
-              if ( $diff_float_abs < \Trader\Exchanges\Bitvavo::MIN_QUOTE ) {
-                // REBUY REQUIRED ..
-                $amount_quote_to_sell = bcadd( $diff_spread_abs, \Trader\Exchanges\Bitvavo::MIN_QUOTE );
-
-                $amount_quote_to_sell = bcdiv( $amount_quote_to_sell, bcsub( 1, \Trader\Exchanges\Bitvavo::TAKER_FEE ) ); // COMPENSATE FOR FEE IN SELL ORDER ..
-                // $amount_quote_to_sell = bcmul( $amount_quote_to_sell, bcadd( 1, \Trader\Exchanges\Bitvavo::TAKER_FEE ) ); // COMPENSATE FOR FEE IN REBUY ORDER ..
-              } else {
-                // NOTHING TO REBUY ..
-                $amount_quote_to_sell = bcabs( $diff );
-              }
-            }
-
-            /**
-             * INCREASE allocation ..
-             */
-            elseif ( $diff_float > 0 ) {
-              if ( $diff_float_abs < \Trader\Exchanges\Bitvavo::MIN_QUOTE + floatval( bcsub( $diff_spread_abs, $diff ) ) ) {
-                // REBUY REQUIRED ..
-                $amount_quote_to_sell = \Trader\Exchanges\Bitvavo::MIN_QUOTE;
-
-                // $amount_quote_to_sell = bcdiv( $amount_quote_to_sell, bcsub( 1, \Trader\Exchanges\Bitvavo::TAKER_FEE ) ); // COMPENSATE FOR FEE IN SELL ORDER ..
-                // $amount_quote_to_sell = bcmul( $amount_quote_to_sell, bcadd( 1, \Trader\Exchanges\Bitvavo::TAKER_FEE ) ); // COMPENSATE FOR FEE IN REBUY ORDER ..
-              }
-            }
-
-            // else // ONLY BUYING MAY BE REQUIRED ..
-          }
-
-          if ( floatval( $amount_quote_to_sell ) > 0 ) {
+          if ( floatval( $amount_quote_to_sell ) > \Trader\Exchanges\Bitvavo::MIN_QUOTE ) {
             $result[] = $asset->rebl_sell_order = $exchange->sell_asset( $asset->symbol, $amount_quote_to_sell, $simulate );
           }
         }
@@ -345,12 +304,7 @@ class Trader
 
       $asset->amount_quote_to_buy = bcsub( $amount_quote, ! $simulate ? $asset->amount_quote : bcsub( $asset->amount_quote, $asset->rebl_sell_order->amountQuote ?? 0 ) );
 
-      /**
-       * Skip if amount is below dust threshold.
-       */
-      if ( floatval( $asset->amount_quote_to_buy ) >= $configuration->dust_limit ) {
-        $to_buy_total = bcadd( $to_buy_total, $asset->amount_quote_to_buy );
-      }
+      $to_buy_total = bcadd( $to_buy_total, $asset->amount_quote_to_buy );
     }
 
     /**
@@ -365,13 +319,6 @@ class Trader
            * Skip if is quote currency as it is the currency we buy with, not we can buy.
            */
           if ( $asset->symbol === \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY ) {
-            return;
-          }
-
-          /**
-           * Skip if amount is below dust threshold.
-           */
-          if ( floatval( $asset->amount_quote_to_buy ) < $configuration->dust_limit ) {
             return;
           }
 
@@ -463,8 +410,7 @@ class Trader
                 $diff               = bcsub( $alloc_perc_current, $alloc_perc_rebl );
                 $diff_quote         = bcsub( $asset->amount_quote, $amount_balanced );
 
-                return // at least the dust- and minimum order amount should be reached
-                  floatval( bcabs( $diff_quote ) ) >= $configuration->dust_limit &&
+                return // at least the minimum order amount should be reached
                   floatval( bcabs( $diff_quote ) ) >= \Trader\Exchanges\Bitvavo::MIN_QUOTE
                   && (
                   // if configured rebalance threshold is reached

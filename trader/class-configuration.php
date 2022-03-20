@@ -49,6 +49,8 @@ class Configuration
    * Minimum required allocation difference in quote currency.
    *
    * @var int
+   *
+   * @deprecated If alloc diff is below min order amount, just skip.
    */
   public int $dust_limit = 5;
 
@@ -230,14 +232,14 @@ class Configuration
         'top_count'                => 1,
         'smoothing'                => 1,
         'nth_root'                 => 1,
-        'dust_limit'               => 1,
         'alloc_quote'              => 0,
-        'alloc_quote_fag_multiply' => false,
         'takeout'                  => 0,
         'interval_hours'           => 1,
         'rebalance_threshold'      => 0,
         'rebalance_mode'           => 'default',
         'automation_enabled'       => false,
+        'dust_limit'               => 1,     // (DEPRECATED)
+        'alloc_quote_fag_multiply' => false, // (DEPRECATED)
       ) as $param => $initial ) {
         $configuration->$param = $initial;
       }

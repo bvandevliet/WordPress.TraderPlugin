@@ -134,7 +134,6 @@ function trader_dynamic_block_rebalance_form_cb( $block_attributes, $content )
   ?>
   <form action="<?php echo esc_attr( get_permalink() ); ?>" method="post" class="trader-rebalance">
     <?php wp_nonce_field( 'portfolio-rebalance-user_' . $current_user->ID, 'do-portfolio-rebalance-nonce' ); ?>
-    <input type="hidden" name="dust_limit" value="<?php echo esc_attr( $configuration->dust_limit ); ?>" />
     <fieldset>
       <p class="form-row form-row-wide">
         <label title="<?php esc_attr_e( 'Max amount of assets from CoinMarketCap listing.', 'trader' ); ?>">

@@ -19,6 +19,7 @@ Connects to exchange API's, provides blocks for rendering exchange data and incl
 == Changelog ==
 
 = 2022.03.20 =
+* Deprecated dust limit, just only trade above the min order amount.
 * Only update last rebalance date if at least one trade was executed.
 * Deprecated weighting quote allocation by fag index.
 * Improved Javascript.
