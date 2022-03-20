@@ -202,7 +202,7 @@ function trader_dynamic_block_rebalance_form_cb( $block_attributes, $content )
     <p style="display:inline-block;">
       <button type="submit" class="button" name="action" value="do-portfolio-rebalance" disabled
       onclick="return confirm('<?php esc_attr_e( 'This will perform a portfolio rebalance.\nAre you sure?', 'trader' ); ?>');">
-      <?php echo sprintf( __( 'Rebalance now (fee ≈ € %s)', 'trader' ), '<span class="trader-expected-fee"></span>' ); ?></button>
+      <?php printf( __( 'Rebalance now (fee ≈ € %s)', 'trader' ), '<span class="trader-expected-fee"></span>' ); ?></button>
     </p>
     <p style="display:inline-block;">
       <button type="submit" class="button trader-danger-zone" name="action" value="sell-whole-portfolio"
