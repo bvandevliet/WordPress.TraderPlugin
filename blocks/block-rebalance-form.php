@@ -149,14 +149,10 @@ function trader_dynamic_block_rebalance_form_cb( $block_attributes, $content )
       </p>
       <div class="clear"></div>
       <p class="form-row form-row-first">
-        <label for="alloc_quote" title="<?php echo esc_attr( sprintf( __( 'Allocate a given percentage to quote currency \'%s\'.', 'trader' ), \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY ) ); ?>">
+        <label title="<?php echo esc_attr( sprintf( __( 'Allocate a given percentage to quote currency \'%s\'.', 'trader' ), \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY ) ); ?>">
           <?php esc_html_e( 'Quote allocation', 'trader' ); ?> [%]
+          <input id="alloc_quote" type="number" min="0" max="100" step=".01" class="input-number" name="alloc_quote" value="<?php echo esc_attr( $configuration->alloc_quote ); ?>" />
         </label>
-        <label style="float:right;" title="<?php esc_attr_e( 'Multiply quote allocation by Fear and Greed index.', 'trader' ); ?>">
-          <?php echo esc_html( sprintf( __( '&#8226;~.%s', 'trader' ), \Trader\Metrics\Alternative_Me::fag_index_current() ) ); ?>
-          <input type="checkbox" name="alloc_quote_fag_multiply" <?php checked( $configuration->alloc_quote_fag_multiply ); ?> />
-        </label>
-        <input id="alloc_quote" type="number" min="0" max="100" step=".01" class="input-number" name="alloc_quote" value="<?php echo esc_attr( $configuration->alloc_quote ); ?>" />
       </p>
       <p class="form-row form-row-last">
         <label title="<?php echo esc_attr( sprintf( __( 'Takeout a given amount of quote currency \'%s\'.', 'trader' ), \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY ) ); ?>">

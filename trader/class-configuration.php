@@ -70,6 +70,8 @@ class Configuration
    * Multiply quote allocation by Fear and Greed index.
    *
    * @var bool
+   *
+   * @deprecated Default false.
    */
   public bool $alloc_quote_fag_multiply = false;
 
@@ -267,6 +269,8 @@ class Configuration
           $configuration->$param = isset( $req_value ) ? sanitize_key( $req_value ) : $default;
           break;
         case 'alloc_quote_fag_multiply':
+          $configuration->$param = false; // (DEPRECATED)
+          break;
         case 'automation_enabled':
           $configuration->$param = ! empty( $req_value ) ? boolval( $req_value ) : $default;
           break;
