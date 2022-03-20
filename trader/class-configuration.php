@@ -29,7 +29,7 @@ class Configuration
    *
    * @var int
    */
-  public int $top_count = 30;
+  public int $top_count = 20;
 
   /**
    * The period to use for smoothing Market Cap.
@@ -50,7 +50,7 @@ class Configuration
    *
    * @var int
    */
-  public int $dust_limit = 2;
+  public int $dust_limit = 5;
 
   /**
    * Allocation percentage to keep in quote currency.
