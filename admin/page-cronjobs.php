@@ -66,7 +66,7 @@ function trader_admin_page_cronjobs( $page )
         <p class="description">
           <?php
           _e(
-            'Disable WP-Cron to improve performace and reliability,<br>
+            'Disable WP-Cron to improve performance and reliability,<br>
             but you need to hook wp-cron.php to the system task scheduler on at least an hourly interval.<br>
             <a href="https://developer.wordpress.org/plugins/cron/hooking-wp-cron-into-the-system-task-scheduler/" target="_blank" rel="noopener noreferrer">Read more</a>',
             'trader'
