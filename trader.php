@@ -148,17 +148,8 @@ add_action(
   {
     wp_enqueue_style( 'trader-plugin-styles', TRADER_URL . 'assets/css/style.css', array(), TRADER_PLUGIN_VERSION );
 
-    wp_enqueue_script( 'trader-plugin-script-forms', TRADER_URL . 'assets/js/forms.js', array( 'jquery' ), TRADER_PLUGIN_VERSION, true );
-
-    wp_enqueue_script( 'trader-plugin-script-ajax', TRADER_URL . 'assets/js/ajax.js', array( 'jquery' ), TRADER_PLUGIN_VERSION, false );
-    wp_localize_script(
-      'trader-plugin-script-ajax',
-      'ajax_obj',
-      array(
-        'ajax_url' => admin_url( 'admin-ajax.php' ),
-        'nonce'    => wp_create_nonce( 'trader_ajax' ),
-      )
-    );
+    wp_enqueue_script( 'trader-plugin-script-functions', TRADER_URL . 'assets/js/functions.js', array( 'jquery' ), TRADER_PLUGIN_VERSION, false );
+    wp_enqueue_script( 'trader-plugin-script-forms', TRADER_URL . 'assets/js/forms.js', array( 'jquery' ), TRADER_PLUGIN_VERSION, false );
   },
   100
 );
