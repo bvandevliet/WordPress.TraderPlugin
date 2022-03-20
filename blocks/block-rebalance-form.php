@@ -50,8 +50,10 @@ function trader_dynamic_block_rebalance_form_cb( $block_attributes, $content )
             $errors->merge_from( $balance_exchange );
           }
 
+          $trades = array();
           if ( ! is_wp_error( $balance_allocated ) && ! is_wp_error( $balance_exchange ) ) {
-            foreach ( \Trader::rebalance( \Trader\Exchanges\Bitvavo::current_user(), $balance, $configuration ) as $index => $order ) {
+            $trades = \Trader::rebalance( \Trader\Exchanges\Bitvavo::current_user(), $balance, $configuration );
+            foreach ( $trades as $index => $order ) {
               if ( ! empty( $order['errorCode'] ) ) {
                 $errors->add(
                   $order['errorCode'] . '-' . $index,
@@ -71,11 +73,17 @@ function trader_dynamic_block_rebalance_form_cb( $block_attributes, $content )
            * Always save configuration.
            */
           if ( ! $errors->has_errors() ) {
-            $configuration->last_rebalance = new DateTime();
+            if ( count( $trades ) > 0 ) {
+              $configuration->last_rebalance = new DateTime();
 
-            ?>
-            <div class="updated notice is-dismissible"><p><?php esc_html_e( 'Portfolio was rebalanced successfully.', 'trader' ); ?></p></div>
-            <?php
+              ?>
+              <div class="updated notice is-dismissible"><p><?php esc_html_e( 'Portfolio was rebalanced successfully.', 'trader' ); ?></p></div>
+              <?php
+            } else {
+              ?>
+              <div class="updated notice is-dismissible"><p><?php esc_html_e( 'Nothing to rebalance.', 'trader' ); ?></p></div>
+              <?php
+            }
           }
           $configuration->save();
           ?>

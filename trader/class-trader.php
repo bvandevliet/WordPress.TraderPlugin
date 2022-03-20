@@ -482,7 +482,8 @@ class Trader
             /**
              * Rebalance.
              */
-            foreach ( self::rebalance( $exchange, $balance, $configuration ) as $index => $order ) {
+            $trades = self::rebalance( $exchange, $balance, $configuration );
+            foreach ( $trades as $index => $order ) {
               if ( ! empty( $order['errorCode'] ) ) {
                 $errors->add(
                   $order['errorCode'] . '-' . $index,
@@ -500,7 +501,7 @@ class Trader
              * On success, update timestamp of last rebalance.
              */
             $timestamp = new DateTime(); // refresh
-            if ( ! $errors->has_errors() ) {
+            if ( count( $trades ) > 0 && ! $errors->has_errors() ) {
               $configuration->last_rebalance = $timestamp;
               $configuration->save( $user_id );
             }
