@@ -52,7 +52,7 @@ class Configuration
    *
    * @deprecated If alloc diff is below min order amount, just skip.
    */
-  public int $dust_limit = 5;
+  // public int $dust_limit = 5;
 
   /**
    * Allocation percentage to keep in quote currency.
@@ -75,7 +75,7 @@ class Configuration
    *
    * @deprecated Default false.
    */
-  public bool $alloc_quote_fag_multiply = false;
+  // public bool $alloc_quote_fag_multiply = false;
 
   /**
    * Rebalance period in hours.
@@ -253,7 +253,6 @@ class Configuration
           $configuration->$param = isset( $req_value ) ? min( max( 1, intval( $req_value ) ), 100 ) : $default;
           break;
         case 'smoothing':
-        case 'dust_limit':
         case 'interval_hours':
           $configuration->$param = isset( $req_value ) ? max( 1, intval( $req_value ) ) : $default;
           break;
@@ -269,9 +268,6 @@ class Configuration
           break;
         case 'rebalance_mode':
           $configuration->$param = isset( $req_value ) ? sanitize_key( $req_value ) : $default;
-          break;
-        case 'alloc_quote_fag_multiply':
-          $configuration->$param = false; // (DEPRECATED)
           break;
         case 'automation_enabled':
           $configuration->$param = ! empty( $req_value ) ? boolval( $req_value ) : $default;
