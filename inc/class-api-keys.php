@@ -8,14 +8,14 @@ defined( 'ABSPATH' ) || exit;
 class API_Keys
 {
   /**
-   * Holds the API keys.
+   * Cached global API keys.
    *
    * @var string[]
    */
   private static ?array $keys = null;
 
   /**
-   * Holds the user API keys.
+   * Cached user API keys.
    *
    * @var string[][]
    */
