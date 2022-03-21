@@ -152,7 +152,7 @@ class CoinMarketCap
    *
    * @return array History extended data.
    */
-  private static function update_get_history( array $cmc_latest, int $limit = 1 ) : array
+  private static function update_get_history( array $cmc_latest, int $limit = 100 ) : array
   {
     // \Trader_Setup::create_db_tables();
 
@@ -194,25 +194,24 @@ class CoinMarketCap
   }
 
   /**
-   * Returns the top 100 from CoinMarketCap.
+   * Returns the top 100 from CoinMarketCap of the past 100 days.
    *
    * @param array $query {
    *   https://coinmarketcap.com/api/documentation/v1/#operation/getV1CryptocurrencyListingsLatest
    *   @type string $sort
    *   @type string $convert
    * }
-   * @param int   $limit Limit the fetched historical database records per asset.
    *
    * @hooked trader_cronjob_hourly_filtered
    *
    * @return object[][]|object[]|\WP_Error Array of historical object[] per asset if 'sort' == 'market_cap', else object[] with assets.
    */
-  public static function list_latest( $query = array(), int $limit = 100 )
+  public static function list_latest( $query = array() )
   {
     $endpoint = 'cryptocurrency/listings/latest';
 
     /**
-     * Set defaults and remove illegal arguments to enforce consistent data being saved to the database.
+     * Remove illegal arguments to enforce consistent data being saved to the database.
      * Always query 100 results for market cap history log, handle top limit elsewhere.
      */
     $query          = wp_parse_args(
@@ -242,6 +241,6 @@ class CoinMarketCap
       return $errors;
     }
 
-    return $db_appropriate ? self::$market_cap_cached = self::update_get_history( $response->data, $limit ) : $response->data;
+    return $db_appropriate ? self::$market_cap_cached = self::update_get_history( $response->data, 100 ) : $response->data;
   }
 }

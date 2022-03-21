@@ -35,14 +35,13 @@ class Trader
     $alloc_quote = ! empty( $configuration->alloc_quote ) ? bcdiv( trader_max( 0, trader_min( 100, $configuration->alloc_quote ) ), 100 ) : '0';
 
     /**
-     * List latest based on market cap.
+     * List latest based on market cap (cache supported).
      */
     $cmc_latest = \Trader\Metrics\CoinMarketCap::list_latest(
       array(
         'sort'    => 'market_cap',
         'convert' => \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY,
-      ),
-      $configuration->smoothing
+      )
     );
 
     /**
