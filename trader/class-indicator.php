@@ -7,6 +7,8 @@ defined( 'ABSPATH' ) || exit;
 
 class Indicator extends \LupeCode\phpTraderNative\Trader
 {
+  // phpcs:disable WordPress.NamingConventions.ValidVariableName
+
   /**
    * Retrieve Market Cap EMA. This function is specific to the rebalance algorithm.
    *
