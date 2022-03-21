@@ -44,7 +44,7 @@ function trader_email_automation_triggered( int $user_id, DateTime $timestamp, \
       <?php
       /**
        * MAKE DYNAMIC USING A SPECIFICALLY ASSIGNED ACCOUNT PAGE !!
-       * NOW THE THEME MUST PROVIDE A TEMPLATE FOR THE "/account" PAGE !!
+       * NOW THE THEME MUST PROVIDE A TEMPLATE FOR THE "/account" PAGE.
        */
       ?>
       This email was automatically generated.

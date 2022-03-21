@@ -106,7 +106,7 @@
    */
   const echo_balance_summary = (deposit_history, withdrawal_history, balance_exchange) =>
   {
-    // ERROR HANDLING !!
+    // ERROR HANDLING ??
     if (deposit_history == null || withdrawal_history == null || balance_exchange == null) return;
 
     const moneyflow_now = balance_exchange.amount_quote_total + withdrawal_history.total;
@@ -196,7 +196,7 @@
    */
   const echo_portfolio_balance = balance =>
   {
-    // ERROR HANDLING !!
+    // ERROR HANDLING ??
     if (balance == null) return;
 
     $('.trader-expected-fee').text(balance.expected_fee);

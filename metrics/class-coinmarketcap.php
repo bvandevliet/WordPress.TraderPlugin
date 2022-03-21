@@ -88,7 +88,7 @@ class CoinMarketCap
       $cmc_name = $format_and_cmc_name[1];
       switch ( $column_name ) {
         case 'last_updated':
-          // '2021-11-02T11:55:27.000Z' is not exactly the ISO8601 format, but what is it then .. ? !!
+          // '2021-11-02T11:55:27.000Z' is not exactly the ISO8601 format, but what is it then .. ??
           // $record->$column_name = \DateTime::createFromFormat( \DateTime::ISO8601, $asset_cmc->$cmc_name )->format( 'Y-m-d H:i:s' );
           $record->$column_name = ( new \DateTime( $asset_cmc->$cmc_name ) )->format( 'Y-m-d H:i:s' );
           break;
@@ -128,7 +128,7 @@ class CoinMarketCap
       $cmc_name = $format_and_cmc_name[1];
       switch ( $column_name ) {
         case 'last_updated':
-          // '2021-11-02T11:55:27.000Z' is not exactly the ISO8601 format, but what is it then .. ? !!
+          // '2021-11-02T11:55:27.000Z' is not exactly the ISO8601 format, but what is it then .. ??
           $asset_cmc->$cmc_name = ( new \DateTime( $record->$column_name ) )->format( \DateTime::ISO8601 );
           break;
         case 'quote':

@@ -81,9 +81,7 @@ class Trader_Setup
     } catch ( \Defuse\Crypto\Exception\BadFormatException $ex ) {
       return false;
     } catch ( Exception $ex ) {
-      /**
-       * ERROR HANDLING !!
-       */
+      // ERROR HANDLING !!
       return false;
     }
 

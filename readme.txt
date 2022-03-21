@@ -5,7 +5,7 @@ Tags:
 Requires at least: 5.7
 Tested up to: 5.8
 Requires PHP: 7.2
-Stable tag: 2022.03.20
+Stable tag: 2022.03.21
 License: MIT
 
 Calculates and executes a crypto portfolio rebalance.

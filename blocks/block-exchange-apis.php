@@ -26,9 +26,7 @@ function trader_dynamic_block_exchange_apis_cb( $block_attributes, $content )
     if ( isset( $_POST['save-exchange-apis-nonce'] ) && wp_verify_nonce( $_POST['save-exchange-apis-nonce'], 'update-user_' . $current_user->ID ) ) {
       $errors = get_error_obj();
 
-      /**
-       * DO VALIDATION OF API KEYS WHEN SAVING !!
-       */
+      // DO VALIDATION OF API KEYS WHEN SAVING !!
       $keys = \Trader\API_Keys::get_api_keys_user();
 
       if ( isset( $_POST['api_keys'] ) && is_array( $_POST['api_keys'] ) ) {

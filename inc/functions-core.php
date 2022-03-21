@@ -36,9 +36,7 @@ function trader_encrypt_key( $key )
   } catch ( \Defuse\Crypto\Exception\BadFormatException $ex ) {
     return null;
   } catch ( Exception $ex ) {
-    /**
-     * ERROR HANDLING !!
-     */
+    // ERROR HANDLING !!
     return null;
   }
 
@@ -65,18 +63,14 @@ function trader_decrypt_key( $encrypted_key )
   } catch ( \Defuse\Crypto\Exception\BadFormatException $ex ) {
     return null;
   } catch ( Exception $ex ) {
-    /**
-     * ERROR HANDLING !!
-     */
+    // ERROR HANDLING !!
     return null;
   }
 
   try {
     return \Defuse\Crypto\Crypto::decrypt( $encrypted_key, $secret_key );
   } catch ( \Defuse\Crypto\Exception\WrongKeyOrModifiedCiphertextException $ex ) {
-    /**
-     * ERROR HANDLING !!
-     */
+    // ERROR HANDLING !!
     return null;
   }
 }
