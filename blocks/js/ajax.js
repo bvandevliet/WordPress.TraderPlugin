@@ -70,16 +70,29 @@
     )
       .done((deposit_history, withdrawal_history, balance_exchange) =>
       {
-        if (deposit_history[0].success && withdrawal_history[0].success && balance_exchange[0].success)
+        if (deposit_history[0]?.success && withdrawal_history[0]?.success && balance_exchange[0]?.success)
         {
           if (typeof cb === 'function') cb(deposit_history[0].data, withdrawal_history[0].data, balance_exchange[0].data);
         }
-        // ERROR HANDLING !!
-        else if (typeof cb === 'function') cb(null, null, null);
+        else
+        {
+          console.error({
+            deposit_history: deposit_history,
+            withdrawal_history: withdrawal_history,
+            balance_exchange: balance_exchange,
+          });
+
+          if (typeof cb === 'function') cb(null, null, null);
+        }
       })
-      .fail(() =>
+      .fail((deposit_history_xhr, withdrawal_history_xhr, balance_exchange_xhr) =>
       {
-        // ERROR HANDLING !!
+        console.error({
+          deposit_history_xhr: deposit_history_xhr,
+          withdrawal_history_xhr: withdrawal_history_xhr,
+          balance_exchange_xhr: balance_exchange_xhr,
+        });
+
         if (typeof cb === 'function') cb(null, null, null);
       });
   };
@@ -93,9 +106,7 @@
    */
   const echo_balance_summary = (deposit_history, withdrawal_history, balance_exchange) =>
   {
-    /**
-     * ERROR HANDLING !!
-     */
+    // ERROR HANDLING !!
     if (deposit_history == null || withdrawal_history == null || balance_exchange == null) return;
 
     const moneyflow_now = balance_exchange.amount_quote_total + withdrawal_history.total;
@@ -164,13 +175,15 @@
         }
         else
         {
-          // ERROR HANDLING !!
+          console.error(balance);
+
           if (typeof cb === 'function') cb(null);
         }
       },
-      error: () =>
+      error: (balance_xhr) =>
       {
-        // ERROR HANDLING !!
+        console.error(balance_xhr);
+
         if (typeof cb === 'function') cb(null);
       },
     });
@@ -183,9 +196,7 @@
    */
   const echo_portfolio_balance = balance =>
   {
-    /**
-     * ERROR HANDLING !!
-     */
+    // ERROR HANDLING !!
     if (balance == null) return;
 
     $('.trader-expected-fee').text(balance.expected_fee);
