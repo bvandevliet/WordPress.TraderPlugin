@@ -104,7 +104,7 @@ function trader_dynamic_block_edit_account_cb( $block_attributes, $content )
       <div class="updated notice is-dismissible"><p><?php esc_html_e( 'Account updated.', 'trader' ); ?></p></div>
     <?php endif; ?>
     <?php if ( isset( $errors ) && is_wp_error( $errors ) && $errors->has_errors() ) : ?>
-      <div class="error"><p><?php echo implode( "</p>\n<p>", esc_html( $errors->get_error_messages() ) ); ?></p></div>
+      <div class="error"><p><?php echo implode( "</p>\n<p>", array_map( 'esc_html', $errors->get_error_messages() ) ); ?></p></div>
     <?php endif; ?>
 
     <fieldset>

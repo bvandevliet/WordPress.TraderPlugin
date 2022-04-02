@@ -127,7 +127,7 @@ function trader_dynamic_block_rebalance_form_cb( $block_attributes, $content )
 
   if ( $errors->has_errors() ) :
     ?>
-    <div class="error"><p><?php echo implode( "</p>\n<p>", esc_html( $errors->get_error_messages() ) ); ?></p></div>
+    <div class="error"><p><?php echo implode( "</p>\n<p>", array_map( 'esc_html', $errors->get_error_messages() ) ); ?></p></div>
     <?php
   endif;
 
