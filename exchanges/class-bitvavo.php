@@ -331,7 +331,7 @@ class Bitvavo implements Exchange
       return $response;
     }
 
-    if ( floatval( $amount_quote ) <= 0 ) {
+    if ( (float) $amount_quote <= 0 ) {
       return $response;
     }
 
@@ -391,7 +391,7 @@ class Bitvavo implements Exchange
       return $response;
     }
 
-    if ( floatval( $amount_quote ) <= 0 ) {
+    if ( (float) $amount_quote <= 0 ) {
       return $response;
     }
 
@@ -419,7 +419,7 @@ class Bitvavo implements Exchange
     /**
      * Prevent dust.
      */
-    if ( floatval( bcmul( bcsub( $asset['available'], $amount ), $price ) ) <= 2 ) {
+    if ( (float) bcmul( bcsub( $asset['available'], $amount ), $price ) <= 2 ) {
       $amount             = $asset['available'];
       $response['amount'] = $amount;
       $amount_quote       = bcmul( $amount, $price );

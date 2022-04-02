@@ -85,7 +85,7 @@ class Trader
        */
       if (
         count( array_intersect( array_merge( array( 'stablecoin' ), $configuration->excluded_tags ), $asset_cmc_arr[0]->tags ) ) > 0 ||
-        ( array_key_exists( $asset_cmc_arr[0]->symbol, $configuration->asset_weightings ) && $configuration->asset_weightings[ $asset_cmc_arr[0]->symbol ] <= 0 )
+        ( array_key_exists( $asset_cmc_arr[0]->symbol, $configuration->asset_weightings ) && (float) $configuration->asset_weightings[ $asset_cmc_arr[0]->symbol ] <= 0 )
       ) {
         continue;
       }
@@ -229,9 +229,9 @@ class Trader
           $amount_quote = bcmul( $balance->amount_quote_total, $asset->allocation_rebl[ $mode ] ?? 0 );
           $diff         = bcsub( $amount_quote, $asset->amount_quote );
 
-          $amount_quote_to_sell = floatval( $diff ) < 0 ? bcabs( $diff ) : 0;
+          $amount_quote_to_sell = (float) $diff < 0 ? bcabs( $diff ) : 0;
 
-          if ( floatval( $amount_quote_to_sell ) >= \Trader\Exchanges\Bitvavo::MIN_QUOTE ) {
+          if ( (float) $amount_quote_to_sell >= \Trader\Exchanges\Bitvavo::MIN_QUOTE ) {
             $result[] = $asset->rebl_sell_order = $exchange->sell_asset( $asset->symbol, $amount_quote_to_sell, $simulate );
           }
         }
@@ -323,7 +323,7 @@ class Trader
 
           $amount_quote_to_buy = ! $simulate ? bcmul( $balance->assets[0]->available, trader_get_allocation( $asset->amount_quote_to_buy, $to_buy_total ) ) : $asset->amount_quote_to_buy;
 
-          if ( floatval( $amount_quote_to_buy ) >= \Trader\Exchanges\Bitvavo::MIN_QUOTE ) {
+          if ( (float) $amount_quote_to_buy >= \Trader\Exchanges\Bitvavo::MIN_QUOTE ) {
             $result[] = $asset->rebl_buy_order = $exchange->buy_asset( $asset->symbol, $amount_quote_to_buy, $simulate );
           }
         }
@@ -410,14 +410,14 @@ class Trader
                 $diff_quote         = bcsub( $asset->amount_quote, $amount_balanced );
 
                 return // at least the minimum order amount should be reached
-                  floatval( bcabs( $diff_quote ) ) >= \Trader\Exchanges\Bitvavo::MIN_QUOTE
+                  (float) bcabs( $diff_quote ) >= \Trader\Exchanges\Bitvavo::MIN_QUOTE
                   && (
                   // if configured rebalance threshold is reached
-                  floatval( bcabs( $diff ) ) >= $configuration->rebalance_threshold
+                  (float) bcabs( $diff ) >= (float) $configuration->rebalance_threshold
                   ||
                   // or if the asset should not be allocated at all
                   // phpcs:ignore WordPress.PHP.StrictComparisons
-                  ( $alloc_perc_current > $alloc_perc_rebl && 0 == $alloc_perc_rebl )
+                  ( (float) $alloc_perc_current > (float) $alloc_perc_rebl && 0 == $alloc_perc_rebl )
                 );
               }
             ) ) {

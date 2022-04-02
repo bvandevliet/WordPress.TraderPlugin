@@ -123,9 +123,9 @@ function trader_echo_portfolio( \Trader\Balance $balance = null, bool $show_curr
               <td class="trader-number trader-no-padd-left"> %</td>
             <?php endif; ?>
             <?php if ( $show_current && $show_rebalanced ) : ?>
-              <td class="trader-number trader-no-padd-right">€ <?php echo $diff_quote >= 0 ? '+' : '-'; ?></td>
+              <td class="trader-number trader-no-padd-right">€ <?php echo (float) $diff_quote >= 0 ? '+' : '-'; ?></td>
               <td class="trader-number trader-no-padd-left"><?php echo esc_html( number_format( abs( $diff_quote ), 2 ) ); ?></td>
-              <td class="trader-number trader-no-padd-right"><?php echo esc_html( ( $diff >= 0 ? '+' : '-' ) . number_format( abs( $diff ), 2 ) ); ?></td>
+              <td class="trader-number trader-no-padd-right"><?php echo esc_html( ( (float) $diff >= 0 ? '+' : '-' ) . number_format( abs( $diff ), 2 ) ); ?></td>
               <td class="trader-number trader-no-padd-left"> %</td>
             <?php endif; ?>
           </tr>
