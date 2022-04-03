@@ -5,7 +5,7 @@ Tags:
 Requires at least: 5.7
 Tested up to: 5.8
 Requires PHP: 7.2
-Stable tag: 2022.03.21
+Stable tag: 2022.04.02
 License: MIT
 
 Calculates and executes a crypto portfolio rebalance.
@@ -17,6 +17,12 @@ Connects to exchange API's, provides blocks for rendering exchange data and incl
 
 
 == Changelog ==
+
+= 2022.04.02 =
+* Fixed a bug that could trigger larger buy orders than the available balance.
+* Bugfix in email notification logic.
+* Bugfixed form error output.
+* Some stability, reliability and performance improvements.
 
 = 2022.03.20 =
 * Deprecated dust limit, just only trade above the min order amount.

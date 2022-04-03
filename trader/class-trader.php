@@ -294,16 +294,23 @@ class Trader
       $amount_quote = bcmul( $balance->amount_quote_total, $asset->allocation_rebl[ $mode ] ?? 0 );
 
       /**
-       * Only append absolute allocation to total buy value if is quote currency.
+       * If is quote currency, then only add to total buy value.
        */
       if ( $asset->symbol === \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY ) {
         $to_buy_total = bcadd( $to_buy_total, $amount_quote );
         continue;
       }
 
-      $asset->amount_quote_to_buy = bcsub( $amount_quote, ! $simulate ? $asset->amount_quote : bcsub( $asset->amount_quote, $asset->rebl_sell_order->amountQuote ?? 0 ) );
+      $amount_quote_to_buy =
+        bcsub( $amount_quote, ! $simulate ? $asset->amount_quote : bcsub( $asset->amount_quote, $asset->rebl_sell_order->amountQuote ?? 0 ) );
 
-      $to_buy_total = bcadd( $to_buy_total, $asset->amount_quote_to_buy );
+      /**
+       * Only positive diffs can be buy orders.
+       */
+      if ( (float) $amount_quote_to_buy > 0 ) {
+        $asset->amount_quote_to_buy = $amount_quote_to_buy;
+        $to_buy_total               = bcadd( $to_buy_total, $asset->amount_quote_to_buy );
+      }
     }
 
     /**
@@ -315,13 +322,16 @@ class Trader
         function () use ( $exchange, $balance, $configuration, $asset, &$simulate, &$mode, &$result, &$to_buy_total )
         {
           /**
-           * Skip if is quote currency as it is the currency we buy with, not we can buy.
+           * Skip:
+           * - if is quote currency as it is the currency we buy with, not we can buy;
+           * - or if no "to buy" amount is set.
            */
-          if ( $asset->symbol === \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY ) {
+          if ( $asset->symbol === \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY || empty( $asset->amount_quote_to_buy ) ) {
             return;
           }
 
-          $amount_quote_to_buy = ! $simulate ? bcmul( $balance->assets[0]->available, trader_get_allocation( $asset->amount_quote_to_buy, $to_buy_total ) ) : $asset->amount_quote_to_buy;
+          $amount_quote_to_buy =
+            ! $simulate ? bcmul( $balance->assets[0]->available, trader_get_allocation( $asset->amount_quote_to_buy, $to_buy_total ) ) : $asset->amount_quote_to_buy;
 
           if ( (float) $amount_quote_to_buy >= \Trader\Exchanges\Bitvavo::MIN_QUOTE ) {
             $result[] = $asset->rebl_buy_order = $exchange->buy_asset( $asset->symbol, $amount_quote_to_buy, $simulate );
