@@ -203,7 +203,8 @@ class Bitvavo implements Exchange
       $errors = new \WP_Error();
       $errors->add(
         'exchange_bitvavo-' . ( $balance_exchange['errorCode'] ?? 0 ),
-        __( 'Exchange error: ', 'trader' ) . ( $balance_exchange['error'] ?? __( 'An unknown error occured.', 'trader' ) )
+        __( 'Exchange error: ', 'trader' ) . ( $balance_exchange['error'] ?? __( 'An unknown error occured.', 'trader' ) ),
+        $balance_exchange
       );
       return $errors;
     }

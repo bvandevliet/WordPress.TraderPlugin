@@ -236,7 +236,8 @@ class CoinMarketCap
       $errors = new \WP_Error();
       $errors->add(
         'market_cap_listings_latest-' . ( $response['error_code'] ?? 0 ),
-        __( 'CoinMarketCap error: ', 'trader' ) . ( $response['error_message'] ?? __( 'An unknown error occured.', 'trader' ) )
+        __( 'CoinMarketCap error: ', 'trader' ) . ( $response['error_message'] ?? __( 'An unknown error occured.', 'trader' ) ),
+        $response
       );
       return $errors;
     }
