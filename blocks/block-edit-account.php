@@ -62,7 +62,7 @@ function trader_dynamic_block_edit_account_cb( $block_attributes, $content )
       }
 
       if ( is_email( $email ) ) {
-        $user->user_email = $email;
+        $user->user_email = $current_user->user_email = sanitize_email( $email );
       } else {
         $errors->add( 'invalid_email', __( 'Please provide a valid email address.', 'trader' ), array( 'form-field' => 'account_email' ) );
       }
@@ -91,7 +91,9 @@ function trader_dynamic_block_edit_account_cb( $block_attributes, $content )
       // $errors = edit_user( $user_id );
 
       if ( ! $errors->has_errors() ) {
-        wp_update_user( $user );
+        if ( is_wp_error( $update = wp_update_user( $user ) ) ) {
+          $errors->merge_from( $update );
+        }
       }
     }
   }
