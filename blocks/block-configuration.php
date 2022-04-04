@@ -95,7 +95,8 @@ function trader_dynamic_block_configuration_cb( $block_attributes, $content )
       <legend>
         <?php
         _e(
-          'Tags to exclude. Assets that include one or more of these tags will never be part of your portfolio.',
+          'Tags to exclude.<br>
+          Assets that contain one or more of these tags will never be included in your portfolio.',
           'trader'
         );
         ?>
