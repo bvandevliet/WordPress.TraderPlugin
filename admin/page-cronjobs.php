@@ -59,7 +59,7 @@ function trader_admin_page_cronjobs( $page )
           <input type="checkbox"
           id="trader_disable_wp_cron_field"
           name="trader_disable_wp_cron"
-          <?php echo ! empty( get_option( 'trader_disable_wp_cron', false ) ) ? 'checked' : ''; ?> />
+          <?php checked( ! empty( get_option( 'trader_disable_wp_cron', false ) ) ); ?> />
           <?php _e( 'Set constant DISABLE_WP_CRON to \'true\' in wp-config.php', 'trader' ); ?>
         </label>
 
