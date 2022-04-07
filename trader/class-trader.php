@@ -301,17 +301,23 @@ class Trader
         continue;
       }
 
-      $amount_quote_to_buy =
+      $diff =
         bcsub( $amount_quote, ! $simulate ? $asset->amount_quote : bcsub( $asset->amount_quote, $asset->rebl_sell_order->amountQuote ?? 0 ) );
 
       /**
        * Only positive diffs can be buy orders.
+       * Use minimum order value to filter out irrelevant dust.
        */
-      if ( (float) $amount_quote_to_buy > 0 ) {
-        $asset->amount_quote_to_buy = $amount_quote_to_buy;
+      if ( (float) $diff >= \Trader\Exchanges\Bitvavo::MIN_QUOTE ) {
+        $asset->amount_quote_to_buy = $diff;
         $to_buy_total               = bcadd( $to_buy_total, $asset->amount_quote_to_buy );
       }
     }
+
+    /**
+     * Dont over-buy. Take the largest total value to calculate the allocation of the available balance from.
+     */
+    $to_buy_total = trader_max( $to_buy_total, $balance->assets[0]->available );
 
     /**
      * Portfolio rebalancing: fourth loop (re)buying assets.
@@ -330,9 +336,16 @@ class Trader
             return;
           }
 
-          $amount_quote_to_buy =
-            ! $simulate ? bcmul( $balance->assets[0]->available, trader_get_allocation( $asset->amount_quote_to_buy, $to_buy_total ) ) : $asset->amount_quote_to_buy;
+          /**
+           * Scale to available balance, but don't over-buy.
+           */
+          $amount_quote_to_buy = ! $simulate
+            ? trader_min( $asset->amount_quote_to_buy, bcmul( $balance->assets[0]->available, trader_get_allocation( $asset->amount_quote_to_buy, $to_buy_total ) ) )
+            : $asset->amount_quote_to_buy;
 
+          /**
+           * Test whether the amount quote to buy is still above the minimum order value.
+           */
           if ( (float) $amount_quote_to_buy >= \Trader\Exchanges\Bitvavo::MIN_QUOTE ) {
             $result[] = $asset->rebl_buy_order = $exchange->buy_asset( $asset->symbol, $amount_quote_to_buy, $simulate );
           }
