@@ -160,6 +160,9 @@ class CoinMarketCap
 
     $limit = max( 1, $limit );
 
+    // Cleanup records older than 2 years to not memory leak while keeping some backtest headroom.
+    $wpdb->query( "DELETE FROM {$wpdb->prefix}trader_market_cap WHERE last_updated < DATE_SUB(NOW(), INTERVAL 730 DAY)" );
+
     $cmc_history = array();
 
     foreach ( $cmc_latest as $asset_cmc ) {
