@@ -83,9 +83,11 @@ class Trader
       /**
        * Skip if is stablecoin, one of its tags are excluded or weighting is set to zero.
        */
+      $weighting_is_set = array_key_exists( $asset_cmc_arr[0]->symbol, $configuration->asset_weightings );
+      $weighting        = $weighting_is_set ? (float) $configuration->asset_weightings[ $asset_cmc_arr[0]->symbol ] : 1;
       if (
-        count( array_intersect( array_merge( array( 'stablecoin' ), $configuration->excluded_tags ), $asset_cmc_arr[0]->tags ) ) > 0 ||
-        ( array_key_exists( $asset_cmc_arr[0]->symbol, $configuration->asset_weightings ) && (float) $configuration->asset_weightings[ $asset_cmc_arr[0]->symbol ] <= 0 )
+        $weighting <= 0 ||
+        ( ! $weighting_is_set && count( array_intersect( array_merge( array( 'stablecoin' ), $configuration->excluded_tags ), $asset_cmc_arr[0]->tags ) ) > 0 )
       ) {
         continue;
       }
