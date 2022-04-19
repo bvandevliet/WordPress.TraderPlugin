@@ -58,17 +58,21 @@ form .form-row {
   clear: both;
 }
 
-form .form-row-first,
-form .form-row-last {
+form .form-row-2 {
   width: calc(50% - 10px);
-  overflow: visible;
 }
 
-form .form-row-first {
-  /* float: left; */
+form .form-row-3 {
+  width: calc(100% / 3 - 10px);
 }
 
-form .form-row-last {
+form .form-row-2:not(:first-child),
+form .form-row-3:not(:first-child) {
+  margin-left: 10px;
+}
+
+form .form-row-2:last-child,
+form .form-row-3:last-child {
   float: right;
 }
 

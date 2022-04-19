@@ -85,8 +85,8 @@ function trader_dynamic_block_configuration_cb( $block_attributes, $content )
       </legend>
       <?php foreach ( array_merge( $configuration->asset_weightings, array( '' => 1 ) ) as $asset => $weighting ) : ?>
         <p class="form-row form-row-wide form-row-cloneable">
-          <input type="text" class="input-text form-row-first" name="assets[]" autocomplete="off" value="<?php echo esc_attr( $asset ); ?>" />
-          <input type="number" min="0" step=".01" class="input-number form-row-last" name="weightings[]" value="<?php echo esc_attr( $weighting ); ?>" default="1" />
+          <input type="text" class="input-text form-row-2" name="assets[]" autocomplete="off" value="<?php echo esc_attr( $asset ); ?>" />
+          <input type="number" min="0" step=".01" class="input-number form-row-2" name="weightings[]" value="<?php echo esc_attr( $weighting ); ?>" default="1" />
         </p>
       <?php endforeach; ?>
     </fieldset>
