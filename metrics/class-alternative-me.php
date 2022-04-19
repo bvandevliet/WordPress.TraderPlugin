@@ -74,7 +74,7 @@ class Alternative_Me
   {
     if ( null === self::$fag_index_cached ) {
       $result                 = self::fag_index( $query = array( 'limit' => 1 ) );
-      self::$fag_index_cached = ! is_array( $result ) || count( $result ) === 0 ? 50 : $result[0]->value; // !!
+      self::$fag_index_cached = ! is_array( $result ) || count( $result ) === 0 ? 50 : $result[0]->value; // "50" !!
     }
 
     return self::$fag_index_cached;

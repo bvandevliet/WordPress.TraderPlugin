@@ -27,6 +27,28 @@ add_filter(
 );
 
 /**
+ * Enqueue styles and scripts.
+ *
+ * HOW TO PROPERLY APPLY ALL THEME AND PLUGIN FRONT-END STYLES ALSO ON BLOCKS WHILE IN THE EDITOR ? !!
+ */
+add_action(
+  'wp_enqueue_scripts',
+  function ()
+  {
+    wp_enqueue_script( 'trader-plugin-script-ajax', TRADER_URL . 'blocks/js/ajax.js', array( 'jquery' ), TRADER_PLUGIN_VERSION, false );
+    wp_localize_script(
+      'trader-plugin-script-ajax',
+      'ajax_obj',
+      array(
+        'ajax_url' => admin_url( 'admin-ajax.php' ),
+        'nonce'    => wp_create_nonce( 'trader_ajax' ),
+      )
+    );
+  },
+  100
+);
+
+/**
  * Register dynamic block types.
  */
 add_action(
@@ -77,13 +99,7 @@ add_action(
     /**
      * Register global dynamic blocks script and instantiate global `trader_dynamic_blocks` variable.
      */
-    wp_register_script(
-      'trader-dynamic-blocks-editor-js',
-      plugins_url( '_dynamic-blocks.js', __FILE__ ),
-      array(),
-      '1',
-      true
-    );
+    wp_register_script( 'trader-dynamic-blocks-editor-js', TRADER_URL . 'blocks/_dynamic-blocks.js', array(), TRADER_PLUGIN_VERSION, true );
 
     $trader_dynamic_blocks = array();
 

@@ -63,9 +63,7 @@ function trader_admin_page_apis( $page )
     __( 'CoinMarketCap', 'trader' ), // $title
     function ( $args )               // $callback
     {
-      /**
-       * DO VALIDATION OF API KEYS WHEN SAVING !!
-       */
+      // DO VALIDATION OF API KEYS WHEN SAVING !!
       $keys = \Trader\API_Keys::get_api_keys();
 
       ?>

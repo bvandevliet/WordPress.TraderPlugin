@@ -62,7 +62,7 @@ function trader_dynamic_block_edit_account_cb( $block_attributes, $content )
       }
 
       if ( is_email( $email ) ) {
-        $user->user_email = $email;
+        $user->user_email = $current_user->user_email = sanitize_email( $email );
       } else {
         $errors->add( 'invalid_email', __( 'Please provide a valid email address.', 'trader' ), array( 'form-field' => 'account_email' ) );
       }
@@ -91,7 +91,9 @@ function trader_dynamic_block_edit_account_cb( $block_attributes, $content )
       // $errors = edit_user( $user_id );
 
       if ( ! $errors->has_errors() ) {
-        wp_update_user( $user );
+        if ( is_wp_error( $update = wp_update_user( $user ) ) ) {
+          $errors->merge_from( $update );
+        }
       }
     }
   }
@@ -104,7 +106,7 @@ function trader_dynamic_block_edit_account_cb( $block_attributes, $content )
       <div class="updated notice is-dismissible"><p><?php esc_html_e( 'Account updated.', 'trader' ); ?></p></div>
     <?php endif; ?>
     <?php if ( isset( $errors ) && is_wp_error( $errors ) && $errors->has_errors() ) : ?>
-      <div class="error"><p><?php echo implode( "</p>\n<p>", esc_html( $errors->get_error_messages() ) ); ?></p></div>
+      <div class="error"><p><?php echo implode( "</p>\n<p>", array_map( 'esc_html', $errors->get_error_messages() ) ); ?></p></div>
     <?php endif; ?>
 
     <fieldset>
@@ -157,16 +159,19 @@ function trader_dynamic_block_edit_account_cb( $block_attributes, $content )
     <p>
       <button type="submit" class="button" value="<?php esc_attr_e( 'Save changes', 'trader' ); ?>"><?php esc_html_e( 'Save changes', 'trader' ); ?></button>
       <?php
-      /**
-       * Support for the Wordfence Login Security plugin's 2FA functionality.
-       */
-      $WFLS_plugin = 'wordfence-login-security/wordfence-login-security.php';
-      /**
-       * The below function is not available from the front-end, so we embedded its body.
-       *
-       * @link https://developer.wordpress.org/reference/functions/is_plugin_active/
-       */
-      if ( in_array( $WFLS_plugin, (array) get_option( 'active_plugins', array() ), true ) || ( is_multisite() && isset( get_site_option( 'active_sitewide_plugins' )[ $WFLS_plugin ] ) ) ) :
+        /**
+         * 2FA support for the Two Factor Authentication Service Inc. plugin.
+         */
+      if ( trader_is_plugin_active( '2fas-light/twofas_light.php' ) ) :
+        ?>
+        &nbsp;
+        <a href="<?php echo esc_attr( admin_url( 'admin.php?page=twofas-light-personal-settings' ) ); ?>" target="_blank" rel="noopener noreferrer"
+        ><?php esc_html_e( 'Manage two factor authentication (2FA)', 'trader' ); ?></a>
+        <?php
+        /**
+         * 2FA support for the Wordfence Login Security plugin.
+         */
+      elseif ( trader_is_plugin_active( 'wordfence-login-security/wordfence-login-security.php' ) ) :
         ?>
         &nbsp;
         <a href="<?php echo esc_attr( admin_url( 'admin.php?page=WFLS' ) ); ?>" target="_blank" rel="noopener noreferrer"

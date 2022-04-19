@@ -21,42 +21,6 @@ add_action(
 
 
 /**
- * Enhanced security for sensitive AJAX requests.
- */
-add_action(
-  'check_ajax_referer',
-  /**
-   * Fires once the Ajax request has been validated or not.
-   *
-   * @param string    $action The Ajax nonce action.
-   * @param false|int $result False if the nonce is invalid, 1 if the nonce is valid and generated between
-   *                          0-12 hours ago, 2 if the nonce is valid and generated between 12-24 hours ago.
-   *
-   * @link https://developer.wordpress.org/reference/functions/check_ajax_referer/
-   */
-  function ( $action, $result )
-  {
-    if ( in_array(
-      $action,
-      array(
-        'ajax_example',
-      ),
-      true
-    ) ) {
-      if ( ! is_user_logged_in() || 1 !== $result ) {
-        if ( wp_doing_ajax() ) {
-          wp_die( -1, 403 );
-        }
-        die( '-1' );
-      }
-    }
-  },
-  PHP_INT_MAX,
-  2
-);
-
-
-/**
  * Re-define nocache headers.
  */
 add_filter(
@@ -72,7 +36,7 @@ add_filter(
    *
    * @link https://developer.wordpress.org/reference/functions/wp_get_nocache_headers/
    */
-  function( $headers )
+  function ( $headers )
   {
     return wp_parse_args(
       array(
@@ -96,7 +60,7 @@ add_filter(
    * @param string[] $headers Associative array of headers to be sent.
    * @param WP       $wp      Current WordPress environment instance.
    */
-  function( $headers/*, $wp*/ )
+  function ( $headers/*, $wp*/ )
   {
     return wp_parse_args( wp_get_nocache_headers(), $headers );
   }

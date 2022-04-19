@@ -36,9 +36,7 @@ function trader_encrypt_key( $key )
   } catch ( \Defuse\Crypto\Exception\BadFormatException $ex ) {
     return null;
   } catch ( Exception $ex ) {
-    /**
-     * ERROR HANDLING !!
-     */
+    // ERROR HANDLING !!
     return null;
   }
 
@@ -65,18 +63,14 @@ function trader_decrypt_key( $encrypted_key )
   } catch ( \Defuse\Crypto\Exception\BadFormatException $ex ) {
     return null;
   } catch ( Exception $ex ) {
-    /**
-     * ERROR HANDLING !!
-     */
+    // ERROR HANDLING !!
     return null;
   }
 
   try {
     return \Defuse\Crypto\Crypto::decrypt( $encrypted_key, $secret_key );
   } catch ( \Defuse\Crypto\Exception\WrongKeyOrModifiedCiphertextException $ex ) {
-    /**
-     * ERROR HANDLING !!
-     */
+    // ERROR HANDLING !!
     return null;
   }
 }
@@ -223,4 +217,20 @@ function trader_enable_wp_cron( bool $enable = true ) : bool
   $wp_config_editor->set_constant( 'DISABLE_WP_CRON', ! $enable ? true : null );
 
   return $wp_config_editor->write();
+}
+
+/**
+ * Determines whether a plugin is active.
+ *
+ * @param string $plugin Path to the plugin file relative to the plugins directory.
+ *
+ * The below function is not available from the front-end, so we embedded its body.
+ *
+ * @link https://developer.wordpress.org/reference/functions/is_plugin_active/
+ *
+ * @return bool True, if in the active plugins list. False, not in the list.
+ */
+function trader_is_plugin_active( string $plugin ) : bool
+{
+  return in_array( $plugin, (array) get_option( 'active_plugins', array() ), true ) || ( is_multisite() && isset( get_site_option( 'active_sitewide_plugins' )[ $plugin ] ) );
 }

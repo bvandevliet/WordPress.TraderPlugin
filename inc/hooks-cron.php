@@ -4,14 +4,14 @@ defined( 'ABSPATH' ) || exit;
 
 
 /**
- * Update market cap history.
+ * Update market cap history. Must be called prior to automations to update database and set cache.
  */
-add_action( 'trader_cronjob_hourly_filtered', array( '\Trader\Metrics\CoinMarketCap', 'list_latest' ) );
+add_action( 'trader_cronjob_hourly_filtered', array( '\Trader\Metrics\CoinMarketCap', 'list_latest' ), 9 );
 
 /**
  * Rebalance all portfolio's that are automated and in turn.
  */
-add_action( 'trader_cronjob_hourly_filtered', array( '\Trader', 'do_automations' ) );
+add_action( 'trader_cronjob_hourly_filtered', array( '\Trader', 'do_automations' )/*, 10*/ );
 
 /**
  * Filter cronjob execution.

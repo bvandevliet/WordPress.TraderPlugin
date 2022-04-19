@@ -80,7 +80,7 @@ class Admin_Pages
        */
       if ( array_some(
         array_merge( array( 'trader_manage_options' ), $page['capabilities'] ),
-        function( $cap )
+        function ( $cap )
         {
           return ! current_user_can( $cap );
         }
@@ -152,7 +152,7 @@ class Admin_Pages
      */
     if ( array_some(
       $caps,
-      function( $cap )
+      function ( $cap )
       {
         return ! current_user_can( $cap );
       }

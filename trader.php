@@ -7,7 +7,7 @@
  *
  * @wordpress-plugin
  * Plugin Name:       Trader
- * Version:           2022.01.05
+ * Version:           2022.04.07
  * Requires at least: 5.7
  * Requires PHP:      7.4
  * Description:       Connects to exchange API's and provides blocks for rendering exchange data.
@@ -26,7 +26,7 @@ defined( 'ABSPATH' ) || exit;
  */
 define( 'TRADER_ABSPATH', trailingslashit( __DIR__ ) );
 define( 'TRADER_URL', plugin_dir_url( __FILE__ ) );
-define( 'TRADER_PLUGIN_VERSION', '2022.01.05' );
+define( 'TRADER_PLUGIN_VERSION', '2022.04.07' );
 
 /**
  * Increase execution times allowing some headroom to wait for order fills.
@@ -148,17 +148,8 @@ add_action(
   {
     wp_enqueue_style( 'trader-plugin-styles', TRADER_URL . 'assets/css/style.css', array(), TRADER_PLUGIN_VERSION );
 
-    wp_enqueue_script( 'trader-plugin-script-forms', TRADER_URL . 'assets/js/forms.js', array( 'jquery' ), TRADER_PLUGIN_VERSION, true );
-
-    wp_enqueue_script( 'trader-plugin-script-ajax', TRADER_URL . 'assets/js/ajax.js', array( 'jquery' ), TRADER_PLUGIN_VERSION, false );
-    wp_localize_script(
-      'trader-plugin-script-ajax',
-      'ajax_obj',
-      array(
-        'ajax_url' => admin_url( 'admin-ajax.php' ),
-        'nonce'    => wp_create_nonce( 'trader_ajax' ),
-      )
-    );
+    wp_enqueue_script( 'trader-plugin-script-functions', TRADER_URL . 'assets/js/functions.js', array( 'jquery' ), TRADER_PLUGIN_VERSION, false );
+    wp_enqueue_script( 'trader-plugin-script-forms', TRADER_URL . 'assets/js/forms.js', array( 'jquery' ), TRADER_PLUGIN_VERSION, false );
   },
   100
 );

@@ -50,12 +50,19 @@ function trader_dynamic_block_rebalance_form_cb( $block_attributes, $content )
             $errors->merge_from( $balance_exchange );
           }
 
+          $trades = array();
           if ( ! is_wp_error( $balance_allocated ) && ! is_wp_error( $balance_exchange ) ) {
-            foreach ( \Trader::rebalance( \Trader\Exchanges\Bitvavo::current_user(), $balance, $configuration ) as $index => $order ) {
+            $trades = \Trader::rebalance( \Trader\Exchanges\Bitvavo::current_user(), $balance, $configuration );
+            foreach ( $trades as $index => $order ) {
               if ( ! empty( $order['errorCode'] ) ) {
                 $errors->add(
                   $order['errorCode'] . '-' . $index,
                   sprintf( __( 'Exchange error %1$s %2$s: ', 'trader' ), $order['side'], $order['market'] ) . ( $order['error'] ?? __( 'An unknown error occured.', 'trader' ) )
+                );
+              } elseif ( ! 'filled' === $order['status'] ) {
+                $errors->add(
+                  'not_filled-' . $index,
+                  sprintf( __( 'Order not filled %1$s %2$s: ', 'trader' ), $order['side'], $order['market'] ) . $order['status']
                 );
               }
             }
@@ -66,11 +73,17 @@ function trader_dynamic_block_rebalance_form_cb( $block_attributes, $content )
            * Always save configuration.
            */
           if ( ! $errors->has_errors() ) {
-            $configuration->last_rebalance = new DateTime();
+            if ( count( $trades ) > 0 ) {
+              $configuration->last_rebalance = new DateTime();
 
-            ?>
-            <div class="updated notice is-dismissible"><p><?php esc_html_e( 'Portfolio was rebalanced successfully.', 'trader' ); ?></p></div>
-            <?php
+              ?>
+              <div class="updated notice is-dismissible"><p><?php esc_html_e( 'Portfolio was rebalanced successfully.', 'trader' ); ?></p></div>
+              <?php
+            } else {
+              ?>
+              <div class="updated notice is-dismissible"><p><?php esc_html_e( 'Nothing to rebalance.', 'trader' ); ?></p></div>
+              <?php
+            }
           }
           $configuration->save();
           ?>
@@ -114,14 +127,13 @@ function trader_dynamic_block_rebalance_form_cb( $block_attributes, $content )
 
   if ( $errors->has_errors() ) :
     ?>
-    <div class="error"><p><?php echo implode( "</p>\n<p>", esc_html( $errors->get_error_messages() ) ); ?></p></div>
+    <div class="error"><p><?php echo implode( "</p>\n<p>", array_map( 'esc_html', $errors->get_error_messages() ) ); ?></p></div>
     <?php
   endif;
 
   ?>
   <form action="<?php echo esc_attr( get_permalink() ); ?>" method="post" class="trader-rebalance">
     <?php wp_nonce_field( 'portfolio-rebalance-user_' . $current_user->ID, 'do-portfolio-rebalance-nonce' ); ?>
-    <input type="hidden" name="dust_limit" value="<?php echo esc_attr( $configuration->dust_limit ); ?>" />
     <fieldset>
       <p class="form-row form-row-wide">
         <label title="<?php esc_attr_e( 'Max amount of assets from CoinMarketCap listing.', 'trader' ); ?>">
@@ -144,14 +156,10 @@ function trader_dynamic_block_rebalance_form_cb( $block_attributes, $content )
       </p>
       <div class="clear"></div>
       <p class="form-row form-row-first">
-        <label for="alloc_quote" title="<?php echo esc_attr( sprintf( __( 'Allocate a given percentage to quote currency \'%s\'.', 'trader' ), $configuration->quote_currency ) ); ?>">
+        <label title="<?php echo esc_attr( sprintf( __( 'Allocate a given percentage to quote currency \'%s\'.', 'trader' ), $configuration->quote_currency ) ); ?>">
           <?php esc_html_e( 'Quote allocation', 'trader' ); ?> [%]
+          <input id="alloc_quote" type="number" min="0" max="100" step=".01" class="input-number" name="alloc_quote" value="<?php echo esc_attr( $configuration->alloc_quote ); ?>" />
         </label>
-        <label style="float:right;" title="<?php esc_attr_e( 'Multiply quote allocation by Fear and Greed index.', 'trader' ); ?>">
-          <?php echo esc_html( sprintf( __( '&#8226;~.%s', 'trader' ), \Trader\Metrics\Alternative_Me::fag_index_current() ) ); ?>
-          <input type="checkbox" name="alloc_quote_fag_multiply" <?php checked( $configuration->alloc_quote_fag_multiply ); ?> />
-        </label>
-        <input id="alloc_quote" type="number" min="0" max="100" class="input-number" name="alloc_quote" value="<?php echo esc_attr( $configuration->alloc_quote ); ?>" />
       </p>
       <p class="form-row form-row-last">
         <label title="<?php echo esc_attr( sprintf( __( 'Takeout a given amount of quote currency \'%s\'.', 'trader' ), $configuration->quote_currency ) ); ?>">
@@ -193,7 +201,7 @@ function trader_dynamic_block_rebalance_form_cb( $block_attributes, $content )
     <p style="display:inline-block;">
       <button type="submit" class="button" name="action" value="do-portfolio-rebalance" disabled
       onclick="return confirm('<?php esc_attr_e( 'This will perform a portfolio rebalance.\nAre you sure?', 'trader' ); ?>');">
-      <?php echo sprintf( __( 'Rebalance now (fee ≈ %1$s %2$s)', 'trader' ), $configuration->quote_currency, '<span class="trader-expected-fee"></span>' ); ?></button>
+      <?php printf( __( 'Rebalance now (fee ≈ %1$s %2$s)', 'trader' ), $configuration->quote_currency, '<span class="trader-expected-fee"></span>' ); ?></button>
     </p>
     <p style="display:inline-block;">
       <button type="submit" class="button trader-danger-zone" name="action" value="sell-whole-portfolio"

@@ -213,7 +213,8 @@ class Bitvavo implements Exchange
       $errors = new \WP_Error();
       $errors->add(
         'exchange_bitvavo-' . ( $balance_exchange['errorCode'] ?? 0 ),
-        __( 'Exchange error: ', 'trader' ) . ( $balance_exchange['error'] ?? __( 'An unknown error occured.', 'trader' ) )
+        __( 'Exchange error: ', 'trader' ) . ( $balance_exchange['error'] ?? __( 'An unknown error occured.', 'trader' ) ),
+        $balance_exchange
       );
       return $errors;
     }
@@ -260,11 +261,21 @@ class Bitvavo implements Exchange
   {
     $result = array();
 
+    /**
+     * Run each sell order in an asyncronous thread when possible.
+     */
+    $pool_selloff = \Spatie\Async\Pool::create()->concurrency( 8 )->timeout( 299 );
     foreach ( $this->get_instance()->ordersOpen( array() ) as $order ) {
-      if ( ! in_array( explode( '-', $order['market'] )[0], $ignore, true ) ) {
-        $result[] = $this->get_instance()->cancelOrder( $order['market'], $order['orderId'] );
-      }
+      $pool_automations->add(
+        function () use ( &$order, &$ignore, &$result )
+        {
+          if ( ! in_array( explode( '-', $order['market'] )[0], $ignore, true ) ) {
+            $result[] = $this->get_instance()->cancelOrder( $order['market'], $order['orderId'] );
+          }
+        }
+      );
     }
+    $pool_selloff->wait();
 
     return $result;
   }
@@ -333,7 +344,7 @@ class Bitvavo implements Exchange
       return $response;
     }
 
-    if ( floatval( $amount_quote ) <= 0 ) {
+    if ( (float) $amount_quote <= 0 ) {
       return $response;
     }
 
@@ -395,7 +406,7 @@ class Bitvavo implements Exchange
       return $response;
     }
 
-    if ( floatval( $amount_quote ) <= 0 ) {
+    if ( (float) $amount_quote <= 0 ) {
       return $response;
     }
 
@@ -423,7 +434,7 @@ class Bitvavo implements Exchange
     /**
      * Prevent dust.
      */
-    if ( floatval( bcmul( bcsub( $asset['available'], $amount ), $price ) ) <= 2 ) {
+    if ( (float) bcmul( bcsub( $asset['available'], $amount ), $price ) <= 2 ) {
       $amount             = $asset['available'];
       $response['amount'] = $amount;
       $amount_quote       = bcmul( $amount, $price );

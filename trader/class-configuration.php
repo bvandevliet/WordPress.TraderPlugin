@@ -36,7 +36,7 @@ class Configuration
    *
    * @var int
    */
-  public int $top_count = 30;
+  public int $top_count = 20;
 
   /**
    * The period to use for smoothing Market Cap.
@@ -50,14 +50,16 @@ class Configuration
    *
    * @var int|float|string
    */
-  public $nth_root = '2.25';
+  public $nth_root = '2.45';
 
   /**
    * Minimum required allocation difference in quote currency.
    *
    * @var int
+   *
+   * @deprecated If alloc diff is below min order amount, just skip.
    */
-  public int $dust_limit = 2;
+  // public int $dust_limit = 5;
 
   /**
    * Allocation percentage to keep in quote currency.
@@ -77,8 +79,10 @@ class Configuration
    * Multiply quote allocation by Fear and Greed index.
    *
    * @var bool
+   *
+   * @deprecated Default false.
    */
-  public bool $alloc_quote_fag_multiply = false;
+  // public bool $alloc_quote_fag_multiply = false;
 
   /**
    * Rebalance period in hours.
@@ -92,7 +96,7 @@ class Configuration
    *
    * @var int|float|string
    */
-  public $rebalance_threshold = '1.25';
+  public $rebalance_threshold = '1.35';
 
   /**
    * Rebalance mode.
@@ -236,14 +240,14 @@ class Configuration
         'top_count'                => 1,
         'smoothing'                => 1,
         'nth_root'                 => 1,
-        'dust_limit'               => 1,
         'alloc_quote'              => 0,
-        'alloc_quote_fag_multiply' => false,
         'takeout'                  => 0,
         'interval_hours'           => 1,
         'rebalance_threshold'      => 0,
         'rebalance_mode'           => 'default',
         'automation_enabled'       => false,
+        'dust_limit'               => 1,     // (DEPRECATED)
+        'alloc_quote_fag_multiply' => false, // (DEPRECATED)
       ) as $param => $initial ) {
         $configuration->$param = $initial;
       }
@@ -257,7 +261,6 @@ class Configuration
           $configuration->$param = isset( $req_value ) ? min( max( 1, intval( $req_value ) ), 100 ) : $default;
           break;
         case 'smoothing':
-        case 'dust_limit':
         case 'interval_hours':
           $configuration->$param = isset( $req_value ) ? max( 1, intval( $req_value ) ) : $default;
           break;
@@ -277,7 +280,6 @@ class Configuration
         case 'rebalance_mode':
           $configuration->$param = isset( $req_value ) ? sanitize_key( $req_value ) : $default;
           break;
-        case 'alloc_quote_fag_multiply':
         case 'automation_enabled':
           $configuration->$param = ! empty( $req_value ) ? boolval( $req_value ) : $default;
           break;

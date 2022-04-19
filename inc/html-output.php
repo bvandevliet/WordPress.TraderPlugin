@@ -1,7 +1,4 @@
 <?php
-/**
- * MIGRATE HTML SNIPPETS TO WP BLOCKS !!
- */
 
 defined( 'ABSPATH' ) || exit;
 
@@ -110,10 +107,10 @@ function trader_echo_portfolio( \Trader\Balance $balance = null, bool $show_curr
         foreach ( $balance->assets as $asset ) :
           $allocation_rebl    = reset( $asset->allocation_rebl ) ?? 0;
           $amount_balanced    = bcmul( $allocation_rebl, $balance->amount_quote_total );
-          $alloc_perc_current = 100 * $asset->allocation_current;
-          $alloc_perc_rebl    = 100 * $allocation_rebl;
-          $diff               = $alloc_perc_current - $alloc_perc_rebl;
-          $diff_quote         = $asset->amount_quote - $amount_balanced;
+          $alloc_perc_current = bcmul( 100, $asset->allocation_current );
+          $alloc_perc_rebl    = bcmul( 100, $allocation_rebl );
+          $diff               = bcsub( $alloc_perc_current, $alloc_perc_rebl );
+          $diff_quote         = bcsub( $asset->amount_quote, $amount_balanced );
           ?>
           <tr>
             <td><?php echo esc_html( $asset->symbol ); ?></td>
@@ -132,7 +129,7 @@ function trader_echo_portfolio( \Trader\Balance $balance = null, bool $show_curr
             <?php if ( $show_current && $show_rebalanced ) : ?>
               <td class="trader-number trader-no-padd-right"><?php echo esc_html( $configuration->quote_currency ); ?> <?php echo $diff_quote >= 0 ? '+' : '-'; ?></td>
               <td class="trader-number trader-no-padd-left"><?php echo esc_html( number_format( abs( $diff_quote ), 2 ) ); ?></td>
-              <td class="trader-number trader-no-padd-right"><?php echo esc_html( ( $diff >= 0 ? '+' : '-' ) . number_format( abs( $diff ), 2 ) ); ?></td>
+              <td class="trader-number trader-no-padd-right"><?php echo esc_html( ( (float) $diff >= 0 ? '+' : '-' ) . number_format( abs( $diff ), 2 ) ); ?></td>
               <td class="trader-number trader-no-padd-left"> %</td>
             <?php endif; ?>
           </tr>
