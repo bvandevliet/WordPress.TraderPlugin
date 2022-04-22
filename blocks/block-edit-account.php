@@ -112,19 +112,22 @@ function trader_dynamic_block_edit_account_cb( $block_attributes, $content )
     <fieldset>
       <legend><?php esc_html_e( 'Personal details', 'trader' ); ?></legend>
 
-      <p class="form-row form-row-first">
-        <label for="account_first_name"><?php esc_html_e( 'First name', 'trader' ); ?>&nbsp;<span class="required">*</span></label>
-        <input type="text" class="input-text" name="account_first_name" id="account_first_name" autocomplete="given-name" value="<?php echo esc_attr( $current_user->first_name ); ?>" />
-      </p>
-      <p class="form-row form-row-last">
-        <label for="account_last_name"><?php esc_html_e( 'Last name', 'trader' ); ?>&nbsp;<span class="required">*</span></label>
-        <input type="text" class="input-text" name="account_last_name" id="account_last_name" autocomplete="family-name" value="<?php echo esc_attr( $current_user->last_name ); ?>" />
-      </p>
-      <div class="clear"></div>
-      <p class="form-row form-row-wide">
-        <label for="account_email"><?php esc_html_e( 'Email address', 'trader' ); ?>&nbsp;<span class="required">*</span></label>
-        <input type="email" class="input-text" name="account_email" id="account_email" autocomplete="email" value="<?php echo esc_attr( $current_user->user_email ); ?>" />
-      </p>
+      <div>
+        <p class="form-row form-row-2">
+          <label for="account_first_name"><?php esc_html_e( 'First name', 'trader' ); ?>&nbsp;<span class="required">*</span></label>
+          <input type="text" class="input-text" name="account_first_name" id="account_first_name" autocomplete="given-name" value="<?php echo esc_attr( $current_user->first_name ); ?>" />
+        </p>
+        <p class="form-row form-row-2">
+          <label for="account_last_name"><?php esc_html_e( 'Last name', 'trader' ); ?>&nbsp;<span class="required">*</span></label>
+          <input type="text" class="input-text" name="account_last_name" id="account_last_name" autocomplete="family-name" value="<?php echo esc_attr( $current_user->last_name ); ?>" />
+        </p>
+      </div>
+      <div>
+        <p class="form-row form-row-wide">
+          <label for="account_email"><?php esc_html_e( 'Email address', 'trader' ); ?>&nbsp;<span class="required">*</span></label>
+          <input type="email" class="input-text" name="account_email" id="account_email" autocomplete="email" value="<?php echo esc_attr( $current_user->user_email ); ?>" />
+        </p>
+      </div>
     </fieldset>
 
     <fieldset>
