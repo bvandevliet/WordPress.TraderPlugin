@@ -33,17 +33,15 @@ class Trader
   public static function get_asset_allocations( \Trader\Exchanges\Exchange $exchange, \Trader\Configuration $configuration )
   {
     $alloc_quote = ! empty( $configuration->alloc_quote ) ? bcdiv( trader_max( 0, trader_min( 100, $configuration->alloc_quote ) ), 100 ) : '0';
-    $alloc_quote = $configuration->alloc_quote_fag_multiply ? bcmul( $alloc_quote, bcdiv( \Trader\Metrics\Alternative_Me::fag_index_current(), 100 ) ) : $alloc_quote;
 
     /**
-     * List latest based on market cap.
+     * List latest based on market cap (cache supported).
      */
     $cmc_latest = \Trader\Metrics\CoinMarketCap::list_latest(
       array(
         'sort'    => 'market_cap',
         'convert' => \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY,
-      ),
-      $configuration->smoothing
+      )
     );
 
     /**
@@ -75,13 +73,7 @@ class Trader
     /**
      * Sort again based on EMA value then handle top count.
      */
-    usort(
-      $cmc_latest,
-      function ( $a, $b )
-      {
-        return $b[0]->indicators->market_cap_ema <=> $a[0]->indicators->market_cap_ema;
-      }
-    );
+    usort( $cmc_latest, fn( $a, $b ) => $b[0]->indicators->market_cap_ema <=> $a[0]->indicators->market_cap_ema );
     $cmc_latest = array_slice( $cmc_latest, 0, $configuration->top_count );
 
     /**
@@ -91,9 +83,11 @@ class Trader
       /**
        * Skip if is stablecoin, one of its tags are excluded or weighting is set to zero.
        */
+      $weighting_is_set = array_key_exists( $asset_cmc_arr[0]->symbol, $configuration->asset_weightings );
+      $weighting        = $weighting_is_set ? (float) $configuration->asset_weightings[ $asset_cmc_arr[0]->symbol ] : 1;
       if (
-        count( array_intersect( array_merge( array( 'stablecoin' ), $configuration->excluded_tags ), $asset_cmc_arr[0]->tags ) ) > 0 ||
-        ( array_key_exists( $asset_cmc_arr[0]->symbol, $configuration->asset_weightings ) && $configuration->asset_weightings[ $asset_cmc_arr[0]->symbol ] <= 0 )
+        $weighting <= 0 ||
+        ( ! $weighting_is_set && count( array_intersect( array_merge( array( 'stablecoin' ), $configuration->excluded_tags ), $asset_cmc_arr[0]->tags ) ) > 0 )
       ) {
         continue;
       }
@@ -223,92 +217,76 @@ class Trader
     /**
      * Portfolio rebalancing: first loop placing sell orders.
      */
+    $pool_selling = \Spatie\Async\Pool::create()->concurrency( 20 )->timeout( 299 );
     foreach ( $balance->assets as $asset ) {
-      /**
-       * Skip if is quote currency.
-       *
-       * THIS OKE ? !!
-       */
-      if ( $asset->symbol === \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY ) {
-        continue;
-      }
+      $pool_selling->add(
+        function () use ( $exchange, $balance, $configuration, $asset, &$simulate, &$mode, &$result )
+        {
+          /**
+           * Skip if is quote currency.
+           *
+           * THIS OKE ? !!
+           */
+          if ( $asset->symbol === \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY ) {
+            return;
+          }
 
-      $market = $asset->symbol . '-'
-      . ( in_array( $configuration->quote_currency, \Trader\Exchanges\Bitvavo::QUOTES_SUPPORTED, true ) ? $configuration->quote_currency : \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY );
+          $amount_quote = bcmul( $balance->amount_quote_total, $asset->allocation_rebl[ $mode ] ?? 0 );
+          $diff         = bcsub( $amount_quote, $asset->amount_quote );
 
-      $amount_quote = bcmul( $balance->amount_quote_total, $asset->allocation_rebl[ $mode ] ?? 0 );
+          $amount_quote_to_sell = (float) $diff < 0 ? bcabs( $diff ) : 0;
 
-      $diff            = bcsub( $amount_quote, $asset->amount_quote );
-      $diff_float      = floatval( $diff );
-      $diff_float_abs  = floatval( bcabs( $diff ) );
-      $diff_spread_abs = trader_max( bcabs( bcsub( $amount_quote, bcmul( $asset->amount_quote, '0.99' ) ) ), bcabs( bcsub( $amount_quote, bcmul( $asset->amount_quote, '1.01' ) ) ) );
+          // THIS OKE ? !!
+          if ( (float) $amount_quote_to_sell >= \Trader\Exchanges\Bitvavo::MIN_QUOTE ) {
+            $market = $asset->symbol . '-'
+            . ( in_array( $configuration->quote_currency, \Trader\Exchanges\Bitvavo::QUOTES_SUPPORTED, true ) ? $configuration->quote_currency : \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY );
 
-      $amount_quote_to_sell = 0;
-
-      /**
-       * REDUCE allocation ..
-       */
-      if ( $diff_float < 0 && $configuration->dust_limit <= $diff_float_abs ) {
-        if ( $diff_float_abs < \Trader\Exchanges\Bitvavo::MIN_QUOTE ) {
-          // REBUY REQUIRED ..
-          $amount_quote_to_sell = bcadd( $diff_spread_abs, \Trader\Exchanges\Bitvavo::MIN_QUOTE );
-
-          $amount_quote_to_sell = bcdiv( $amount_quote_to_sell, bcsub( 1, \Trader\Exchanges\Bitvavo::TAKER_FEE ) ); // COMPENSATE FOR FEE IN SELL ORDER ..
-          // $amount_quote_to_sell = bcmul( $amount_quote_to_sell, bcadd( 1, \Trader\Exchanges\Bitvavo::TAKER_FEE ) ); // COMPENSATE FOR FEE IN REBUY ORDER ..
-        } else {
-          // NOTHING TO REBUY ..
-          $amount_quote_to_sell = bcabs( $diff );
+            $result[] = $asset->rebl_sell_order = $exchange->sell_asset( $market, $amount_quote_to_sell, $simulate );
+          }
         }
-      }
-
-      /**
-       * INCREASE allocation ..
-       */
-      elseif ( $diff_float > 0 && $configuration->dust_limit <= $diff_float_abs ) {
-        if ( $diff_float_abs < \Trader\Exchanges\Bitvavo::MIN_QUOTE + floatval( bcsub( $diff_spread_abs, $diff ) ) ) {
-          // REBUY REQUIRED ..
-          $amount_quote_to_sell = \Trader\Exchanges\Bitvavo::MIN_QUOTE;
-
-          // $amount_quote_to_sell = bcdiv( $amount_quote_to_sell, bcsub( 1, \Trader\Exchanges\Bitvavo::TAKER_FEE ) ); // COMPENSATE FOR FEE IN SELL ORDER ..
-          // $amount_quote_to_sell = bcmul( $amount_quote_to_sell, bcadd( 1, \Trader\Exchanges\Bitvavo::TAKER_FEE ) ); // COMPENSATE FOR FEE IN REBUY ORDER ..
-        }
-      }
-      // else // ONLY BUYING MAY BE REQUIRED ..
-
-      if ( floatval( $amount_quote_to_sell ) > 0 ) {
-        $result[] = $asset->rebl_sell_order = $exchange->sell_asset( $market, $amount_quote_to_sell, $simulate );
-      }
+      );
     }
+    $pool_selling->wait();
 
     /**
      * Portfolio rebalancing: second loop to verify all sell orders are filled.
      * OPTIMIZALBLE IF USING ordersOpen() ENDPOINT INSTEAD => LESS API CALLS => BUT HAS A REQUEST RATE LIMITING WEIGHT OF 25 ..
      */
     $all_filled  = false;
-    $fill_checks = 60; // multiply by sleep seconds ..
+    $fill_checks = 60; // multiply by sleep() seconds ..
     while ( ! $simulate && ! $all_filled && $fill_checks > 0 ) {
       sleep( 1 ); // multiply by $fill_checks ..
-
       $all_filled = true;
+
+      /**
+       * Run each sell order verification in an asyncronous thread when possible.
+       */
+      $pool_sell_verify = \Spatie\Async\Pool::create()->concurrency( 20 )->timeout( 299 );
       foreach ( $balance->assets as $asset ) {
-        // Only (re)request non-filled orders.
-        if (
-          empty( $asset->rebl_sell_order['orderId'] ) ||
-          substr( $asset->rebl_sell_order['status'], 0, 6 ) === 'cancel' || in_array( $asset->rebl_sell_order['status'], array( 'filled', 'expired', 'rejected' ), true )
-        ) {
-          continue;
-        }
+        $pool_sell_verify->add(
+          function () use ( $exchange, $asset, &$all_filled, &$fill_checks )
+          {
+            // Only (re)request non-filled orders.
+            if (
+              empty( $asset->rebl_sell_order['orderId'] ) ||
+              substr( $asset->rebl_sell_order['status'], 0, 6 ) === 'cancel' || in_array( $asset->rebl_sell_order['status'], array( 'filled', 'expired', 'rejected' ), true )
+            ) {
+              return;
+            }
 
-        $all_filled = false;
+            $all_filled = false;
 
-        if ( $fill_checks <= 1 ) {
-          // QUEUE THIS ASSET REBL INSTEAD OF ORDER CANCEL !!
-          $exchange->cancel_order( $asset->rebl_sell_order['market'], $asset->rebl_sell_order['orderId'] );
-          $asset->rebl_sell_order['status'] = 'canceled';
-        } else {
-          $asset->rebl_sell_order = $exchange->get_order( $asset->rebl_sell_order['market'], $asset->rebl_sell_order['orderId'] );
-        }
+            if ( $fill_checks <= 1 ) {
+              // QUEUE THIS ASSET REBL INSTEAD OF ORDER CANCEL !!
+              $exchange->cancel_order( $asset->rebl_sell_order['market'], $asset->rebl_sell_order['orderId'] );
+              $asset->rebl_sell_order['status'] = 'canceled';
+            } else {
+              $asset->rebl_sell_order = $exchange->get_order( $asset->rebl_sell_order['market'], $asset->rebl_sell_order['orderId'] );
+            }
+          }
+        );
       }
+      $pool_sell_verify->wait();
 
       $fill_checks--;
     }
@@ -325,7 +303,7 @@ class Trader
       $amount_quote = bcmul( $balance->amount_quote_total, $asset->allocation_rebl[ $mode ] ?? 0 );
 
       /**
-       * Only append absolute allocation to total buy value if is quote currency.
+       * If is quote currency, then only add to total buy value.
        *
        * QUOTE ASSET SHOULD SOMEHOW BE HANDLED THE SAME WAY AS ANY OTHER ASSET,
        * BUT POTENTIAL SWAPS SHOULD RUN THROUGH QUOTE WITH RESPECT TO LIMITED TRADING PAIRS !!
@@ -335,42 +313,64 @@ class Trader
         continue;
       }
 
-      $asset->amount_quote_to_buy = bcsub( $amount_quote, ! $simulate ? $asset->amount_quote : bcsub( $asset->amount_quote, $asset->rebl_sell_order->amountQuote ?? 0 ) );
+      $diff =
+        bcsub( $amount_quote, ! $simulate ? $asset->amount_quote : bcsub( $asset->amount_quote, $asset->rebl_sell_order->amountQuote ?? 0 ) );
 
       /**
-       * Skip if amount is below dust threshold.
+       * Only positive diffs can be buy orders.
+       * Use minimum order value to filter out irrelevant dust.
+       *
+       * THIS OKE ? !!
        */
-      if ( floatval( $asset->amount_quote_to_buy ) >= $configuration->dust_limit ) {
-        $to_buy_total = bcadd( $to_buy_total, $asset->amount_quote_to_buy );
+      if ( (float) $diff >= \Trader\Exchanges\Bitvavo::MIN_QUOTE ) {
+        $asset->amount_quote_to_buy = $diff;
+        $to_buy_total               = bcadd( $to_buy_total, $asset->amount_quote_to_buy );
       }
     }
 
     /**
+     * Dont over-buy. Take the largest total value to calculate the allocation of the available balance from.
+     */
+    $to_buy_total = trader_max( $to_buy_total, $balance->assets[0]->available );
+
+    /**
      * Portfolio rebalancing: fourth loop (re)buying assets.
      */
+    $pool_buying = \Spatie\Async\Pool::create()->concurrency( 20 )->timeout( 299 );
     foreach ( $balance->assets as $asset ) {
-      /**
-       * Skip if is quote currency as it is the currency we buy with, not we can buy.
-       *
-       * THIS OKE ? !!
-       */
-      if ( $asset->symbol === \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY ) {
-        continue;
-      }
+      $pool_buying->add(
+        function () use ( $exchange, $balance, $configuration, $asset, &$simulate, &$mode, &$result, &$to_buy_total )
+        {
+          /**
+           * Skip:
+           * - if is quote currency as it is the currency we buy with, not we can buy;
+           * - or if no "to buy" amount is set.
+           *
+           * THIS OKE ? !!
+           */
+          if ( $asset->symbol === \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY || empty( $asset->amount_quote_to_buy ) ) {
+            return;
+          }
 
-      /**
-       * Skip if amount is below dust threshold.
-       */
-      if ( floatval( $asset->amount_quote_to_buy ) < $configuration->dust_limit ) {
-        continue;
-      }
+          /**
+           * Scale to available balance, but don't over-buy.
+           */
+          $amount_quote_to_buy = ! $simulate
+            ? trader_min( $asset->amount_quote_to_buy, bcmul( $balance->assets[0]->available, trader_get_allocation( $asset->amount_quote_to_buy, $to_buy_total ) ) )
+            : $asset->amount_quote_to_buy;
 
-      $amount_quote_to_buy = ! $simulate ? bcmul( $balance->assets[0]->available, trader_get_allocation( $asset->amount_quote_to_buy, $to_buy_total ) ) : $asset->amount_quote_to_buy;
-
-      if ( floatval( $amount_quote_to_buy ) >= \Trader\Exchanges\Bitvavo::MIN_QUOTE ) {
-        $result[] = $asset->rebl_buy_order = $exchange->buy_asset( $market, $amount_quote_to_buy, $simulate );
-      }
+          /**
+           * Test whether the amount quote to buy is still above the minimum order value.
+           *
+           * THIS OKE ? !!
+           */
+          if ( (float) $amount_quote_to_buy >= \Trader\Exchanges\Bitvavo::MIN_QUOTE ) {
+            $result[] = $asset->rebl_buy_order = $exchange->buy_asset( $asset->symbol, $amount_quote_to_buy, $simulate );
+          }
+        }
+      );
     }
+    $pool_buying->wait();
 
     return $result;
   }
@@ -388,10 +388,9 @@ class Trader
     /**
      * Run each automation in an asyncronous thread when possible.
      */
-    $pool = \Spatie\Async\Pool::create()->concurrency( 20 )->timeout( 299 );
-
+    $pool_automations = \Spatie\Async\Pool::create()->concurrency( 8 )->timeout( 299 );
     foreach ( \Trader\Configuration::get_automations() as $user_id => $configurations ) {
-      $pool->add(
+      $pool_automations->add(
         function () use ( $user_id, $configurations )
         {
           $automations_triggered = array();
@@ -404,8 +403,8 @@ class Trader
             return array();
           }
 
-          $bitvavo          = new \Trader\Exchanges\Bitvavo( $user_id );
-          $balance_exchange = $bitvavo->get_balance();
+          $exchange         = new \Trader\Exchanges\Bitvavo( $user_id );
+          $balance_exchange = $exchange->get_balance();
 
           if ( is_wp_error( $balance_exchange ) ) {
             $errors->merge_from( $balance_exchange );
@@ -428,7 +427,7 @@ class Trader
               continue;
             }
 
-            $balance_allocated = self::get_asset_allocations( $bitvavo, $configuration );
+            $balance_allocated = self::get_asset_allocations( $exchange, $configuration );
             $balance           = \Trader\Balance::merge_balance( $balance_allocated, $balance_exchange, $configuration );
 
             if ( is_wp_error( $balance_allocated ) ) {
@@ -442,25 +441,24 @@ class Trader
              */
             if ( ! array_some(
               $balance->assets,
-              function ( $asset ) use ( $balance, $configuration )
+              function ( \Trader\Asset $asset ) use ( $balance, $configuration )
               {
-                $allocation_rebl    = $asset->allocation_rebl[ $configuration->rebalance_mode ] ?? 0;
+                $allocation_rebl    = reset( $asset->allocation_rebl ) ?? 0;
                 $amount_balanced    = bcmul( $allocation_rebl, $balance->amount_quote_total );
-                $alloc_perc_current = 100 * $asset->allocation_current;
-                $alloc_perc_rebl    = 100 * $allocation_rebl;
-                $diff               = $alloc_perc_current - $alloc_perc_rebl;
-                $diff_quote         = $asset->amount_quote - $amount_balanced;
+                $alloc_perc_current = bcmul( 100, $asset->allocation_current );
+                $alloc_perc_rebl    = bcmul( 100, $allocation_rebl );
+                $diff               = bcsub( $alloc_perc_current, $alloc_perc_rebl );
+                $diff_quote         = bcsub( $asset->amount_quote, $amount_balanced );
 
-                return // at least the dust- and minimum order amount should be reached
-                  $diff_quote >= $configuration->dust_limit &&
-                  $diff_quote >= \Trader\Exchanges\Bitvavo::MIN_QUOTE
+                return // at least the minimum order amount should be reached
+                  (float) bcabs( $diff_quote ) >= \Trader\Exchanges\Bitvavo::MIN_QUOTE
                   && (
                   // if configured rebalance threshold is reached
-                  ( bcabs( $diff ) >= $configuration->rebalance_threshold )
+                  (float) bcabs( $diff ) >= (float) $configuration->rebalance_threshold
                   ||
                   // or if the asset should not be allocated at all
                   // phpcs:ignore WordPress.PHP.StrictComparisons
-                  ( $alloc_perc_current > $alloc_perc_rebl && 0 == $alloc_perc_rebl )
+                  ( (float) $alloc_perc_current > (float) $alloc_perc_rebl && 0 == $alloc_perc_rebl )
                 );
               }
             ) ) {
@@ -470,11 +468,19 @@ class Trader
             /**
              * Rebalance.
              */
-            foreach ( self::rebalance( $bitvavo, $balance, $configuration ) as $index => $order ) {
+            $trades = self::rebalance( $exchange, $balance, $configuration );
+            foreach ( $trades as $index => $order ) {
               if ( ! empty( $order['errorCode'] ) ) {
                 $errors->add(
                   $order['errorCode'] . '-' . $index,
-                  sprintf( __( 'Exchange error %1$s %2$s: ', 'trader' ), $order['side'], $order['market'] ) . ( $order['error'] ?? __( 'An unknown error occured.', 'trader' ) )
+                  sprintf( __( 'Exchange error %1$s %2$s: ', 'trader' ), $order['side'], $order['market'] ) . ( $order['error'] ?? __( 'An unknown error occured.', 'trader' ) ),
+                  $order
+                );
+              } elseif ( ! 'filled' === $order['status'] ) {
+                $errors->add(
+                  'not_filled-' . $index,
+                  sprintf( __( 'Order not filled %1$s %2$s: ', 'trader' ), $order['side'], $order['market'] ) . $order['status'],
+                  $order
                 );
               }
             }
@@ -483,7 +489,7 @@ class Trader
              * On success, update timestamp of last rebalance.
              */
             $timestamp = new DateTime(); // refresh
-            if ( ! $errors->has_errors() ) {
+            if ( count( $trades ) > 0 && ! $errors->has_errors() ) {
               $configuration->last_rebalance = $timestamp;
               $configuration->save( $user_id );
             }
@@ -504,7 +510,7 @@ class Trader
              * @param DateTime  $timestamp The timestamp of when the automation was triggered.
              * @param \WP_Error $errors    Errors if any.
              */
-            do_action( 'trader_automation_triggered', $automation_triggered );
+            do_action( 'trader_automation_triggered', $automation_triggered[0], $automation_triggered[1], $automation_triggered[2] );
           }
         }
       )->catch(
@@ -516,6 +522,6 @@ class Trader
       );
     }
 
-    $pool->wait();
+    $pool_automations->wait();
   }
 }
