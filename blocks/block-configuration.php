@@ -1,4 +1,6 @@
 <?php
+// phpcs:disable WordPress.Security.ValidatedSanitizedInput.MissingUnslash
+// phpcs:disable WordPress.Security.ValidatedSanitizedInput
 
 defined( 'ABSPATH' ) || exit;
 
@@ -30,25 +32,36 @@ function trader_dynamic_block_configuration_cb( $block_attributes, $content )
         isset( $_POST['assets'] ) && is_array( $_POST['assets'] ) &&
         isset( $_POST['weightings'] ) && is_array( $_POST['weightings'] )
       ) {
-        $asset_weightings = array();
+        $asset_weightings  = array();
+        $asset_alloc_percs = array();
 
-        $assets     = /*wp_unslash( */$_POST['assets'];// );
-        $weightings = /*wp_unslash( */$_POST['weightings'];// );
+        $assets      = /*wp_unslash( */$_POST['assets'];// );
+        $weightings  = /*wp_unslash( */$_POST['weightings'];// );
+        $alloc_percs = /*wp_unslash( */$_POST['alloc_percs'];// );
 
-        $length = min( count( $assets ), count( $weightings ) );
+        $length = min( count( $assets ), count( $weightings ), count( $alloc_percs ) );
 
-        $assets     = array_slice( $assets, 0, $length );
-        $weightings = array_slice( $weightings, 0, $length );
+        $assets      = array_slice( $assets, 0, $length );
+        $weightings  = array_slice( $weightings, 0, $length );
+        $alloc_percs = array_slice( $alloc_percs, 0, $length );
 
         foreach ( $assets as $index => $asset ) {
-          $asset = strtoupper( sanitize_key( $asset ) );
+          if ( '' === $asset = strtoupper( sanitize_key( $asset ) ) ) {
+            continue;
+          }
 
-          if ( '' !== $asset && false !== $weighting = is_numeric( $weightings[ $index ] ) ? trader_max( 0, floatstr( $weightings[ $index ] ) ) : false ) {
+          if ( false !== $weighting = is_numeric( $weightings[ $index ] ) ? trader_max( 0, floatstr( $weightings[ $index ] ) ) : false ) {
             $asset_weightings[ $asset ] = $weighting;
+          }
+
+          if ( false !== $alloc_perc = is_numeric( $alloc_percs[ $index ] ) ? trader_max( 0, trader_min( 100, floatstr( $alloc_percs[ $index ] ) ) ) : false ) {
+            $asset_alloc_percs[ $asset ] = $alloc_perc;
           }
         }
 
-        $configuration->asset_weightings = $asset_weightings;
+        $configuration->asset_weightings  = $asset_weightings;
+        $configuration->asset_alloc_percs = $asset_alloc_percs;
+
         $configuration->save();
       }
 
@@ -85,8 +98,9 @@ function trader_dynamic_block_configuration_cb( $block_attributes, $content )
       </legend>
       <?php foreach ( array_merge( $configuration->asset_weightings, array( '' => 1 ) ) as $asset => $weighting ) : ?>
         <p class="form-row form-row-wide form-row-cloneable">
-          <input type="text" class="input-text form-row-2" name="assets[]" autocomplete="off" value="<?php echo esc_attr( $asset ); ?>" />
-          <input type="number" min="0" step=".01" class="input-number form-row-2" name="weightings[]" value="<?php echo esc_attr( $weighting ); ?>" default="1" />
+          <input type="text" class="input-text form-row-3" name="assets[]" autocomplete="off" value="<?php echo esc_attr( $asset ); ?>" />
+          <input type="number" min="0" step=".01" class="input-number form-row-3" name="weightings[]" value="<?php echo esc_attr( $weighting ); ?>" default="1" />
+          <input type="number" min="0" max="100" step=".01" class="input-number form-row-3" name="alloc_percs[]" value="0" default="0" />
         </p>
       <?php endforeach; ?>
     </fieldset>

@@ -18,6 +18,13 @@ class Configuration
   public array $asset_weightings = array();
 
   /**
+   * Force allocate at least this percentage.
+   *
+   * @var array
+   */
+  public array $asset_alloc_percs = array();
+
+  /**
    * Exclude assets that have at least one of these tags.
    *
    * @var string[]
@@ -208,6 +215,25 @@ class Configuration
     }
 
     return $automations;
+  }
+
+  private $allocations_total = null;
+  /**
+   * Get the minimum allocation percentage for a given asset.
+   *
+   * @param string $symbol
+   */
+  public function get_minimum_allocation( string $symbol ) : string
+  {
+    if ( ! array_key_exists( $symbol, $this->asset_allocations ) ) {
+      return 0;
+    }
+
+    if ( null === $this->allocations_total ) {
+      $this->allocations_total = trader_max( 100, array_sum( $this->asset_allocations ) );
+    }
+
+    return trader_get_allocation( $this->asset_allocations[ $symbol ], $this->allocations_total );
   }
 
   /**

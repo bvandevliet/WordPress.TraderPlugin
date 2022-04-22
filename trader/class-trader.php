@@ -76,6 +76,8 @@ class Trader
     usort( $cmc_latest, fn( $a, $b ) => $b[0]->indicators->market_cap_ema <=> $a[0]->indicators->market_cap_ema );
     $cmc_latest = array_slice( $cmc_latest, 0, $configuration->top_count );
 
+    // APPEND ASSETS WITH CUSTOM ALLOCATION IF MISSING !!
+
     /**
      * Loop to leave out certain non-relevant assets then retrieve candlesticks and indicators.
      */
@@ -163,6 +165,8 @@ class Trader
       $asset_quote->allocation_rebl[ $mode ] = $alloc_quote;
       $total_allocations[ $mode ]            = bcmul( bcdiv( '1', bcsub( 1, $alloc_quote ) ), $total_allocation );
     }
+
+    // SCALE FOR CUSTOM MINIMUM ALLOCATIONS ? !!
 
     /**
      * Loop to calculate relative asset allocations.
