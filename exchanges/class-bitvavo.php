@@ -63,6 +63,25 @@ class Bitvavo implements Exchange
 
 
   /**
+   * {@inheritDoc}
+   *
+   * @return \WP_Error
+   */
+  public static function check_error( \WP_Error $errors, $response ) : \WP_Error
+  {
+    if ( ! is_array( $response ) || ! empty( $response['errorCode'] ) ) {
+      $errors->add(
+        'exchange_bitvavo-' . ( $response['errorCode'] ?? 0 ),
+        __( 'Exchange error: ', 'trader' ) . ( $response['error'] ?? __( 'An unknown error occured.', 'trader' ) ),
+        $response
+      );
+    }
+
+    return $errors;
+  }
+
+
+  /**
    * Container for the wrapper instance belonging to the current user.
    *
    * @var null|Bitvavo
@@ -149,16 +168,30 @@ class Bitvavo implements Exchange
   /**
    * {@inheritDoc}
    */
-  public function deposit_history() : array
+  public function deposit_history()
   {
+    $errors = new \WP_Error();
+
     $deposits = $this->get_instance()->depositHistory( array() );
-    $total    = 0;
-    $prices   = array( self::QUOTE_CURRENCY => 1 );
+
+    if ( self::check_error( $errors, $deposits )->has_errors() ) {
+      return $errors;
+    }
+
+    $total  = 0;
+    $prices = array( self::QUOTE_CURRENCY => 1 );
 
     foreach ( $deposits as $deposit ) {
       if ( $deposit['symbol'] !== self::QUOTE_CURRENCY && ! array_key_exists( $deposit['symbol'], $prices ) ) {
-        $market                       = $deposit['symbol'] . '-' . self::QUOTE_CURRENCY;
-        $prices[ $deposit['symbol'] ] = $this->get_instance()->tickerPrice( array( 'market' => $market ) )['price'];
+        $market = $deposit['symbol'] . '-' . self::QUOTE_CURRENCY;
+
+        $price_response = $this->get_instance()->tickerPrice( array( 'market' => $market ) );
+
+        if ( self::check_error( $errors, $price_response )->has_errors() ) {
+          return $errors;
+        }
+
+        $prices[ $deposit['symbol'] ] = $price_response['price'];
       }
       $amount_quote = floatstr( bcmul( $deposit['amount'], $prices[ $deposit['symbol'] ] ) );
 
@@ -172,16 +205,30 @@ class Bitvavo implements Exchange
   /**
    * {@inheritDoc}
    */
-  public function withdrawal_history() : array
+  public function withdrawal_history()
   {
+    $errors = new \WP_Error();
+
     $withdrawals = $this->get_instance()->withdrawalHistory( array() );
-    $total       = 0;
-    $prices      = array( self::QUOTE_CURRENCY => 1 );
+
+    if ( self::check_error( $errors, $withdrawals )->has_errors() ) {
+      return $errors;
+    }
+
+    $total  = 0;
+    $prices = array( self::QUOTE_CURRENCY => 1 );
 
     foreach ( $withdrawals as $withdrawal ) {
       if ( $withdrawal['symbol'] !== self::QUOTE_CURRENCY && ! array_key_exists( $withdrawal['symbol'], $prices ) ) {
-        $market                          = $withdrawal['symbol'] . '-' . self::QUOTE_CURRENCY;
-        $prices[ $withdrawal['symbol'] ] = $this->get_instance()->tickerPrice( array( 'market' => $market ) )['price'];
+        $market = $withdrawal['symbol'] . '-' . self::QUOTE_CURRENCY;
+
+        $price_response = $this->get_instance()->tickerPrice( array( 'market' => $market ) );
+
+        if ( self::check_error( $errors, $price_response )->has_errors() ) {
+          return $errors;
+        }
+
+        $prices[ $withdrawal['symbol'] ] = $price_response['price'];
       }
       $amount_quote = floatstr( bcmul( $withdrawal['amount'], $prices[ $withdrawal['symbol'] ] ) );
 
@@ -197,15 +244,11 @@ class Bitvavo implements Exchange
    */
   public function get_balance()
   {
+    $errors = new \WP_Error();
+
     $balance_exchange = $this->get_instance()->balance( array() );
 
-    if ( ! is_array( $balance_exchange ) || ! empty( $balance_exchange['errorCode'] ) ) {
-      $errors = new \WP_Error();
-      $errors->add(
-        'exchange_bitvavo-' . ( $balance_exchange['errorCode'] ?? 0 ),
-        __( 'Exchange error: ', 'trader' ) . ( $balance_exchange['error'] ?? __( 'An unknown error occured.', 'trader' ) ),
-        $balance_exchange
-      );
+    if ( self::check_error( $errors, $balance_exchange )->has_errors() ) {
       return $errors;
     }
 
@@ -224,7 +267,13 @@ class Bitvavo implements Exchange
         $asset->symbol = $balance_exchange[ $i ]['symbol'];
         $market        = $asset->symbol . '-' . self::QUOTE_CURRENCY;
 
-        $asset->price        = $this->get_instance()->tickerPrice( array( 'market' => $market ) )['price'];
+        $price_response = $this->get_instance()->tickerPrice( array( 'market' => $market ) );
+
+        if ( self::check_error( $errors, $price_response )->has_errors() ) {
+          return $errors;
+        }
+
+        $asset->price        = $price_response['price'];
         $asset->amount_quote = floatstr( bcmul( $asset->amount, $asset->price ) );
       }
 
@@ -251,11 +300,17 @@ class Bitvavo implements Exchange
   {
     $result = array();
 
+    $open_orders = $this->get_instance()->ordersOpen( array() );
+
+    if ( ! is_array( $open_orders ) || ! empty( $open_orders['errorCode'] ) ) {
+      return $result;
+    }
+
     /**
      * Run each sell order in an asyncronous thread when possible.
      */
     $pool_selloff = \Spatie\Async\Pool::create()->concurrency( 8 )->timeout( 299 );
-    foreach ( $this->get_instance()->ordersOpen( array() ) as $order ) {
+    foreach ( $open_orders as $order ) {
       $pool_automations->add(
         function () use ( &$order, &$ignore, &$result )
         {
@@ -279,6 +334,23 @@ class Bitvavo implements Exchange
     $result = self::cancel_all_orders( $ignore );
 
     $balance = $this->get_instance()->balance( array() );
+
+    if ( ! is_array( $balance ) || ! empty( $balance['errorCode'] ) ) {
+      return array(
+        array(
+          'errorCode'         => $balance['errorCode'] ?? 0,
+          'error'             => $balance['error'] ?? __( 'An unknown error occured.', 'trader' ),
+          'orderId'           => null,
+          'market'            => null,
+          'side'              => 'sell',
+          'status'            => 'rejected',
+          'amountQuote'       => '0',
+          'filledAmount'      => '0',
+          'filledAmountQuote' => '0',
+          'feePaid'           => '0',
+        ),
+      );
+    }
 
     foreach ( $balance as $asset ) {
       if ( $asset['symbol'] === self::QUOTE_CURRENCY ) {
@@ -339,13 +411,12 @@ class Bitvavo implements Exchange
     $response['status'] = 'new';
 
     // $market_info = $this->get_instance()->markets( ['market' => $market] );
-    // $asset_info  = $this->get_instance()->assets( ['symbol' => $symbol] );
-
     // $min_quote  = $market_info['minOrderInQuoteAsset'];
     // $min_amount = $market_info['minOrderInBaseAsset'];
 
-    $price = $this->get_instance()->tickerPrice( array( 'market' => $market ) )['price'];
-    // $book  = $this->get_instance()->tickerBook( ['market' => $market] );
+    // $price = $this->get_instance()->tickerPrice( array( 'market' => $market ) )['price'];
+
+    // $asset_info  = $this->get_instance()->assets( ['symbol' => $symbol] );
 
     $amount_quote = trader_floor( $amount_quote, 2 );
     // $amount       = trader_floor( bcdiv( $amount_quote, $price ), $asset_info['decimals'] );
@@ -396,32 +467,49 @@ class Bitvavo implements Exchange
       return $response;
     }
 
-    $asset = $this->get_instance()->balance( array( 'symbol' => $symbol ) )[0];
+    $balance = $this->get_instance()->balance( array( 'symbol' => $symbol ) );
+
+    if ( ! is_array( $balance ) || ! empty( $balance['errorCode'] ) ) {
+      $response['errorCode'] = $balance['errorCode'] ?? 0;
+      $response['error']     = $balance['error'] ?? __( 'An unknown error occured.', 'trader' );
+      return $response;
+    }
 
     // phpcs:ignore WordPress.PHP.StrictComparisons
-    if ( $asset['available'] == 0 ) {
+    if ( $balance[0]['available'] == 0 ) {
       return $response;
     }
 
     $response['status'] = 'new';
 
     // $market_info = $this->get_instance()->markets( ['market' => $market] );
-    $asset_info = $this->get_instance()->assets( array( 'symbol' => $symbol ) );
-
     // $min_quote  = $market_info['minOrderInQuoteAsset'];
     // $min_amount = $market_info['minOrderInBaseAsset'];
 
-    $price = $this->get_instance()->tickerPrice( array( 'market' => $market ) )['price'];
-    // $book  = $this->get_instance()->tickerBook( ['market' => $market] );
+    $price_response = $this->get_instance()->tickerPrice( array( 'market' => $market ) );
+
+    if ( ! is_array( $price_response ) || ! empty( $price_response['errorCode'] ) ) {
+      $response['errorCode'] = $price_response['errorCode'] ?? 0;
+      $response['error']     = $price_response['error'] ?? __( 'An unknown error occured.', 'trader' );
+      return $response;
+    }
+
+    $price = $price_response['price'];
+
+    $asset_info = $this->get_instance()->assets( array( 'symbol' => $symbol ) );
+
+    if ( ! is_array( $asset_info ) || ! empty( $asset_info['errorCode'] ) ) {
+      $response['errorCode'] = $asset_info['errorCode'] ?? 0;
+      $response['error']     = $asset_info['error'] ?? __( 'An unknown error occured.', 'trader' );
+      return $response;
+    }
 
     $amount_quote = trader_ceil( $amount_quote, 2 );
-    $amount       = trader_min( $asset['available'], trader_floor( bcdiv( $amount_quote, $price ), $asset_info['decimals'] ) );
+    $amount       = trader_min( $balance[0]['available'], trader_floor( bcdiv( $amount_quote, $price ), $asset_info['decimals'] ) );
 
-    /**
-     * Prevent dust.
-     */
-    if ( (float) bcmul( bcsub( $asset['available'], $amount ), $price ) <= 2 ) {
-      $amount             = $asset['available'];
+    // Prevent dust.
+    if ( (float) bcmul( bcsub( $balance[0]['available'], $amount ), $price ) <= 2 ) {
+      $amount             = $balance[0]['available'];
       $response['amount'] = $amount;
       $amount_quote       = bcmul( $amount, $price );
 

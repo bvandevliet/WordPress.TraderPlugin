@@ -16,7 +16,20 @@ add_action(
       wp_die( -1, 403 );
     }
 
-    wp_send_json_success( \Trader\Exchanges\Bitvavo::current_user()->deposit_history() );
+    $errors = get_error_obj();
+
+    $deposit_history = \Trader\Exchanges\Bitvavo::current_user()->deposit_history();
+
+    if ( is_wp_error( $deposit_history ) ) {
+      $errors->merge_from( $deposit_history );
+    }
+
+    if ( $errors->has_errors() ) {
+      wp_send_json_error( $errors->get_all_error_data() );
+      wp_die();
+    }
+
+    wp_send_json_success( $deposit_history );
     wp_die();
   }
 );
@@ -34,7 +47,20 @@ add_action(
       wp_die( -1, 403 );
     }
 
-    wp_send_json_success( \Trader\Exchanges\Bitvavo::current_user()->withdrawal_history() );
+    $errors = get_error_obj();
+
+    $withdrawal_history = \Trader\Exchanges\Bitvavo::current_user()->withdrawal_history();
+
+    if ( is_wp_error( $withdrawal_history ) ) {
+      $errors->merge_from( $withdrawal_history );
+    }
+
+    if ( $errors->has_errors() ) {
+      wp_send_json_error( $errors->get_all_error_data() );
+      wp_die();
+    }
+
+    wp_send_json_success( $withdrawal_history );
     wp_die();
   }
 );

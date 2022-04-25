@@ -271,9 +271,11 @@ class Trader
 
             if ( $fill_checks <= 1 ) {
               // QUEUE THIS ASSET REBL INSTEAD OF ORDER CANCEL !!
+              // HANDLE ERRORS / API RATE LIMIT !!
               $exchange->cancel_order( $asset->rebl_sell_order['market'], $asset->rebl_sell_order['orderId'] );
               $asset->rebl_sell_order['status'] = 'canceled';
             } else {
+              // HANDLE ERRORS / API RATE LIMIT !!
               $asset->rebl_sell_order = $exchange->get_order( $asset->rebl_sell_order['market'], $asset->rebl_sell_order['orderId'] );
             }
           }

@@ -51,6 +51,16 @@ interface Exchange
   public function __construct( ?int $user_id = null );
 
   /**
+   * Check for errors in API response.
+   *
+   * @param \WP_Error $errors   Error object to append to.
+   * @param mixed     $response Response data.
+   *
+   * @return \WP_Error
+   */
+  public static function check_error( \WP_Error $errors, $response ) : \WP_Error;
+
+  /**
    * Get wrapper instance belonging to the current user.
    *
    * @return Bitvavo
@@ -96,7 +106,7 @@ interface Exchange
   /**
    * Returns the deposit history.
    *
-   * @return array $history {.
+   * @return \WP_Error|array $history {.
    *   @type array   $deposits {.
    *     @type string  $symbol
    *     @type string  $amount
@@ -104,12 +114,12 @@ interface Exchange
    *   @type string  $total
    * }
    */
-  public function deposit_history() : array;
+  public function deposit_history();
 
   /**
    * Returns the withdrawal history.
    *
-   * @return array $history {.
+   * @return \WP_Error|array $history {.
    *   @type array   $withdrawals {.
    *     @type string  $symbol
    *     @type string  $amount
@@ -117,7 +127,7 @@ interface Exchange
    *   @type string  $total
    * }
    */
-  public function withdrawal_history() : array;
+  public function withdrawal_history();
 
   /**
    * Get balance. First entry of $assets is quote currency.
