@@ -288,10 +288,8 @@ class Trader
      * Portfolio rebalancing: third loop adding amounts to scale to available balance.
      * No need to pass takeout value as it is already applied to the passed $balance.
      */
-    $config_without_takeout          = clone $configuration;
-    $config_without_takeout->takeout = 0;
-    $balance                         = ! $simulate ? \Trader\Balance::merge_balance( $balance, $exchange->get_balance(), $config_without_takeout ) : $balance;
-    $to_buy_total                    = 0;
+    $balance      = ! $simulate ? \Trader\Balance::merge_balance( $balance, $exchange->get_balance()/*, $takeout = 0 */ ) : $balance;
+    $to_buy_total = 0;
     foreach ( $balance->assets as $asset ) {
       $amount_quote = bcmul( $balance->amount_quote_total, $asset->allocation_rebl[ $mode ] ?? 0 );
 
@@ -412,7 +410,7 @@ class Trader
             }
 
             $balance_allocated = self::get_asset_allocations( $exchange, $configuration );
-            $balance           = \Trader\Balance::merge_balance( $balance_allocated, $balance_exchange, $configuration );
+            $balance           = \Trader\Balance::merge_balance( $balance_allocated, $balance_exchange, $configuration->takeout );
 
             if ( is_wp_error( $balance_allocated ) ) {
               $errors->merge_from( $balance_allocated );

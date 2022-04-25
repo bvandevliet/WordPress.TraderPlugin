@@ -41,7 +41,7 @@ function trader_dynamic_block_rebalance_form_cb( $block_attributes, $content )
           $balance_allocated = \Trader::get_asset_allocations( \Trader\Exchanges\Bitvavo::current_user(), $configuration );
 
           $balance_exchange = \Trader\Exchanges\Bitvavo::current_user()->get_balance();
-          $balance          = \Trader\Balance::merge_balance( $balance_allocated, $balance_exchange, $configuration );
+          $balance          = \Trader\Balance::merge_balance( $balance_allocated, $balance_exchange, $configuration->takeout );
 
           if ( is_wp_error( $balance_allocated ) ) {
             $errors->merge_from( $balance_allocated );
@@ -161,7 +161,7 @@ function trader_dynamic_block_rebalance_form_cb( $block_attributes, $content )
         <p class="form-row form-row-2">
           <label title="<?php echo esc_attr( sprintf( __( 'Allocate a given percentage to quote currency \'%s\'.', 'trader' ), \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY ) ); ?>">
             <?php esc_html_e( 'Quote allocation', 'trader' ); ?> [%]
-            <input id="alloc_quote" type="number" min="0" max="100" step=".01" class="input-number" name="alloc_quote" value="<?php echo esc_attr( $configuration->alloc_quote ); ?>" />
+            <input id="alloc_quote" type="number" min="0" max="99" step=".01" class="input-number" name="alloc_quote" value="<?php echo esc_attr( $configuration->alloc_quote ); ?>" />
           </label>
         </p>
         <p class="form-row form-row-2">
@@ -186,7 +186,7 @@ function trader_dynamic_block_rebalance_form_cb( $block_attributes, $content )
           <label title="<?php esc_attr_e( 'Minimum required percentage difference to trigger an automated rebalance.', 'trader' ); ?>">
             <?php esc_html_e( 'Rebalance threshold', 'trader' ); ?> [%]
             <span style="float:right;">(€~<span class="trader-threshold-absolute"></span>)</span>
-            <input type="number" min="0" max="100" step=".01" class="input-number" name="rebalance_threshold" value="<?php echo esc_attr( $configuration->rebalance_threshold ); ?>" />
+            <input type="number" min="0" max="99" step=".01" class="input-number" name="rebalance_threshold" value="<?php echo esc_attr( $configuration->rebalance_threshold ); ?>" />
           </label>
         </p>
       </div>

@@ -261,7 +261,8 @@ class Configuration
           break;
         case 'alloc_quote':
         case 'rebalance_threshold':
-          $configuration->$param = is_numeric( $req_value ) ? trader_min( trader_max( 0, floatstr( $req_value ) ), 100 ) : $default;
+          // ("99" to avoid divide by zero issues) ..
+          $configuration->$param = is_numeric( $req_value ) ? trader_min( trader_max( 0, floatstr( $req_value ) ), 99 ) : $default;
           break;
         case 'takeout':
           $configuration->$param = is_numeric( $req_value ) ? trader_max( 0, floatstr( $req_value ) ) : $default;

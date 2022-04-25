@@ -28,11 +28,11 @@ class Balance
    *
    * @param Balance|null|\WP_Error $balance          Existing balance.
    * @param Balance|null|\WP_Error $balance_exchange Updated balance.
-   * @param Configuration          $configuration    Rebalance configuration.
+   * @param int|float|string       $takeout          Amount in quote currency to keep out.
    *
    * @return Balance $balance_merged Merged balance.
    */
-  public static function merge_balance( $balance, $balance_exchange, Configuration $configuration ) : Balance
+  public static function merge_balance( $balance, $balance_exchange, $takeout = 0 ) : Balance
   {
     if ( is_wp_error( $balance ) || ! $balance instanceof Balance ) {
       $balance_merged = new Balance();
@@ -44,8 +44,8 @@ class Balance
       $balance_exchange = new Balance();
     }
 
-    $configuration->takeout = ! empty( $configuration->takeout ) ? trader_max( 0, trader_min( $balance_exchange->amount_quote_total, $configuration->takeout ) ) : 0;
-    $takeout_alloc          = $configuration->takeout > 0 ? trader_get_allocation( $configuration->takeout, $balance_exchange->amount_quote_total ) : 0;
+    $takeout       = ! empty( $takeout ) ? trader_max( 0, trader_min( $balance_exchange->amount_quote_total, $takeout ) ) : 0;
+    $takeout_alloc = $takeout > 0 ? trader_get_allocation( $takeout, $balance_exchange->amount_quote_total ) : 0;
 
     /**
      * Get current allocations.
@@ -65,9 +65,10 @@ class Balance
             // only modify rebalance allocations if a takeout value is set
             if ( $takeout_alloc > 0 ) {
               foreach ( $asset->allocation_rebl as $mode => $allocation ) {
-                $asset->allocation_rebl[ $mode ] = bcmul( $allocation, bcsub( 1, $takeout_alloc ) );
                 if ( $asset->symbol === \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY ) {
-                  $asset->allocation_rebl[ $mode ] = bcadd( $asset->allocation_rebl[ $mode ], $takeout_alloc );
+                  $asset->allocation_rebl[ $mode ] = bcadd( $allocation, $takeout_alloc );
+                } else {
+                  $asset->allocation_rebl[ $mode ] = bcmul( $allocation, bcsub( 1, $takeout_alloc ) );
                 }
               }
             }
