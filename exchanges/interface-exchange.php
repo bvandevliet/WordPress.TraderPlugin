@@ -76,6 +76,13 @@ interface Exchange
 
 
   /**
+   * Determine if a given market is tradable.
+   *
+   * @param string $market Market.
+   */
+  public function is_tradable( string $market ) : bool;
+
+  /**
    * Get candlesticks from exchange.
    *
    * @param string $market Market.

@@ -144,6 +144,17 @@ class Bitvavo implements Exchange
   /**
    * {@inheritDoc}
    */
+  public function is_tradable( string $market ) : bool
+  {
+    $data = $this->get_instance()->markets( array( 'market' => $market ) );
+
+    return isset( $data['status'] ) && $data['status'] === 'trading';
+  }
+
+
+  /**
+   * {@inheritDoc}
+   */
   public function candles( string $market, string $chart, array $args = array() ) : array
   {
     return $this->get_instance()->candles( $market, $chart, $args );

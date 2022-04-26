@@ -93,36 +93,11 @@ class Trader
       }
 
       /**
-       * Define market.
-       */
-      $market = $asset_cmc_arr[0]->symbol . '-' . \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY;
-
-      /**
-       * Get candlesticks from exchange.
-       */
-      $candles = $exchange->candles(
-        $market,
-        '4h',
-        array(
-          'limit' => \Trader\Exchanges\Bitvavo::CANDLES_LIMIT,
-          'end'   => time() * 1000,
-        )
-      );
-
-      /**
        * Skip if market doesn't exist on the exchange.
        */
-      if ( empty( $candles ) || ! empty( $candles['error'] ) || ! is_array( $candles ) || count( $candles ) === 0 ) {
-        /**
-         * ERROR HANDLING ? ! !
-         */
+      if ( ! $exchange->is_tradable( $asset_cmc_arr[0]->symbol . '-' . \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY ) ) {
         continue;
       }
-
-      /**
-       * Get additional price action indicator data, TO BE DEVELOPED !!
-       */
-      // retrieve_allocation_indicators( $asset_cmc_arr[0], $candles, $configuration->interval_hours );
 
       /**
        * Append to global array for next loop(s).
