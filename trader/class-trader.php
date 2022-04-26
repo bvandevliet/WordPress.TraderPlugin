@@ -32,8 +32,6 @@ class Trader
    */
   public static function get_asset_allocations( \Trader\Exchanges\Exchange $exchange, \Trader\Configuration $configuration )
   {
-    $alloc_quote = ! empty( $configuration->alloc_quote ) ? bcdiv( trader_max( 0, trader_min( 100, $configuration->alloc_quote ) ), 100 ) : '0';
-
     /**
      * List latest based on market cap (cache supported).
      */
@@ -52,11 +50,15 @@ class Trader
     }
 
     /**
-     * Initiate balance object and quote asset.
+     * Initiate balance object, quote- and sideline asset.
      */
-    $balance             = new \Trader\Balance();
-    $asset_quote         = new \Trader\Asset();
-    $asset_quote->symbol = \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY;
+    $balance        = new \Trader\Balance();
+    $asset_quote    = new \Trader\Asset( array( 'symbol' => \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY ) );
+    $asset_sideline =
+      $asset_quote->symbol === $configuration->sideline_currency ||
+      ! $exchange->is_tradable( $configuration->sideline_currency . '-' . \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY )
+      ? $asset_quote
+      : new \Trader\Asset( array( 'symbol' => $configuration->sideline_currency ) );
 
     /**
      * Loop through the asset ranking and retrieve Market Cap EMA.
@@ -80,6 +82,13 @@ class Trader
      * Loop to leave out certain non-relevant assets then retrieve candlesticks and indicators.
      */
     foreach ( $cmc_latest as $asset_cmc_arr ) {
+      /**
+       * Skip sideline currency for now.
+       */
+      if ( $configuration->sideline_currency === $asset_cmc_arr[0]->symbol ) {
+        continue;
+      }
+
       /**
        * Skip if is stablecoin, one of its tags are excluded or weighting is set to zero.
        */
@@ -132,11 +141,13 @@ class Trader
     }
 
     /**
-     * Scale for quote allocation.
+     * Scale for sideline allocation.
      */
+    $alloc_sideline = ! empty( $configuration->alloc_sideline ) ? bcdiv( trader_max( 0, trader_min( 100, $configuration->alloc_sideline ) ), 100 ) : '0';
     foreach ( $total_allocations as $mode => $total_allocation ) {
-      $asset_quote->allocation_rebl[ $mode ] = $alloc_quote;
-      $total_allocations[ $mode ]            = bcmul( bcdiv( '1', bcsub( 1, $alloc_quote ) ), $total_allocation );
+      $asset_quote->allocation_rebl[ $mode ]    = 0; // at least initiate zero, takeout is determined in `merge_balance` but only for existing `allocation_rebl` values.
+      $asset_sideline->allocation_rebl[ $mode ] = $alloc_sideline;
+      $total_allocations[ $mode ]               = bcmul( bcdiv( '1', bcsub( 1, $alloc_sideline ) ), $total_allocation );
     }
 
     /**
@@ -160,9 +171,14 @@ class Trader
     );
 
     /**
-     * Finally, prepend quote currency and return $balance.
+     * Finally, prepend quote- and sideline currency.
      */
+    if ( $asset_sideline->symbol !== $asset_quote->symbol ) {
+      array_unshift( $balance->assets, $asset_sideline );
+    }
     array_unshift( $balance->assets, $asset_quote );
+
+    // Then return $balance.
     return $balance;
   }
 

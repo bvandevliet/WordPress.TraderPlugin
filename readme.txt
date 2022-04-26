@@ -5,7 +5,7 @@ Tags:
 Requires at least: 5.7
 Tested up to: 5.8
 Requires PHP: 7.2
-Stable tag: 2022.04.07
+Stable tag: 2022.04.26
 License: MIT
 
 Calculates and executes a crypto portfolio rebalance.
@@ -17,6 +17,10 @@ Connects to exchange API's, provides blocks for rendering exchange data and incl
 
 
 == Changelog ==
+
+= 2022.04.26 =
+* Added support to force a fixed sideline allocation of a given asset (e.g. a stablecoin with a high staking reward).
+* Allocation of excluded assets is allowed if custom weighting is set and asset is within top count (e.g. stablecoins or excluded tags).
 
 = 2022.04.07 =
 * Improved logic to properly rebalance as best as possible within boundaries.

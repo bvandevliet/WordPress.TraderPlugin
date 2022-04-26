@@ -136,38 +136,44 @@ function trader_dynamic_block_rebalance_form_cb( $block_attributes, $content )
     <?php wp_nonce_field( 'portfolio-rebalance-user_' . $current_user->ID, 'do-portfolio-rebalance-nonce' ); ?>
     <fieldset>
       <div>
-        <p class="form-row form-row-wide">
+        <p class="form-row form-row-2">
           <label title="<?php esc_attr_e( 'Max amount of assets from CoinMarketCap listing.', 'trader' ); ?>">
             <?php esc_html_e( 'Top count', 'trader' ); ?> [n]
             <input type="number" min="1" max="100" class="input-number" name="top_count" value="<?php echo esc_attr( $configuration->top_count ); ?>" />
           </label>
         </p>
-      </div>
-      <div>
         <p class="form-row form-row-2">
           <label title="<?php esc_attr_e( 'Exponential Moving Average period of Market Cap, to smooth out volatility.', 'trader' ); ?>">
             <?php esc_html_e( 'Smoothing [days]', 'trader' ); ?>
             <input type="number" min="1" max="100" class="input-number" name="smoothing" value="<?php echo esc_attr( $configuration->smoothing ); ?>" />
           </label>
         </p>
+      </div>
+      <div>
         <p class="form-row form-row-2">
           <label title="<?php esc_attr_e( 'nth root of Market Cap EMA, to dampen the effect an individual asset has on the portfolio.', 'trader' ); ?>">
             <?php esc_html_e( 'nth root ^(1/[n])', 'trader' ); ?>
             <input type="number" min="1" step=".01" class="input-number" name="nth_root" value="<?php echo esc_attr( $configuration->nth_root ); ?>" />
           </label>
         </p>
+        <p class="form-row form-row-2">
+          <label title="<?php echo esc_attr( sprintf( __( 'Takeout a given amount of quote currency \'%s\'.', 'trader' ), \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY ) ); ?>">
+            <?php esc_html_e( 'Quote takeout', 'trader' ); ?> [<?php echo esc_html( \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY ); ?>]
+            <input type="number" min="0" step=".01" class="input-number" name="takeout" value="<?php echo esc_attr( $configuration->takeout ); ?>" />
+          </label>
+        </p>
       </div>
       <div>
         <p class="form-row form-row-2">
-          <label title="<?php echo esc_attr( sprintf( __( 'Allocate a given percentage to quote currency \'%s\'.', 'trader' ), \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY ) ); ?>">
-            <?php esc_html_e( 'Quote allocation', 'trader' ); ?> [%]
-            <input id="alloc_quote" type="number" min="0" max="99" step=".01" class="input-number" name="alloc_quote" value="<?php echo esc_attr( $configuration->alloc_quote ); ?>" />
+          <label title="<?php esc_attr_e( 'A "stable" asset to hold a fixed percentage of.', 'trader' ); ?>">
+            <?php esc_html_e( 'Sideline currency', 'trader' ); ?>
+            <input id="sideline_currency" type="text" class="input-text" name="sideline_currency" autocomplete="off" value="<?php echo esc_attr( $configuration->sideline_currency ); ?>" />
           </label>
         </p>
         <p class="form-row form-row-2">
-          <label title="<?php echo esc_attr( sprintf( __( 'Takeout a given amount of quote currency \'%s\'.', 'trader' ), \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY ) ); ?>">
-            <?php esc_html_e( 'Quote takeout', 'trader' ); ?> [€]
-            <input type="number" min="0" step=".01" class="input-number" name="takeout" value="<?php echo esc_attr( $configuration->takeout ); ?>" />
+          <label title="<?php esc_attr_e( 'Allocate a given percentage to sideline currency.', 'trader' ); ?>">
+            <?php esc_html_e( 'Sideline allocation', 'trader' ); ?> [%]
+            <input id="alloc_sideline" type="number" min="0" max="99" step=".01" class="input-number" name="alloc_sideline" value="<?php echo esc_attr( $configuration->alloc_sideline ); ?>" />
           </label>
         </p>
       </div>

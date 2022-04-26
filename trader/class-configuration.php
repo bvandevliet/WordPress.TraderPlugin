@@ -11,6 +11,20 @@ defined( 'ABSPATH' ) || exit;
 class Configuration
 {
   /**
+   * A "stable" asset to hold a fixed percentage of.
+   *
+   * @var string|null
+   */
+  public ?string $sideline_currency = \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY;
+
+  /**
+   * Allocation percentage to keep in sideline currency.
+   *
+   * @var int|float|string
+   */
+  public $alloc_sideline = 10;
+
+  /**
    * Alternative asset allocation weighting factors.
    *
    * @var array
@@ -55,27 +69,11 @@ class Configuration
   // public int $dust_limit = 5;
 
   /**
-   * Allocation percentage to keep in quote currency.
-   *
-   * @var int|float|string
-   */
-  public $alloc_quote = 10;
-
-  /**
    * Amount in quote currency to keep out / not re-invest.
    *
    * @var int|float|string
    */
   public $takeout = 0;
-
-  /**
-   * Multiply quote allocation by Fear and Greed index.
-   *
-   * @var bool
-   *
-   * @deprecated Default false.
-   */
-  // public bool $alloc_quote_fag_multiply = false;
 
   /**
    * Rebalance period in hours.
@@ -222,6 +220,12 @@ class Configuration
   {
     $configuration = self::get( $user_id );
 
+    // back-compat
+    if ( isset( $configuration->alloc_quote ) ) {
+      $configuration->alloc_sideline = $configuration->alloc_quote;
+      unset( $configuration->alloc_quote );
+    }
+
     /**
      * If an object was passed or current request is a POST request, then reset default values to initial values.
      * This is required since empty fields or checkboxes may not be serialized at all while their default values may be defined otherwise.
@@ -229,17 +233,16 @@ class Configuration
      */
     if ( count( (array) $object ) > 0 || 'POST' === $_SERVER['REQUEST_METHOD'] ) {
       foreach ( array(
-        'top_count'                => 1,
-        'smoothing'                => 1,
-        'nth_root'                 => 1,
-        'alloc_quote'              => 0,
-        'takeout'                  => 0,
-        'interval_hours'           => 1,
-        'rebalance_threshold'      => 0,
-        'rebalance_mode'           => 'default',
-        'automation_enabled'       => false,
-        'dust_limit'               => 1,     // (DEPRECATED)
-        'alloc_quote_fag_multiply' => false, // (DEPRECATED)
+        'sideline_currency'   => null,
+        'top_count'           => 1,
+        'smoothing'           => 1,
+        'nth_root'            => 1,
+        'alloc_sideline'      => 0,
+        'takeout'             => 0,
+        'interval_hours'      => 1,
+        'rebalance_threshold' => 0,
+        'rebalance_mode'      => 'default',
+        'automation_enabled'  => false,
       ) as $param => $initial ) {
         $configuration->$param = $initial;
       }
@@ -249,6 +252,9 @@ class Configuration
       // phpcs:ignore WordPress.Security
       $req_value = wp_unslash( ( (array) $object )[ $param ] ?? $_POST[ $param ] ?? $_GET[ $param ] ?? null );
       switch ( $param ) {
+        case 'sideline_currency':
+          $configuration->$param = isset( $req_value ) ? strtoupper( sanitize_key( $req_value ) ) : $default;
+          break;
         case 'top_count':
           $configuration->$param = isset( $req_value ) ? min( max( 1, intval( $req_value ) ), 100 ) : $default;
           break;
@@ -259,7 +265,7 @@ class Configuration
         case 'nth_root':
           $configuration->$param = is_numeric( $req_value ) ? trader_max( 1, floatstr( $req_value ) ) : $default;
           break;
-        case 'alloc_quote':
+        case 'alloc_sideline':
         case 'rebalance_threshold':
           // ("99" to avoid divide by zero issues) ..
           $configuration->$param = is_numeric( $req_value ) ? trader_min( trader_max( 0, floatstr( $req_value ) ), 99 ) : $default;
