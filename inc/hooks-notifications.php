@@ -11,9 +11,17 @@ defined( 'ABSPATH' ) || exit;
  * @param int       $user_id   The ID of the user to which the automation belongs.
  * @param DateTime  $timestamp The timestamp of when the automation was triggered.
  * @param \WP_Error $errors    Errors if any.
+ * @param array     $trades    Trades executed.
  */
-function trader_email_automation_triggered( int $user_id, DateTime $timestamp, \WP_Error $errors )
+function trader_email_automation_triggered( int $user_id, DateTime $timestamp, \WP_Error $errors, array $trades )
 {
+  /**
+   * Only send email if relevant.
+   */
+  if ( count( $trades ) === 0 && ! $errors->has_errors() ) {
+    return;
+  }
+
   /**
    * Initiate default email arguments.
    */
@@ -38,7 +46,7 @@ function trader_email_automation_triggered( int $user_id, DateTime $timestamp, \
       $admin_email,
       $subject,
       // phpcs:ignore WordPress.PHP.DevelopmentFunctions
-      '<pre>' . esc_html( print_r( $user, true ) ) . '</pre><pre>' . esc_html( print_r( $errors->error_data, true ) ) . '</pre>',
+      '<pre>' . esc_html( print_r( $user, true ) ) . "</pre>\n<pre>" . esc_html( print_r( $errors->error_data, true ) ) . '</pre>',
       $email_headers
     );
   }
@@ -63,6 +71,15 @@ function trader_email_automation_triggered( int $user_id, DateTime $timestamp, \
       and executed successfully.
     </p>
     <p>
+      The below <?php echo count( $trades ); ?> trades where executed:
+    </p>
+    <div>
+      <?php
+        // phpcs:ignore WordPress.PHP.DevelopmentFunctions, WordPress.Security.EscapeOutput
+        echo '<pre>' . implode( "</pre>\n<pre>", array_map( fn( $order) => esc_html( print_r( $order, true ) ), $trades ) ) . '</pre>';
+      ?>
+    </div>
+    <p>
       <?php
       /**
        * MAKE DYNAMIC USING A SPECIFICALLY ASSIGNED ACCOUNT PAGE !!
@@ -83,12 +100,21 @@ function trader_email_automation_triggered( int $user_id, DateTime $timestamp, \
       We will try again within an hour.
     </p>
     <p>
-      The below errors occured.
+      The below <?php echo count( $trades ); ?> trades where attempted:
     </p>
-      <div class="error"><p><?php echo implode( "</p>\n<p>", array_map( 'esc_html', $errors->get_error_messages() ) ); ?></p></div>
+    <div>
+      <?php
+        // phpcs:ignore WordPress.PHP.DevelopmentFunctions, WordPress.Security.EscapeOutput
+        echo '<pre>' . implode( "</pre>\n<pre>", array_map( fn( $order) => esc_html( print_r( $order, true ) ), $trades ) ) . '</pre>';
+      ?>
+    </div>
+    <p>
+      The below error(s) occured:
+    </p>
+    <div class="error"><p><?php echo implode( "</p>\n<p>", array_map( 'esc_html', $errors->get_error_messages() ) ); ?></p></div>
     <p>
       This email was automatically generated.
-      We will always notify you about failed automations. The website administrator is also informed about this error.
+      We will always notify you about failed automations. The website administrator is also informed about the error(s).
     </p>
     <?php
   }
@@ -101,4 +127,4 @@ function trader_email_automation_triggered( int $user_id, DateTime $timestamp, \
 
   wp_mail( $user->user_email, $subject, ob_get_clean(), $email_headers );
 }
-add_action( 'trader_automation_triggered', 'trader_email_automation_triggered', 10, 3 );
+add_action( 'trader_automation_triggered', 'trader_email_automation_triggered', 10, 4 );

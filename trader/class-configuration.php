@@ -160,17 +160,19 @@ class Configuration
   }
 
   /**
-   * Get all configurations that have automaion enabled.
+   * Get all configurations that have automation enabled.
    *
    * @link https://developer.wordpress.org/reference/functions/update_meta_cache/
    *
    * @global wpdb $wpdb
    *
-   * @return Configuration[][] Associative array of user ID's and their automated configurations.
+   * @return Configuration[][] Associative array of automated configurations indexed by user ID.
    */
   public static function get_automations() : array
   {
     global $wpdb;
+
+    $automations = array();
 
     $table = _get_meta_table( 'user' );
 
@@ -178,10 +180,8 @@ class Configuration
     $meta_list = $wpdb->get_results( "SELECT user_id, meta_value FROM $table WHERE meta_key = 'trader_configuration' ORDER BY umeta_id ASC", ARRAY_A );
 
     if ( empty( $meta_list ) || ! is_array( $meta_list ) ) {
-      return array();
+      return $automations;
     }
-
-    $automations = array();
 
     foreach ( $meta_list as $metarow ) {
       /**

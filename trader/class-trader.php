@@ -366,7 +366,7 @@ class Trader
     $pool_automations = \Spatie\Async\Pool::create()->concurrency( 8 )->timeout( 299 );
     foreach ( \Trader\Configuration::get_automations() as $user_id => $configurations ) {
       $pool_automations->add(
-        function () use ( $user_id, $configurations )
+        function () use ( $user_id, $configurations ) : array
         {
           $automations_triggered = array();
 
@@ -375,7 +375,7 @@ class Trader
 
           // Check user permission.
           if ( ! user_can( $user_id, 'trader_manage_portfolio' ) ) {
-            return array();
+            return $automations_triggered;
           }
 
           $exchange         = new \Trader\Exchanges\Bitvavo( $user_id );
@@ -383,7 +383,7 @@ class Trader
 
           if ( is_wp_error( $balance_exchange ) ) {
             $errors->merge_from( $balance_exchange );
-            return array( array( $user_id, $timestamp, $errors ) );
+            return array( array( $user_id, $timestamp, $errors, array() ) );
           }
 
           foreach ( $configurations as $configuration ) {
@@ -407,7 +407,7 @@ class Trader
 
             if ( is_wp_error( $balance_allocated ) ) {
               $errors->merge_from( $balance_allocated );
-              $automations_triggered[] = array( $user_id, $timestamp, $errors );
+              $automations_triggered[] = array( $user_id, $timestamp, $errors, array() );
               continue;
             }
 
@@ -469,7 +469,7 @@ class Trader
               $configuration->save( $user_id );
             }
 
-            $automations_triggered[] = array( $user_id, $timestamp, $errors );
+            $automations_triggered[] = array( $user_id, $timestamp, $errors, $trades );
           }
 
           return $automations_triggered;
@@ -484,8 +484,9 @@ class Trader
              * @param int       $user_id   The ID of the user to which the automation belongs.
              * @param DateTime  $timestamp The timestamp of when the automation was triggered.
              * @param \WP_Error $errors    Errors if any.
+             * @param array     $trades    Trades executed.
              */
-            do_action( 'trader_automation_triggered', $automation_triggered[0], $automation_triggered[1], $automation_triggered[2] );
+            do_action( 'trader_automation_triggered', $automation_triggered[0], $automation_triggered[1], $automation_triggered[2], $automation_triggered[3] );
           }
         }
       )->catch(
