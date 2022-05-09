@@ -10,7 +10,7 @@ class Asset
   /**
    * Creates an instance and optionally pre-define properties.
    *
-   * @param array|object $object An optional array or object to "cast" to an instance of Asset.
+   * @param array|object $object Optional array or object of args to parse into the instance.
    */
   public function __construct( $object = array() )
   {

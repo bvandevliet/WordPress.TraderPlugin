@@ -114,7 +114,7 @@ class Configuration
    * Creates an instance and optionally pre-define properties.
    * Use the get() method instead if you intend to save() this configuration, to avoid overwrites.
    *
-   * @param array|object $object An optional array or object to "cast" to an instance of Asset.
+   * @param array|object $object Optional array or object of args to parse into the instance.
    */
   public function __construct( $object = array() )
   {
@@ -128,7 +128,7 @@ class Configuration
    *
    * FOR NOW, ONLY ONE CONFIGURATION PER USER IS SUPPORTED !!
    *
-   * @var Configuration[]
+   * @var self[]
    */
   private static array $configurations = array();
 
@@ -137,15 +137,15 @@ class Configuration
    *
    * @param int|null $user_id Defaults to current user.
    *
-   * @return Configuration
+   * @return self
    */
-  public static function &get( ?int $user_id = null ) : Configuration
+  public static function &get( ?int $user_id = null ) : self
   {
     $user_id = $user_id ?? wp_get_current_user()->ID;
 
     if ( empty( self::$configurations[ $user_id ] ) ) {
       $configuration                    = get_user_meta( $user_id, 'trader_configuration', true );
-      self::$configurations[ $user_id ] = $configuration instanceof Configuration ? $configuration : new Configuration();
+      self::$configurations[ $user_id ] = $configuration instanceof self ? $configuration : new self();
     }
 
     $configuration =& self::$configurations[ $user_id ];
@@ -166,7 +166,7 @@ class Configuration
    *
    * @global wpdb $wpdb
    *
-   * @return Configuration[][] Associative array of automated configurations indexed by user ID.
+   * @return self[][] Associative array of automated configurations indexed by user ID.
    */
   public static function get_automations() : array
   {
@@ -185,7 +185,7 @@ class Configuration
 
     foreach ( $meta_list as $metarow ) {
       /**
-       * @var Configuration
+       * @var self
        */
       $configuration = maybe_unserialize( $metarow['meta_value'] );
 
@@ -211,12 +211,12 @@ class Configuration
   /**
    * Get rebalance parameters from request parameters or a passed object.
    *
-   * @param array|object $object  An optional array or object to "cast" to an instance of Asset.
+   * @param array|object $object  Optional array or object of args to parse into the instance.
    * @param int|null     $user_id Defaults to current user.
    *
-   * @return Configuration
+   * @return self
    */
-  public static function get_configuration_from_environment( $object = array(), ?int $user_id = null ) : Configuration
+  public static function get_configuration_from_environment( $object = array(), ?int $user_id = null ) : self
   {
     $configuration = self::get( $user_id );
 

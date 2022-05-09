@@ -26,22 +26,22 @@ class Balance
    *
    * MAKE NON-STATIC !!
    *
-   * @param Balance|null|\WP_Error $balance          Existing balance.
-   * @param Balance|null|\WP_Error $balance_exchange Updated balance.
-   * @param int|float|string       $takeout          Amount in quote currency to keep out.
+   * @param self|null|\WP_Error $balance          Existing balance.
+   * @param self|null|\WP_Error $balance_exchange Updated balance.
+   * @param int|float|string    $takeout          Amount in quote currency to keep out.
    *
-   * @return Balance $balance_merged Merged balance.
+   * @return self $balance_merged Merged balance.
    */
-  public static function merge_balance( $balance, $balance_exchange, $takeout = 0 ) : Balance
+  public static function merge_balance( $balance, $balance_exchange, $takeout = 0 ) : self
   {
-    if ( is_wp_error( $balance ) || ! $balance instanceof Balance ) {
-      $balance_merged = new Balance();
+    if ( is_wp_error( $balance ) || ! $balance instanceof self ) {
+      $balance_merged = new self();
     } else {
       // Clone the object to prevent making changes to the original.
       $balance_merged = clone $balance;
     }
-    if ( is_wp_error( $balance_exchange ) || ! $balance_exchange instanceof Balance ) {
-      $balance_exchange = new Balance();
+    if ( is_wp_error( $balance_exchange ) || ! $balance_exchange instanceof self ) {
+      $balance_exchange = new self();
     }
 
     $takeout       = ! empty( $takeout ) ? trader_max( 0, trader_min( $balance_exchange->amount_quote_total, $takeout ) ) : 0;
