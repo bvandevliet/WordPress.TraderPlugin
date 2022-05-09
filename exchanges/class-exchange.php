@@ -5,50 +5,65 @@ namespace Trader\Exchanges;
 defined( 'ABSPATH' ) || exit;
 
 
-interface Exchange
+/**
+ * Base class for Exchange objects,
+ * based on Bitvavo parameters, other exchanges may have to overwrite properties.
+ */
+abstract class Exchange
 {
   /**
    * The default quote currency.
    *
    * @var string
    */
-  // public const QUOTE_CURRENCY;
+  public const QUOTE_CURRENCY = 'EUR';
 
   /**
    * The minimum amount quote for market orders.
    *
    * @var int
    */
-  // public const MIN_QUOTE;
+  public const MIN_QUOTE = 5;
 
   /**
    * The maximum fee for taker orders.
    *
    * @var string
    */
-  // public const TAKER_FEE;
+  public const TAKER_FEE = '.0025';
 
   /**
    * The maximum fee for maker orders.
    *
    * @var string
    */
-  // public const MAKER_FEE;
+  public const MAKER_FEE = '.0015';
 
   /**
    * The maximum amount of candles that can be retrieved in a single API call.
    *
    * @var int
    */
-  // public const CANDLES_LIMIT;
+  public const CANDLES_LIMIT = 1440;
 
+
+  /**
+   * User ID this instance belongs to.
+   *
+   * @var null|int
+   */
+  protected ?int $user_id = null;
 
   /**
    * Constructor.
    *
-   * @param null|int $user_id
+   * @param null|int $user_id User ID.
    */
-  public function __construct( ?int $user_id = null );
+  public function __construct( ?int $user_id = null )
+  {
+    $this->user_id = $user_id;
+  }
+
 
   /**
    * Check for errors in API response.
@@ -58,21 +73,48 @@ interface Exchange
    *
    * @return \WP_Error
    */
-  public static function check_error( \WP_Error $errors, $response ) : \WP_Error;
+  public static function check_error( \WP_Error $errors, $response ) : \WP_Error
+  {
+    if ( ! is_array( $response ) || ! empty( $response['errorCode'] ) ) {
+      $errors->add(
+        'exchange_' . get_called_class() . '-' . ( $response['errorCode'] ?? 0 ),
+        __( 'Exchange error: ', 'trader' ) . ( $response['error'] ?? __( 'An unknown error occured.', 'trader' ) ),
+        $response
+      );
+    }
+
+    return $errors;
+  }
+
+
+  /**
+   * Container for the wrapper instance belonging to the current user.
+   *
+   * @var ?self
+   */
+  protected static ?self $instance_current_user = null;
 
   /**
    * Get wrapper instance belonging to the current user.
    *
-   * @return Bitvavo
+   * @return self
    */
-  public static function current_user() : Bitvavo;
+  public static function current_user() : self
+  {
+    if ( null === static::$instance_current_user ) {
+      static::$instance_current_user = new static();
+    }
+
+    return static::$instance_current_user;
+  }
+
 
   /**
-   * Get instance of a connected API object.
+   * Get native instance of a connected API object.
    *
-   * @return \Bitvavo
+   * @return mixed
    */
-  public function get_instance() : \Bitvavo;
+  abstract public function get_instance();
 
 
   /**
@@ -80,7 +122,7 @@ interface Exchange
    *
    * @param string $market Market.
    */
-  public function is_tradable( string $market ) : bool;
+  abstract public function is_tradable( string $market ) : bool;
 
   /**
    * Get candlesticks from exchange.
@@ -96,7 +138,7 @@ interface Exchange
    *
    * @return array Candlestick data as returned by exchange.
    */
-  public function candles( string $market, string $chart, array $args = array() ) : array;
+  abstract public function candles( string $market, string $chart, array $args = array() ) : array;
 
   /**
    * Retrieve ohlcv arrays where first index is oldest and last index is latest data.
@@ -108,7 +150,7 @@ interface Exchange
    * @param array $close_arr Array of candle "close" values.
    * @param array $vol_arr   Array of candle "volume" values.
    */
-  public static function retrieve_ohlcv( array $candles, array &$open_arr, array &$high_arr, array &$low_arr, array &$close_arr, array &$vol_arr );
+  abstract public static function retrieve_ohlcv( array $candles, array &$open_arr, array &$high_arr, array &$low_arr, array &$close_arr, array &$vol_arr );
 
   /**
    * Returns the deposit history.
@@ -121,7 +163,7 @@ interface Exchange
    *   @type string  $total
    * }
    */
-  public function deposit_history();
+  abstract public function deposit_history();
 
   /**
    * Returns the withdrawal history.
@@ -134,14 +176,14 @@ interface Exchange
    *   @type string  $total
    * }
    */
-  public function withdrawal_history();
+  abstract public function withdrawal_history();
 
   /**
    * Get balance. First entry of $assets is quote currency.
    *
    * @return \Trader\Balance|\WP_Error
    */
-  public function get_balance();
+  abstract public function get_balance();
 
   /**
    * Cancel all existing open orders.
@@ -150,7 +192,7 @@ interface Exchange
    *
    * @return array List of order data.
    */
-  public function cancel_all_orders( array $ignore = array() ) : array;
+  abstract public function cancel_all_orders( array $ignore = array() ) : array;
 
   /**
    * Sell whole portfolio.
@@ -159,7 +201,7 @@ interface Exchange
    *
    * @return array List of order data.
    */
-  public function sell_whole_portfolio( array $ignore = array() ) : array;
+  abstract public function sell_whole_portfolio( array $ignore = array() ) : array;
 
   /**
    * Buy asset.
@@ -170,7 +212,7 @@ interface Exchange
    *
    * @return array List of order data.
    */
-  public function buy_asset( string $symbol, $amount_quote, bool $simulate = false ) : array;
+  abstract public function buy_asset( string $symbol, $amount_quote, bool $simulate = false ) : array;
 
   /**
    * Sell asset.
@@ -181,7 +223,7 @@ interface Exchange
    *
    * @return array List of order data.
    */
-  public function sell_asset( string $symbol, $amount_quote, bool $simulate = false ) : array;
+  abstract public function sell_asset( string $symbol, $amount_quote, bool $simulate = false ) : array;
 
   /**
    * Get order data.
@@ -191,7 +233,7 @@ interface Exchange
    *
    * @return array List of order data.
    */
-  public function get_order( string $market, string $order_id ) : array;
+  abstract public function get_order( string $market, string $order_id ) : array;
 
   /**
    * Cancel order.
@@ -201,5 +243,5 @@ interface Exchange
    *
    * @return array List of order data.
    */
-  public function cancel_order( string $market, string $order_id ) : array;
+  abstract public function cancel_order( string $market, string $order_id ) : array;
 }

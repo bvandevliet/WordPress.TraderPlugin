@@ -90,7 +90,7 @@ require __DIR__ . '/trader/class-configuration.php';
 /**
  * Load exchange functions.
  */
-require __DIR__ . '/exchanges/interface-exchange.php';
+require __DIR__ . '/exchanges/class-exchange.php'; // abstract
 require __DIR__ . '/exchanges/class-bitvavo.php';
 
 /**
