@@ -84,6 +84,7 @@ require __DIR__ . '/metrics/class-alternative-me.php';
  * Load trader objects.
  */
 require __DIR__ . '/trader/class-asset.php';
+require __DIR__ . '/trader/class-order-args.php';
 require __DIR__ . '/trader/class-balance.php';
 require __DIR__ . '/trader/class-configuration.php';
 

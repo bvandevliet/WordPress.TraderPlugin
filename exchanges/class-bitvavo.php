@@ -5,6 +5,8 @@ namespace Trader\Exchanges;
 defined( 'ABSPATH' ) || exit;
 
 
+// phpcs:disable WordPress.NamingConventions.ValidVariableName
+
 /**
  * A wrapper class for the Bitvavo API.
  */
@@ -254,19 +256,14 @@ class Bitvavo extends Exchange
     $balance = $this->get_instance()->balance( array() );
 
     if ( ! is_array( $balance ) || ! empty( $balance['errorCode'] ) ) {
-      return array(
+      return array_merge(
+        (array) new \Trader\OrderArgs\Market( null ),
         array(
-          'errorCode'         => $balance['errorCode'] ?? 0,
-          'error'             => $balance['error'] ?? __( 'An unknown error occured.', 'trader' ),
-          'orderId'           => null,
-          'market'            => null,
-          'side'              => 'sell',
-          'status'            => 'rejected',
-          'amountQuote'       => '0',
-          'filledAmount'      => '0',
-          'filledAmountQuote' => '0',
-          'feePaid'           => '0',
-        ),
+          'side'      => 'sell',
+          'status'    => 'rejected',
+          'errorCode' => $balance['errorCode'] ?? 0,
+          'error'     => $balance['error'] ?? __( 'An unknown error occured.', 'trader' ),
+        )
       );
     }
 
@@ -288,11 +285,7 @@ class Bitvavo extends Exchange
         $market,
         'sell',
         'market',
-        array(
-          'amount'                  => $amount,
-          'disableMarketProtection' => false,
-          'responseRequired'        => false,
-        )
+        (array) new \Trader\OrderArgs\Market( null, $amount )
       );
     }
 
@@ -305,56 +298,62 @@ class Bitvavo extends Exchange
    */
   public function buy_asset( string $symbol, $amount_quote, bool $simulate = false ) : array
   {
-    $market = $symbol . '-' . self::QUOTE_CURRENCY;
-
-    $response = array(
-      'orderId'           => null,
-      'market'            => $market,
-      'side'              => 'buy',
-      'status'            => 'rejected',
-      'amountQuote'       => &$amount_quote,
-      'filledAmount'      => '0',
-      'filledAmountQuote' => '0',
-      'feePaid'           => '0',
-    );
+    $order_args = new \Trader\OrderArgs\Market( trader_floor( $amount_quote, 2 ) );
+    $market     = $symbol . '-' . self::QUOTE_CURRENCY;
 
     if ( $symbol === self::QUOTE_CURRENCY ) {
-      return $response;
+      return array_merge(
+        (array) $order_args,
+        array(
+          'market'    => $market,
+          'side'      => 'buy',
+          'status'    => 'rejected',
+          'errorCode' => 0,
+          'error'     => __( 'Cannot trade quote currency.', 'trader' ),
+        )
+      );
     }
 
-    if ( (float) $amount_quote <= 0 ) {
-      return $response;
+    if ( (float) $order_args->amountQuote <= 0 ) {
+      return array_merge(
+        (array) $order_args,
+        array(
+          'market'    => $market,
+          'side'      => 'buy',
+          'status'    => 'rejected',
+          'errorCode' => 0,
+          'error'     => __( 'Amount is too small.', 'trader' ),
+        )
+      );
     }
-
-    $response['status'] = 'new';
 
     // $market_info = $this->get_instance()->markets( ['market' => $market] );
-    // $min_quote  = $market_info['minOrderInQuoteAsset'];
-    // $min_amount = $market_info['minOrderInBaseAsset'];
+    // $min_quote   = $market_info['minOrderInQuoteAsset'];
+    // $min_amount  = $market_info['minOrderInBaseAsset'];
 
-    // $price = $this->get_instance()->tickerPrice( array( 'market' => $market ) )['price'];
+    // $price              = $this->get_instance()->tickerPrice( array( 'market' => $market ) )['price'];
+    // $asset_info         = $this->get_instance()->assets( ['symbol' => $symbol] );
+    // $order_args->amount = trader_floor( bcdiv( $order_args->amountQuote, $price ), $asset_info['decimals'] );
 
-    // $asset_info  = $this->get_instance()->assets( ['symbol' => $symbol] );
-
-    $amount_quote = trader_floor( $amount_quote, 2 );
-    // $amount       = trader_floor( bcdiv( $amount_quote, $price ), $asset_info['decimals'] );
-
-    return wp_parse_args(
-      $simulate
-        ? array(
-          'feePaid' => floatstr( bcmul( $amount_quote, self::TAKER_FEE ) ),
-        )
-        : $this->get_instance()->placeOrder(
-          $market,
-          'buy',
-          'market',
-          array(
-            'amountQuote'             => $amount_quote,
-            'disableMarketProtection' => true,
-            'responseRequired'        => false,
-          )
+    return array_merge(
+      (array) $order_args,
+      array_merge(
+        array(
+          'feeExpected' => floatstr( bcmul( $order_args->amountQuote, self::TAKER_FEE ) ),
         ),
-      $response
+        $simulate
+          ? array(
+            'market' => $market,
+            'side'   => 'buy',
+            'status' => 'fake',
+          )
+          : $this->get_instance()->placeOrder(
+            $market,
+            'buy',
+            'market',
+            (array) $order_args
+          )
+      )
     );
   }
 
@@ -364,109 +363,112 @@ class Bitvavo extends Exchange
    */
   public function sell_asset( string $symbol, $amount_quote, bool $simulate = false ) : array
   {
-    $market = $symbol . '-' . self::QUOTE_CURRENCY;
-
-    $response = array(
-      'orderId'           => null,
-      'market'            => $market,
-      'side'              => 'sell',
-      'status'            => 'rejected',
-      'amountQuote'       => &$amount_quote,
-      'filledAmount'      => '0',
-      'filledAmountQuote' => '0',
-      'feePaid'           => '0',
-    );
+    $order_args = new \Trader\OrderArgs\Market( trader_ceil( $amount_quote, 2 ) );
+    $market     = $symbol . '-' . self::QUOTE_CURRENCY;
 
     if ( $symbol === self::QUOTE_CURRENCY ) {
-      return $response;
+      return array_merge(
+        (array) $order_args,
+        array(
+          'market'    => $market,
+          'side'      => 'sell',
+          'status'    => 'rejected',
+          'errorCode' => 0,
+          'error'     => __( 'Cannot trade quote currency.', 'trader' ),
+        )
+      );
     }
 
-    if ( (float) $amount_quote <= 0 ) {
-      return $response;
+    if ( (float) $order_args->amountQuote <= 0 ) {
+      return array_merge(
+        (array) $order_args,
+        array(
+          'market'    => $market,
+          'side'      => 'sell',
+          'status'    => 'rejected',
+          'errorCode' => 0,
+          'error'     => __( 'Amount is too small.', 'trader' ),
+        )
+      );
     }
 
     $balance = $this->get_instance()->balance( array( 'symbol' => $symbol ) );
 
-    if ( ! is_array( $balance ) || ! empty( $balance['errorCode'] ) ) {
-      $response['errorCode'] = $balance['errorCode'] ?? 0;
-      $response['error']     = $balance['error'] ?? __( 'An unknown error occured.', 'trader' );
-      return $response;
+    if ( ! is_array( $balance ) || empty( $balance['available'] ) || ! empty( $balance['errorCode'] ) ) {
+      return array_merge(
+        (array) $order_args,
+        array(
+          'market'    => $market,
+          'side'      => 'sell',
+          'status'    => 'rejected',
+          'errorCode' => $balance['errorCode'] ?? 0,
+          'error'     => $balance['error'] ?? __( 'An unknown error occured.', 'trader' ),
+        )
+      );
     }
 
     // phpcs:ignore WordPress.PHP.StrictComparisons
     if ( $balance[0]['available'] == 0 ) {
-      return $response;
+      return array_merge(
+        (array) $order_args,
+        array(
+          'market'    => $market,
+          'side'      => 'sell',
+          'status'    => 'rejected',
+          'errorCode' => 0,
+          'error'     => __( 'No balance.', 'trader' ),
+        )
+      );
     }
 
-    $response['status'] = 'new';
-
-    // $market_info = $this->get_instance()->markets( ['market' => $market] );
-    // $min_quote  = $market_info['minOrderInQuoteAsset'];
-    // $min_amount = $market_info['minOrderInBaseAsset'];
+    $order_args->feeExpected = floatstr( bcmul( $order_args->amountQuote, self::TAKER_FEE ) );
 
     $price_response = $this->get_instance()->tickerPrice( array( 'market' => $market ) );
 
-    if ( ! is_array( $price_response ) || ! empty( $price_response['errorCode'] ) ) {
-      $response['errorCode'] = $price_response['errorCode'] ?? 0;
-      $response['error']     = $price_response['error'] ?? __( 'An unknown error occured.', 'trader' );
-      return $response;
+    if ( ! is_array( $price_response ) || empty( $price_response['price'] ) || ! empty( $price_response['errorCode'] ) ) {
+      return array_merge(
+        (array) $order_args,
+        array(
+          'market'    => $market,
+          'side'      => 'sell',
+          'status'    => 'rejected',
+          'errorCode' => $price_response['errorCode'] ?? 0,
+          'error'     => $price_response['error'] ?? __( 'An unknown error occured.', 'trader' ),
+        )
+      );
     }
 
     $price = $price_response['price'];
 
-    $asset_info = $this->get_instance()->assets( array( 'symbol' => $symbol ) );
+    $amount   = bcdiv( $order_args->amountQuote, $price );
+    $leftover = bcmul( bcsub( $balance[0]['available'], $amount ), $price );
 
-    if ( ! is_array( $asset_info ) || ! empty( $asset_info['errorCode'] ) ) {
-      $response['errorCode'] = $asset_info['errorCode'] ?? 0;
-      $response['error']     = $asset_info['error'] ?? __( 'An unknown error occured.', 'trader' );
-      return $response;
+    // Prevent dust, sell whole position.
+    if ( (float) $leftover <= 2 ) {
+      $order_args->amountQuote = null; // unset( $order_args->amountQuote );
+      $order_args->amount      = $balance[0]['available'];
     }
 
-    $amount_quote = trader_ceil( $amount_quote, 2 );
-    $amount       = trader_min( $balance[0]['available'], trader_floor( bcdiv( $amount_quote, $price ), $asset_info['decimals'] ) );
-
-    // Prevent dust.
-    if ( (float) bcmul( bcsub( $balance[0]['available'], $amount ), $price ) <= 2 ) {
-      $amount             = $balance[0]['available'];
-      $response['amount'] = $amount;
-      $amount_quote       = bcmul( $amount, $price );
-
-      return wp_parse_args(
+    return array_merge(
+      (array) $order_args,
+      array_merge(
+        array(
+          'amountQuote' => null !== $order_args->amount ? bcmul( $order_args->amount, $price ) : $order_args->amountQuote,
+          'feeExpected' => floatstr( bcmul( $order_args->amountQuote, self::TAKER_FEE ) ),
+        ),
         $simulate
           ? array(
-            'amountQuote' => floatstr( $amount_quote ),
-            'feePaid'     => floatstr( bcmul( $amount_quote, self::TAKER_FEE ) ),
+            'market' => $market,
+            'side'   => 'sell',
+            'status' => 'fake',
           )
           : $this->get_instance()->placeOrder(
             $market,
             'sell',
             'market',
-            array(
-              'amount'                  => $amount,
-              'disableMarketProtection' => true,
-              'responseRequired'        => false,
-            )
-          ),
-        $response
-      );
-    }
-
-    return wp_parse_args(
-      $simulate
-        ? array(
-          'feePaid' => floatstr( bcmul( $amount_quote, self::TAKER_FEE ) ),
-        )
-        : $this->get_instance()->placeOrder(
-          $market,
-          'sell',
-          'market',
-          array(
-            'amountQuote'             => $amount_quote,
-            'disableMarketProtection' => true,
-            'responseRequired'        => false,
+            (array) $order_args
           )
-        ),
-      $response
+      )
     );
   }
 

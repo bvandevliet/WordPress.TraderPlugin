@@ -132,7 +132,7 @@ add_action(
 
     $expected_fee = 0;
     foreach ( \Trader::rebalance( \Trader\Exchanges\Bitvavo::current_user(), $balance, $configuration, true ) as $fake_order ) {
-      $expected_fee = bcadd( $expected_fee, trader_ceil( $fake_order['feePaid'] ?? 0, 2 ) );
+      $expected_fee = bcadd( $expected_fee, trader_ceil( $fake_order['feeExpected'] ?? 0, 2 ) );
     }
 
     $balance->expected_fee  = number_format( trader_ceil( $expected_fee, 2 ), 2 );
