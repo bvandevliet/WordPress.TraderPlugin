@@ -111,9 +111,9 @@ class Bitvavo extends Exchange
 
         $prices[ $deposit['symbol'] ] = $price_response['price'];
       }
-      $amount_quote = floatstr( bcmul( $deposit['amount'], $prices[ $deposit['symbol'] ] ) );
 
-      $total = bcadd( $total, $amount_quote );
+      $amount_quote = bcmul( $deposit['amount'], $prices[ $deposit['symbol'] ] );
+      $total        = bcadd( $total, $amount_quote );
     }
 
     return compact( 'deposits', 'total' );
@@ -148,9 +148,9 @@ class Bitvavo extends Exchange
 
         $prices[ $withdrawal['symbol'] ] = $price_response['price'];
       }
-      $amount_quote = floatstr( bcmul( $withdrawal['amount'], $prices[ $withdrawal['symbol'] ] ) );
 
-      $total = bcadd( $total, $amount_quote );
+      $amount_quote = bcmul( $withdrawal['amount'], $prices[ $withdrawal['symbol'] ] );
+      $total        = bcadd( $total, $amount_quote );
     }
 
     return compact( 'withdrawals', 'total' );
@@ -178,7 +178,7 @@ class Bitvavo extends Exchange
       $asset->symbol       = self::QUOTE_CURRENCY;
       $asset->price        = '1';
       $asset->available    = $balance_exchange[ $i ]['available'];
-      $asset->amount       = floatstr( bcadd( $asset->available, $balance_exchange[ $i ]['inOrder'] ) );
+      $asset->amount       = bcadd( $asset->available, $balance_exchange[ $i ]['inOrder'] );
       $asset->amount_quote = $asset->amount;
 
       if ( $i > 0 ) { // $balance_exchange[$i]['symbol'] !== self::QUOTE_CURRENCY )
@@ -192,7 +192,7 @@ class Bitvavo extends Exchange
         }
 
         $asset->price        = $price_response['price'];
-        $asset->amount_quote = floatstr( bcmul( $asset->amount, $asset->price ) );
+        $asset->amount_quote = bcmul( $asset->amount, $asset->price );
       }
 
       $balance->amount_quote_total = bcadd( $balance->amount_quote_total, $asset->amount_quote );
@@ -256,16 +256,10 @@ class Bitvavo extends Exchange
     if ( ! is_array( $balance ) || ! empty( $balance['errorCode'] ) ) {
       return array(
         array(
-          'errorCode'         => $balance['errorCode'] ?? 0,
-          'error'             => $balance['error'] ?? __( 'An unknown error occured.', 'trader' ),
-          'orderId'           => null,
-          'market'            => null,
-          'side'              => 'sell',
-          'status'            => 'rejected',
-          'amountQuote'       => '0',
-          'filledAmount'      => '0',
-          'filledAmountQuote' => '0',
-          'feePaid'           => '0',
+          'side'      => 'sell',
+          'status'    => 'rejected',
+          'errorCode' => $balance['errorCode'] ?? 0,
+          'error'     => $balance['error'] ?? __( 'An unknown error occured.', 'trader' ),
         ),
       );
     }
@@ -290,7 +284,7 @@ class Bitvavo extends Exchange
         'market',
         array(
           'amount'                  => $amount,
-          'disableMarketProtection' => false,
+          'disableMarketProtection' => true,
           'responseRequired'        => false,
         )
       );
@@ -307,54 +301,63 @@ class Bitvavo extends Exchange
   {
     $market = $symbol . '-' . self::QUOTE_CURRENCY;
 
+    $amount_quote = trader_floor( $amount_quote, 2 );
+
     $response = array(
-      'orderId'           => null,
-      'market'            => $market,
-      'side'              => 'buy',
-      'status'            => 'rejected',
-      'amountQuote'       => &$amount_quote,
-      'filledAmount'      => '0',
-      'filledAmountQuote' => '0',
-      'feePaid'           => '0',
+      'orderId'     => null,
+      'market'      => $market,
+      'side'        => 'buy',
+      'status'      => 'rejected',
+      'amountQuote' => &$amount_quote,
+      'feeExpected' => '0',
     );
 
     if ( $symbol === self::QUOTE_CURRENCY ) {
-      return $response;
+      return array_merge(
+        $response,
+        array(
+          'errorCode' => 0,
+          'error'     => __( 'Cannot trade quote currency.', 'trader' ),
+        )
+      );
     }
 
     if ( (float) $amount_quote <= 0 ) {
-      return $response;
+      return array_merge(
+        $response,
+        array(
+          'errorCode' => 0,
+          'error'     => __( 'Amount is too small.', 'trader' ),
+        )
+      );
     }
 
     $response['status'] = 'new';
 
     // $market_info = $this->get_instance()->markets( ['market' => $market] );
-    // $min_quote  = $market_info['minOrderInQuoteAsset'];
-    // $min_amount = $market_info['minOrderInBaseAsset'];
+    // $min_quote   = $market_info['minOrderInQuoteAsset'];
+    // $min_amount  = $market_info['minOrderInBaseAsset'];
 
-    // $price = $this->get_instance()->tickerPrice( array( 'market' => $market ) )['price'];
+    // $price      = $this->get_instance()->tickerPrice( array( 'market' => $market ) )['price'];
+    // $asset_info = $this->get_instance()->assets( ['symbol' => $symbol] );
+    // $amount     = trader_floor( bcdiv( $amount_quote, $price ), $asset_info['decimals'] );
 
-    // $asset_info  = $this->get_instance()->assets( ['symbol' => $symbol] );
+    $response['feeExpected'] = bcmul( $amount_quote, self::TAKER_FEE );
 
-    $amount_quote = trader_floor( $amount_quote, 2 );
-    // $amount       = trader_floor( bcdiv( $amount_quote, $price ), $asset_info['decimals'] );
-
-    return wp_parse_args(
+    return array_merge(
+      $response,
       $simulate
-        ? array(
-          'feePaid' => floatstr( bcmul( $amount_quote, self::TAKER_FEE ) ),
+      ? array( 'status' => 'fake' )
+      : $this->get_instance()->placeOrder(
+        $market,
+        'buy',
+        'market',
+        array(
+          'amountQuote'             => $amount_quote,
+          'disableMarketProtection' => true,
+          'responseRequired'        => false,
         )
-        : $this->get_instance()->placeOrder(
-          $market,
-          'buy',
-          'market',
-          array(
-            'amountQuote'             => $amount_quote,
-            'disableMarketProtection' => true,
-            'responseRequired'        => false,
-          )
-        ),
-      $response
+      )
     );
   }
 
@@ -366,107 +369,108 @@ class Bitvavo extends Exchange
   {
     $market = $symbol . '-' . self::QUOTE_CURRENCY;
 
+    $amount_quote = trader_ceil( $amount_quote, 2 );
+
     $response = array(
-      'orderId'           => null,
-      'market'            => $market,
-      'side'              => 'sell',
-      'status'            => 'rejected',
-      'amountQuote'       => &$amount_quote,
-      'filledAmount'      => '0',
-      'filledAmountQuote' => '0',
-      'feePaid'           => '0',
+      'orderId'     => null,
+      'market'      => $market,
+      'side'        => 'sell',
+      'status'      => 'rejected',
+      'amountQuote' => &$amount_quote,
+      'feeExpected' => '0',
     );
 
     if ( $symbol === self::QUOTE_CURRENCY ) {
-      return $response;
+      return array_merge(
+        $response,
+        array(
+          'errorCode' => 0,
+          'error'     => __( 'Cannot trade quote currency.', 'trader' ),
+        )
+      );
     }
 
     if ( (float) $amount_quote <= 0 ) {
-      return $response;
+      return array_merge(
+        $response,
+        array(
+          'errorCode' => 0,
+          'error'     => __( 'Amount is too small.', 'trader' ),
+        )
+      );
     }
 
     $balance = $this->get_instance()->balance( array( 'symbol' => $symbol ) );
 
-    if ( ! is_array( $balance ) || ! empty( $balance['errorCode'] ) ) {
-      $response['errorCode'] = $balance['errorCode'] ?? 0;
-      $response['error']     = $balance['error'] ?? __( 'An unknown error occured.', 'trader' );
-      return $response;
+    if ( ! is_array( $balance ) || empty( $balance[0]['available'] ) || ! empty( $balance['errorCode'] ) ) {
+      return array_merge(
+        $response,
+        array(
+          'errorCode' => $balance['errorCode'] ?? 0,
+          'error'     => $balance['error'] ?? __( 'An unknown error occured at $balance.', 'trader' ),
+        )
+      );
     }
 
     // phpcs:ignore WordPress.PHP.StrictComparisons
     if ( $balance[0]['available'] == 0 ) {
-      return $response;
+      return array_merge(
+        $response,
+        array(
+          'errorCode' => 0,
+          'error'     => __( 'No balance.', 'trader' ),
+        )
+      );
     }
 
     $response['status'] = 'new';
 
-    // $market_info = $this->get_instance()->markets( ['market' => $market] );
-    // $min_quote  = $market_info['minOrderInQuoteAsset'];
-    // $min_amount = $market_info['minOrderInBaseAsset'];
-
     $price_response = $this->get_instance()->tickerPrice( array( 'market' => $market ) );
 
-    if ( ! is_array( $price_response ) || ! empty( $price_response['errorCode'] ) ) {
-      $response['errorCode'] = $price_response['errorCode'] ?? 0;
-      $response['error']     = $price_response['error'] ?? __( 'An unknown error occured.', 'trader' );
-      return $response;
+    if ( ! is_array( $price_response ) || empty( $price_response['price'] ) || ! empty( $price_response['errorCode'] ) ) {
+      return array_merge(
+        $response,
+        array(
+          'errorCode' => $price_response['errorCode'] ?? 0,
+          'error'     => $price_response['error'] ?? __( 'An unknown error occured at $price.', 'trader' ),
+        )
+      );
     }
 
     $price = $price_response['price'];
 
-    $asset_info = $this->get_instance()->assets( array( 'symbol' => $symbol ) );
-
-    if ( ! is_array( $asset_info ) || ! empty( $asset_info['errorCode'] ) ) {
-      $response['errorCode'] = $asset_info['errorCode'] ?? 0;
-      $response['error']     = $asset_info['error'] ?? __( 'An unknown error occured.', 'trader' );
-      return $response;
-    }
-
-    $amount_quote = trader_ceil( $amount_quote, 2 );
-    $amount       = trader_min( $balance[0]['available'], trader_floor( bcdiv( $amount_quote, $price ), $asset_info['decimals'] ) );
+    $amount   = bcdiv( $amount_quote, $price );
+    $leftover = bcmul( bcsub( $balance[0]['available'], $amount ), $price );
 
     // Prevent dust.
-    if ( (float) bcmul( bcsub( $balance[0]['available'], $amount ), $price ) <= 2 ) {
+    if ( $liquidate = (float) $leftover <= 2 ) {
       $amount             = $balance[0]['available'];
       $response['amount'] = $amount;
       $amount_quote       = bcmul( $amount, $price );
-
-      return wp_parse_args(
-        $simulate
-          ? array(
-            'amountQuote' => floatstr( $amount_quote ),
-            'feePaid'     => floatstr( bcmul( $amount_quote, self::TAKER_FEE ) ),
-          )
-          : $this->get_instance()->placeOrder(
-            $market,
-            'sell',
-            'market',
-            array(
-              'amount'                  => $amount,
-              'disableMarketProtection' => true,
-              'responseRequired'        => false,
-            )
-          ),
-        $response
-      );
     }
 
-    return wp_parse_args(
+    $response['feeExpected'] = bcmul( $amount_quote, self::TAKER_FEE );
+
+    return array_merge(
+      $response,
       $simulate
+      ? array( 'status' => 'fake' )
+      : $this->get_instance()->placeOrder(
+        $market,
+        'sell',
+        'market',
+        $liquidate
         ? array(
-          'feePaid' => floatstr( bcmul( $amount_quote, self::TAKER_FEE ) ),
+          'amount'                  => $amount,
+          'disableMarketProtection' => true,
+          'responseRequired'        => false,
         )
-        : $this->get_instance()->placeOrder(
-          $market,
-          'sell',
-          'market',
-          array(
-            'amountQuote'             => $amount_quote,
-            'disableMarketProtection' => true,
-            'responseRequired'        => false,
-          )
-        ),
-      $response
+        : array(
+          'amountQuote'             => $amount_quote,
+          'disableMarketProtection' => true,
+          'responseRequired'        => false,
+        )
+      )
     );
   }
 

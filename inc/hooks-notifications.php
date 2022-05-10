@@ -42,11 +42,12 @@ function trader_email_automation_triggered( int $user_id, DateTime $timestamp, \
     // Change the subject.
     $subject = 'Rebalance failed';
 
+    $relevant = array_flip( array( 'ID', 'display_name', 'user_email' ) );
     wp_mail(
       $admin_email,
       $subject,
-      // phpcs:ignore WordPress.PHP.DevelopmentFunctions
-      '<pre>' . esc_html( print_r( $user, true ) ) . "</pre>\n<pre>" . esc_html( print_r( $errors->error_data, true ) ) . '</pre>',
+      '<pre>' . esc_html( wp_json_encode( array_intersect_key( (array) $user->data, $relevant ), JSON_PRETTY_PRINT ) ) . '</pre>' . PHP_EOL .
+      '<pre>' . esc_html( wp_json_encode( $errors->error_data, JSON_PRETTY_PRINT ) ) . '</pre>',
       $email_headers
     );
   }
@@ -75,8 +76,21 @@ function trader_email_automation_triggered( int $user_id, DateTime $timestamp, \
     </p>
     <div>
       <?php
-        // phpcs:ignore WordPress.PHP.DevelopmentFunctions, WordPress.Security.EscapeOutput
-        echo '<pre>' . implode( "</pre>\n<pre>", array_map( fn( $order) => esc_html( print_r( $order, true ) ), $trades ) ) . '</pre>';
+        $relevant = array_flip( array( 'market', 'side', 'orderType', 'amount', 'price', 'amountQuote', 'feeExpected' ) );
+        echo '<pre>'
+        . implode(
+          "</pre>\n<pre>",
+          // phpcs:ignore WordPress.Security.EscapeOutput
+          array_map(
+            function( $order )
+            {
+              $order['feeExpected'] = trader_ceil( $order['feeExpected'] ?? 0, 2 );
+              return esc_html( wp_json_encode( array_intersect_key( $order, $relevant ), JSON_PRETTY_PRINT ) );
+            },
+            $trades
+          )
+        )
+        . '</pre>';
       ?>
     </div>
     <p>
@@ -104,8 +118,8 @@ function trader_email_automation_triggered( int $user_id, DateTime $timestamp, \
     </p>
     <div>
       <?php
-        // phpcs:ignore WordPress.PHP.DevelopmentFunctions, WordPress.Security.EscapeOutput
-        echo '<pre>' . implode( "</pre>\n<pre>", array_map( fn( $order) => esc_html( print_r( $order, true ) ), $trades ) ) . '</pre>';
+        // phpcs:ignore WordPress.Security.EscapeOutput
+        echo '<pre>' . implode( "</pre>\n<pre>", array_map( fn( $order ) => esc_html( wp_json_encode( $order, JSON_PRETTY_PRINT ) ), $trades ) ) . '</pre>';
       ?>
     </div>
     <p>
