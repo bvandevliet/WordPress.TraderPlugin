@@ -46,18 +46,25 @@ class Configuration
   public int $top_count = 20;
 
   /**
+   * Skip stablecoins in top counter.
+   *
+   * @var bool
+   */
+  public bool $skip_stablecoin_count = false;
+
+  /**
    * The period to use for smoothing Market Cap.
    *
    * @var int
    */
-  public int $smoothing = 7;
+  public int $smoothing = 3;
 
   /**
    * The nth root of Market Cap to use for allocation.
    *
    * @var int|float|string
    */
-  public $nth_root = '2.45';
+  public $nth_root = '2.6';
 
   /**
    * Minimum required allocation difference in quote currency.
@@ -87,7 +94,7 @@ class Configuration
    *
    * @var int|float|string
    */
-  public $rebalance_threshold = '1.35';
+  public $rebalance_threshold = '1.2';
 
   /**
    * Rebalance mode.
@@ -233,16 +240,17 @@ class Configuration
      */
     if ( count( (array) $object ) > 0 || 'POST' === $_SERVER['REQUEST_METHOD'] ) {
       foreach ( array(
-        'sideline_currency'   => null,
-        'top_count'           => 1,
-        'smoothing'           => 1,
-        'nth_root'            => 1,
-        'alloc_sideline'      => 0,
-        'takeout'             => 0,
-        'interval_hours'      => 1,
-        'rebalance_threshold' => 0,
-        'rebalance_mode'      => 'default',
-        'automation_enabled'  => false,
+        'sideline_currency'     => null,
+        'top_count'             => 1,
+        'skip_stablecoin_count' => false,
+        'smoothing'             => 1,
+        'nth_root'              => 1,
+        'alloc_sideline'        => 0,
+        'takeout'               => 0,
+        'interval_hours'        => 1,
+        'rebalance_threshold'   => 0,
+        'rebalance_mode'        => 'default',
+        'automation_enabled'    => false,
       ) as $param => $initial ) {
         $configuration->$param = $initial;
       }
@@ -276,6 +284,7 @@ class Configuration
         case 'rebalance_mode':
           $configuration->$param = isset( $req_value ) ? sanitize_key( $req_value ) : $default;
           break;
+        case 'skip_stablecoin_count':
         case 'automation_enabled':
           $configuration->$param = ! empty( $req_value ) ? boolval( $req_value ) : $default;
           break;

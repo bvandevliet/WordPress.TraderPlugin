@@ -73,15 +73,32 @@ class Trader
     }
 
     /**
-     * Sort again based on EMA value then handle top count.
+     * Sort again based on EMA value.
      */
     usort( $cmc_latest, fn( $a, $b ) => $b[0]->indicators->market_cap_ema <=> $a[0]->indicators->market_cap_ema );
-    $cmc_latest = array_slice( $cmc_latest, 0, $configuration->top_count );
+    // $cmc_latest = array_slice( $cmc_latest, 0, $configuration->top_count );
 
     /**
      * Loop to leave out certain non-relevant assets then retrieve candlesticks and indicators.
      */
+    $counter = 0;
     foreach ( $cmc_latest as $asset_cmc_arr ) {
+      $counter++;
+
+      /**
+       * Decrement counter if it should skip stablecoins.
+       */
+      if ( $configuration->skip_stablecoin_count && in_array( 'stablecoin', $asset_cmc_arr[0]->tags, true ) ) {
+        $counter--;
+      }
+
+      /**
+       * Check if within top count.
+       */
+      if ( $counter > $configuration->top_count ) {
+        break;
+      }
+
       /**
        * Skip sideline currency for now.
        */
