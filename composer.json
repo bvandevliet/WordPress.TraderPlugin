@@ -1,8 +1,15 @@
 {
+	"name": "bvandevliet/trader-plugin",
+	"description": "WordPress plugin to automate portfolio management.",
+	"type": "project",
 	"require": {
 		"lupecode/php-trader-native": "^1.2",
 		"defuse/php-encryption": "^2.3",
 		"bitvavo/php-bitvavo-api": "^1.2",
 		"spatie/async": "^1.5"
+	},
+	"license": "MIT",
+	"config": {
+		"optimize-autoloader": true
 	}
 }
