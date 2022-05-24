@@ -72,7 +72,7 @@ function trader_email_automation_triggered( int $user_id, DateTime $timestamp, \
       and executed successfully.
     </p>
     <p>
-      The below <?php echo count( $trades ); ?> trades where executed:
+      The below <?php echo count( $trades ); ?> trades were executed:
     </p>
     <div>
       <?php
@@ -114,7 +114,7 @@ function trader_email_automation_triggered( int $user_id, DateTime $timestamp, \
       We will try again within an hour.
     </p>
     <p>
-      The below <?php echo count( $trades ); ?> trades where attempted:
+      The below <?php echo count( $trades ); ?> trades were attempted:
     </p>
     <div>
       <?php
