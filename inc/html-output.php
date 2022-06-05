@@ -75,8 +75,8 @@ function trader_echo_balance_summary( $balance_exchange = null )
  * Print html for a portfolio balance overview.
  *
  * @param \Trader\Balance|null $balance         The balance to print.
- * @param boolean              $show_current    Print current balance?
- * @param boolean              $show_rebalanced Print rebalanced situation?
+ * @param bool                 $show_current    Print current balance?
+ * @param bool                 $show_rebalanced Print rebalanced situation?
  */
 function trader_echo_portfolio( \Trader\Balance $balance = null, bool $show_current = true, bool $show_rebalanced = true )
 {
