@@ -81,14 +81,7 @@ function trader_email_automation_triggered( int $user_id, DateTime $timestamp, \
         . implode(
           "</pre>\n<pre>",
           // phpcs:ignore WordPress.Security.EscapeOutput
-          array_map(
-            function( $order ) use ( $relevant )
-            {
-              $order['feeExpected'] = trader_ceil( $order['feeExpected'] ?? 0, 2 );
-              return esc_html( wp_json_encode( array_intersect_key( $order, $relevant ), JSON_PRETTY_PRINT ) );
-            },
-            $trades
-          )
+          array_map( fn( $order ) => esc_html( wp_json_encode( array_intersect_key( $order, $relevant ), JSON_PRETTY_PRINT ) ), $trades )
         )
         . '</pre>';
       ?>

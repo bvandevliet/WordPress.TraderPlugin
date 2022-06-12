@@ -342,7 +342,7 @@ class Bitvavo extends Exchange
     // $asset_info = $this->get_instance()->assets( ['symbol' => $symbol] );
     // $amount     = trader_floor( bcdiv( $amount_quote, $price ), $asset_info['decimals'] );
 
-    $response['feeExpected'] = bcmul( $amount_quote, self::TAKER_FEE );
+    $response['feeExpected'] = trader_ceil( bcmul( $amount_quote, self::TAKER_FEE ), 2 );
 
     return array_merge(
       $response,
@@ -449,7 +449,7 @@ class Bitvavo extends Exchange
       $amount_quote       = bcmul( $amount, $price );
     }
 
-    $response['feeExpected'] = bcmul( $amount_quote, self::TAKER_FEE );
+    $response['feeExpected'] = trader_ceil( bcmul( $amount_quote, self::TAKER_FEE ), 2 );
 
     return array_merge(
       $response,
