@@ -19,7 +19,7 @@ class Balance
    *
    * @var string
    */
-  public ?string $amount_quote_total = null;
+  public string $amount_quote_total = '0';
 
   /**
    * Update an existing balance with actual values from an exchange balance.

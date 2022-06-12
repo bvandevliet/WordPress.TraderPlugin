@@ -19,6 +19,7 @@ Connects to exchange API's, provides blocks for rendering exchange data and incl
 == Changelog ==
 
 = 2022.06.12 =
+* Fix compatibility with php 8.1
 * Round up expected fee per trade, not only the total amount.
 * Minor spelling correction in email notification.
 
