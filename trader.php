@@ -33,7 +33,7 @@ define( 'TRADER_PLUGIN_VERSION', '2022.06.12' );
  */
 ini_set( 'max_input_time', 299 );
 ini_set( 'max_execution_time', 299 );
-// @set_time_limit( 299 );
+@set_time_limit( 299 );
 
 /**
  * Increase bcmath precision.
