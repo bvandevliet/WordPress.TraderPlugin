@@ -163,7 +163,7 @@ abstract class Exchange
    *   @type string  $total
    * }
    */
-  abstract public function deposit_history();
+  abstract public function deposit_history() : \WP_Error|array;
 
   /**
    * Returns the withdrawal history.
@@ -176,14 +176,14 @@ abstract class Exchange
    *   @type string  $total
    * }
    */
-  abstract public function withdrawal_history();
+  abstract public function withdrawal_history() : \WP_Error|array;
 
   /**
    * Get balance. First entry of $assets is quote currency.
    *
    * @return \Trader\Balance|\WP_Error
    */
-  abstract public function get_balance();
+  abstract public function get_balance() : \Trader\Balance|\WP_Error;
 
   /**
    * Cancel all existing open orders.

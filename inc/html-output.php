@@ -6,9 +6,9 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Print html for a basic balance overview.
  *
- * @param \Trader\Balance|\WP_Error|null $balance_exchange The exchange balance.
+ * @param null|\Trader\Balance|\WP_Error $balance_exchange The exchange balance.
  */
-function trader_echo_balance_summary( $balance_exchange = null )
+function trader_echo_balance_summary( null|\Trader\Balance|\WP_Error $balance_exchange = null )
 {
   if ( $balanced_passed = $balance_exchange instanceof \Trader\Balance ) {
     $deposit_history    = \Trader\Exchanges\Bitvavo::current_user()->deposit_history();
@@ -139,7 +139,7 @@ function trader_echo_portfolio( \Trader\Balance $balance = null, bool $show_curr
 /**
  * Print html for a basic onchain indicator summary.
  *
- * @param array|null $market_cap [CapMrktCurUSD, CapRealUSD][]
+ * @param null|array $market_cap [CapMrktCurUSD, CapRealUSD][]
  */
 function trader_echo_onchain_summary( ?array $market_cap = null )
 {

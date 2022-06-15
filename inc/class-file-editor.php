@@ -28,7 +28,8 @@ class File_Editor
    * Make specific private properties readonly.
    *
    * @param string $prop Property name.
-   * @return mixed|null  Property value or null on failure.
+   *
+   * @return null|mixed Property value or null on failure.
    */
   public function __get( string $prop )
   {

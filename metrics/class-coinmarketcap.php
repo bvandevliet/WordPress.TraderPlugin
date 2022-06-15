@@ -73,7 +73,7 @@ class CoinMarketCap
    * Serialize a cmc asset into a database record.
    *
    * @param object     $asset_cmc The cmc asset.
-   * @param array|null $format    Array of formats to use in $wpdb's update() and insert() methods.
+   * @param null|array $format    Array of formats to use in $wpdb's update() and insert() methods.
    *
    * @return object $record
    */
@@ -209,7 +209,7 @@ class CoinMarketCap
    *
    * @return object[][]|object[]|\WP_Error Array of historical object[] per asset if 'sort' == 'market_cap', else object[] with assets.
    */
-  public static function list_latest( $query = array() )
+  public static function list_latest( $query = array() ) : array|\WP_Error
   {
     $endpoint = 'cryptocurrency/listings/latest';
 

@@ -2,9 +2,9 @@
 
 Contributors: bvandevliet
 Tags: 
-Requires at least: 5.7
-Tested up to: 5.8
-Requires PHP: 7.2
+Requires at least: 5.8
+Tested up to: 6.0
+Requires PHP: 8.1
 Stable tag: 2022.06.12
 License: MIT
 
@@ -17,6 +17,10 @@ Connects to exchange API's, provides blocks for rendering exchange data and incl
 
 
 == Changelog ==
+
+= xxxx.xx.xx =
+* Improved strong-typed params and returns, no back-compat php <8
+* Re-enabled `set_time_limit` fallback.
 
 = 2022.06.12 =
 * Fix compatibility with php 8.1

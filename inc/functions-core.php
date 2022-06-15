@@ -21,9 +21,9 @@ function trader_trim( $string, string $delim = ' ' ) : string
  *
  * @param string|string[] $key The plain string key(s).
  *
- * @return string|string[]|null The encrypted string key(s).
+ * @return null|string|string[] The encrypted string key(s).
  */
-function trader_encrypt_key( $key )
+function trader_encrypt_key( string|array $key ) : null|string|array
 {
   if ( is_array( $key ) ) {
     return array_map( 'trader_encrypt_key', $key );
@@ -48,9 +48,9 @@ function trader_encrypt_key( $key )
  *
  * @param string|string[] $encrypted_key The encrypted string key(s).
  *
- * @return string|string[]|null The original string key(s).
+ * @return null|string|string[] The original string key(s).
  */
-function trader_decrypt_key( $encrypted_key )
+function trader_decrypt_key( string|array $encrypted_key ) :null|string|array
 {
   if ( is_array( $encrypted_key ) ) {
     return array_map( 'trader_decrypt_key', $encrypted_key );

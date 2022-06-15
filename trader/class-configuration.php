@@ -123,7 +123,7 @@ class Configuration
    *
    * @param array|object $object Optional array or object of args to parse into the instance.
    */
-  public function __construct( $object = array() )
+  public function __construct( array|object $object = array() )
   {
     foreach ( (array) $object as $key => $value ) {
       $this->$key = $value;
@@ -142,7 +142,7 @@ class Configuration
   /**
    * Get configuration by user id.
    *
-   * @param int|null $user_id Defaults to current user.
+   * @param null|int $user_id Defaults to current user.
    *
    * @return self
    */
@@ -219,11 +219,11 @@ class Configuration
    * Get rebalance parameters from request parameters or a passed object.
    *
    * @param array|object $object  Optional array or object of args to parse into the instance.
-   * @param int|null     $user_id Defaults to current user.
+   * @param null|int     $user_id Defaults to current user.
    *
    * @return self
    */
-  public static function get_configuration_from_environment( $object = array(), ?int $user_id = null ) : self
+  public static function get_configuration_from_environment( array|object $object = array(), ?int $user_id = null ) : self
   {
     $configuration = self::get( $user_id );
 
@@ -299,7 +299,7 @@ class Configuration
   /**
    * Save this configuration.
    *
-   * @param int|null $user_id Defaults to current user.
+   * @param null|int $user_id Defaults to current user.
    */
   public function save( ?int $user_id = null )
   {

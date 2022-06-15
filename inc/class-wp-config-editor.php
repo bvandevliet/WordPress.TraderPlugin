@@ -46,11 +46,11 @@ class WP_Config_Editor extends File_Editor
    * If the constant was not yet defined, it is added.
    *
    * @param string           $name  The name of the constant to define.
-   * @param string|bool|null $value The value of the constant or null to remove its declaration.
+   * @param null|string|bool $value The value of the constant or null to remove its declaration.
    *
    * @return bool Whether the constant was updated, added or removed successfully.
    */
-  public function set_constant( string $name, $value )
+  public function set_constant( string $name, null|string|bool $value )
   {
     /**
      * If content could not be read, return false.

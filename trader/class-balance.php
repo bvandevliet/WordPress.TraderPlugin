@@ -26,13 +26,13 @@ class Balance
    *
    * MAKE NON-STATIC !!
    *
-   * @param self|null|\WP_Error $balance          Existing balance.
-   * @param self|null|\WP_Error $balance_exchange Updated balance.
+   * @param null|self|\WP_Error $balance          Existing balance.
+   * @param null|self|\WP_Error $balance_exchange Updated balance.
    * @param int|float|string    $takeout          Amount in quote currency to keep out.
    *
    * @return self $balance_merged Merged balance.
    */
-  public static function merge_balance( $balance, $balance_exchange, $takeout = 0 ) : self
+  public static function merge_balance( null|self|\WP_Error $balance, null|self|\WP_Error $balance_exchange, int|float|string $takeout = 0 ) : self
   {
     if ( is_wp_error( $balance ) || ! $balance instanceof self ) {
       $balance_merged = new self();

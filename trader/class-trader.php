@@ -30,7 +30,7 @@ class Trader
    *
    * @return \Trader\Balance|\WP_Error
    */
-  public static function get_asset_allocations( \Trader\Exchanges\Exchange $exchange, \Trader\Configuration $configuration )
+  public static function get_asset_allocations( \Trader\Exchanges\Exchange $exchange, \Trader\Configuration $configuration ) : \Trader\Balance|\WP_Error
   {
     /**
      * List latest based on market cap (cache supported).

@@ -12,7 +12,7 @@ class Asset
    *
    * @param array|object $object Optional array or object of args to parse into the instance.
    */
-  public function __construct( $object = array() )
+  public function __construct( array|object $object = array() )
   {
     foreach ( (array) $object as $key => $value ) {
       $this->$key = $value;

@@ -86,7 +86,7 @@ class Bitvavo extends Exchange
   /**
    * {@inheritDoc}
    */
-  public function deposit_history()
+  public function deposit_history() : \WP_Error|array
   {
     $errors = new \WP_Error();
 
@@ -123,7 +123,7 @@ class Bitvavo extends Exchange
   /**
    * {@inheritDoc}
    */
-  public function withdrawal_history()
+  public function withdrawal_history() : \WP_Error|array
   {
     $errors = new \WP_Error();
 
@@ -160,7 +160,7 @@ class Bitvavo extends Exchange
   /**
    * {@inheritDoc}
    */
-  public function get_balance()
+  public function get_balance() : \Trader\Balance|\WP_Error
   {
     $errors = new \WP_Error();
 
