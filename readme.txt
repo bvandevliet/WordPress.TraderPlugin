@@ -5,7 +5,7 @@ Tags:
 Requires at least: 5.8
 Tested up to: 6.0
 Requires PHP: 8.1
-Stable tag: 2022.06.12
+Stable tag: 2022.06.19
 License: MIT
 
 Calculates and executes a crypto portfolio rebalance.
@@ -18,7 +18,8 @@ Connects to exchange API's, provides blocks for rendering exchange data and incl
 
 == Changelog ==
 
-= xxxx.xx.xx =
+= 2022.06.19 =
+* BREAKING CHANGES: Assets containing excluded tags are skipped in the top counter, reducing top count value may be required !!
 * BREAKING CHANGES: Stablecoins not skipped anymore by default, add 'stablecoin' to excluded tags to skip them !!
 * BREAKING CHANGES: Improved strong-typed params and returns, no back-compat php <8 !!
 * Re-enabled `set_time_limit` fallback.

@@ -86,13 +86,6 @@ class Trader
       $counter++;
 
       /**
-       * Decrement counter if it should skip stablecoins.
-       */
-      if ( $configuration->skip_stablecoin_count && in_array( 'stablecoin', $asset_cmc_arr[0]->tags, true ) ) {
-        $counter--;
-      }
-
-      /**
        * Check if within top count.
        */
       if ( $counter > $configuration->top_count ) {
@@ -100,14 +93,8 @@ class Trader
       }
 
       /**
-       * Skip sideline currency for now.
-       */
-      if ( $configuration->sideline_currency === $asset_cmc_arr[0]->symbol ) {
-        continue;
-      }
-
-      /**
-       * Skip if is stablecoin, one of its tags are excluded or weighting is set to zero.
+       * Skip if one of the tags are excluded or weighting is set to zero.
+       * Decrement counter if skipped.
        */
       $weighting_is_set = array_key_exists( $asset_cmc_arr[0]->symbol, $configuration->asset_weightings );
       $weighting        = $weighting_is_set ? (float) $configuration->asset_weightings[ $asset_cmc_arr[0]->symbol ] : 1;
@@ -115,6 +102,14 @@ class Trader
         $weighting <= 0 ||
         ( ! $weighting_is_set && count( array_intersect( $configuration->excluded_tags, $asset_cmc_arr[0]->tags ) ) > 0 )
       ) {
+        $counter--;
+        continue;
+      }
+
+      /**
+       * Skip sideline currency for now.
+       */
+      if ( $configuration->sideline_currency === $asset_cmc_arr[0]->symbol ) {
         continue;
       }
 

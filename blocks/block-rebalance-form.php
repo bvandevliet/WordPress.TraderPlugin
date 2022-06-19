@@ -137,14 +137,10 @@ function trader_dynamic_block_rebalance_form_cb( $block_attributes, $content )
     <fieldset>
       <div>
         <p class="form-row form-row-2">
-          <label for="top_count" title="<?php esc_attr_e( 'Max amount of assets from CoinMarketCap listing.', 'trader' ); ?>">
+          <label title="<?php esc_attr_e( 'Max amount of assets from CoinMarketCap listing. Excluded assets and tags are skipped, i.e. they are not counted.', 'trader' ); ?>">
             <?php esc_html_e( 'Top count', 'trader' ); ?> [n]
+            <input type="number" min="1" max="100" class="input-number" name="top_count" value="<?php echo esc_attr( $configuration->top_count ); ?>" />
           </label>
-          <label style="float:right;" title="<?php esc_attr_e( 'Skip stablecoins in top counter.', 'trader' ); ?>">
-            <?php esc_html_e( 'Skip stablecoins', 'trader' ); ?>
-            <input type="checkbox" name="skip_stablecoin_count" <?php checked( $configuration->skip_stablecoin_count ); ?> />
-          </label>
-          <input id="top_count" type="number" min="1" max="100" class="input-number" name="top_count" value="<?php echo esc_attr( $configuration->top_count ); ?>" />
         </p>
         <p class="form-row form-row-2">
           <label title="<?php esc_attr_e( 'Exponential Moving Average period of Market Cap, to smooth out volatility.', 'trader' ); ?>">
