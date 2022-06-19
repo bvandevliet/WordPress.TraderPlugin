@@ -19,7 +19,8 @@ Connects to exchange API's, provides blocks for rendering exchange data and incl
 == Changelog ==
 
 = xxxx.xx.xx =
-* Improved strong-typed params and returns, no back-compat php <8
+* BREAKING CHANGES: Stablecoins not skipped anymore by default, add 'stablecoin' to excluded tags to skip them !!
+* BREAKING CHANGES: Improved strong-typed params and returns, no back-compat php <8 !!
 * Re-enabled `set_time_limit` fallback.
 
 = 2022.06.12 =

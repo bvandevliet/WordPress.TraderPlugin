@@ -96,7 +96,7 @@ function trader_dynamic_block_configuration_cb( $block_attributes, $content )
         <?php
         _e(
           'Tags to exclude.<br>
-          Assets that contain one or more of these tags will never be included in your portfolio.',
+          Assets that contain one or more of these tags will never be included in your portfolio, unless an alternative weighting is set for an asset.',
           'trader'
         );
         ?>

@@ -113,7 +113,7 @@ class Trader
       $weighting        = $weighting_is_set ? (float) $configuration->asset_weightings[ $asset_cmc_arr[0]->symbol ] : 1;
       if (
         $weighting <= 0 ||
-        ( ! $weighting_is_set && count( array_intersect( array_merge( array( 'stablecoin' ), $configuration->excluded_tags ), $asset_cmc_arr[0]->tags ) ) > 0 )
+        ( ! $weighting_is_set && count( array_intersect( $configuration->excluded_tags, $asset_cmc_arr[0]->tags ) ) > 0 )
       ) {
         continue;
       }

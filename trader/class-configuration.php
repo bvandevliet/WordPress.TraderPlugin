@@ -36,7 +36,7 @@ class Configuration
    *
    * @var string[]
    */
-  public array $excluded_tags = array();
+  public array $excluded_tags = array( 'stablecoin' );
 
   /**
    * Amount of assets from the top market cap ranking.
