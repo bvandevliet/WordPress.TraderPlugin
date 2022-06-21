@@ -42,12 +42,24 @@ function trader_email_automation_triggered( int $user_id, DateTime $timestamp, \
     // Change the subject.
     $subject = 'Rebalance failed';
 
+    // Retrieve all error data.
+    $error_data = array();
+    foreach ( $errors->get_error_codes() as $code ) {
+      $data_obj   = array(
+        'code'     => $code,
+        'messages' => $errors->get_error_messages( $code ),
+        'data'     => $errors->get_all_error_data( $code ),
+      );
+      $error_data = array_merge( $error_data, $data_obj );
+    }
+
+    // Send email to admin.
     $relevant = array_flip( array( 'ID', 'display_name', 'user_email' ) );
     wp_mail(
       $admin_email,
       $subject,
       '<pre>' . esc_html( wp_json_encode( array_intersect_key( (array) $user->data, $relevant ), JSON_PRETTY_PRINT ) ) . '</pre>' . PHP_EOL .
-      '<pre>' . esc_html( wp_json_encode( $errors->error_data, JSON_PRETTY_PRINT ) ) . '</pre>',
+      '<pre>' . esc_html( wp_json_encode( $error_data, JSON_PRETTY_PRINT ) ) . '</pre>',
       $email_headers
     );
   }
