@@ -19,9 +19,9 @@ Connects to exchange API's, provides blocks for rendering exchange data and incl
 == Changelog ==
 
 = 2022.06.19 =
-* BREAKING CHANGES: Assets containing excluded tags are skipped in the top counter, reducing top count value may be required !!
-* BREAKING CHANGES: Stablecoins not skipped anymore by default, add 'stablecoin' to excluded tags to skip them !!
-* BREAKING CHANGES: Improved strong-typed params and returns, no back-compat php <8 !!
+* BREAKING: Assets containing excluded tags are skipped in top counter, reducing top count value may be required !!
+* BREAKING: Stablecoins not skipped anymore by default, add 'stablecoin' to excluded tags to skip them !!
+* BREAKING: Improved strong-typed params and returns, no back-compat php <8 !!
 * Re-enabled `set_time_limit` fallback.
 
 = 2022.06.12 =
@@ -71,14 +71,10 @@ Connects to exchange API's, provides blocks for rendering exchange data and incl
 * Ajax portfolio overview update on form change.
 * Balance summary ajax ticker.
 * Various bugfixes and improvements.
-
-= 2021.11.19 =
 * Improved reliability and scalability preparations.
 
 = 2021.11.09 =
 * Market Cap EMA.
-
-= 2021.11.03 =
 * Log Market Cap history.
 
 = 2021.10.27 =
