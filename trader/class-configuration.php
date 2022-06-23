@@ -22,7 +22,7 @@ class Configuration
    *
    * @var int|float|string
    */
-  public $alloc_sideline = 10;
+  public $alloc_sideline = 5;
 
   /**
    * Alternative asset allocation weighting factors.
@@ -43,7 +43,7 @@ class Configuration
    *
    * @var int
    */
-  public int $top_count = 20;
+  public int $top_count = 10;
 
   /**
    * The period to use for smoothing Market Cap.
@@ -57,7 +57,7 @@ class Configuration
    *
    * @var int|float|string
    */
-  public $nth_root = '2.6';
+  public $nth_root = '2.4';
 
   /**
    * Minimum required allocation difference in quote currency.
