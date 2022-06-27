@@ -25,7 +25,7 @@ add_action(
     }
 
     if ( $errors->has_errors() ) {
-      wp_send_json_error( $errors->get_all_error_data() );
+      wp_send_json_error( get_error_data( $errors ) );
       wp_die();
     }
 
@@ -56,7 +56,7 @@ add_action(
     }
 
     if ( $errors->has_errors() ) {
-      wp_send_json_error( $errors->get_all_error_data() );
+      wp_send_json_error( get_error_data( $errors ) );
       wp_die();
     }
 
@@ -87,7 +87,7 @@ add_action(
     }
 
     if ( $errors->has_errors() ) {
-      wp_send_json_error( $errors->get_all_error_data() );
+      wp_send_json_error( get_error_data( $errors ) );
       wp_die();
     }
 
@@ -126,7 +126,7 @@ add_action(
     }
 
     if ( $errors->has_errors() ) {
-      wp_send_json_error( $errors->get_all_error_data() );
+      wp_send_json_error( get_error_data( $errors ) );
       wp_die();
     }
 
