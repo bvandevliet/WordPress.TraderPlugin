@@ -43,15 +43,7 @@ function trader_email_automation_triggered( int $user_id, DateTime $timestamp, \
     $subject = 'Rebalance failed';
 
     // Retrieve all error data.
-    $error_data = array();
-    foreach ( $errors->get_error_codes() as $code ) {
-      $data_obj   = array(
-        'code'     => $code,
-        'messages' => $errors->get_error_messages( $code ),
-        'data'     => $errors->get_all_error_data( $code ),
-      );
-      $error_data = array_merge( $error_data, $data_obj );
-    }
+    $error_data = get_error_data( $errors );
 
     // Send email to admin.
     $relevant = array_flip( array( 'ID', 'display_name', 'user_email' ) );

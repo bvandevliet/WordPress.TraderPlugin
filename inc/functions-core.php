@@ -114,6 +114,35 @@ if ( ! function_exists( 'get_error_obj' ) ) {
   }
 }
 
+if ( ! function_exists( 'get_error_data' ) ) {
+  /**
+   * Get all error data from an existing error object.
+   *
+   * @param \WP_Error $errors An existing EP_Error object.
+   *
+   * @return array[] {.
+   *   @type int|string $code
+   *   @type string     $message
+   *   @type mixed      $data
+   * }
+   */
+  function get_error_data( \WP_Error $errors )
+  {
+    $error_data = array();
+
+    foreach ( $errors->get_error_codes() as $code ) {
+      $data_obj   = array(
+        'code'     => $code,
+        'messages' => $errors->get_error_messages( $code ),
+        'data'     => $errors->get_all_error_data( $code ),
+      );
+      $error_data = array_merge( $error_data, $data_obj );
+    }
+
+    return $error_data;
+  }
+}
+
 if ( ! function_exists( 'array_some' ) ) {
   /**
    * Determines whether the specified callback function returns true for any element of an array.
