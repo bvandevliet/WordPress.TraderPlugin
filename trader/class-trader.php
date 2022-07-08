@@ -231,8 +231,8 @@ class Trader
             return;
           }
 
-          $amount_quote = bcmul( $balance->amount_quote_total, $asset->allocation_rebl[ $mode ] ?? 0 );
-          $diff         = bcsub( $amount_quote, $asset->amount_quote );
+          $amount_quote_balanced = bcmul( $balance->amount_quote_total, $asset->allocation_rebl[ $mode ] ?? 0 );
+          $diff                  = bcsub( $amount_quote_balanced, $asset->amount_quote );
 
           $amount_quote_to_sell = (float) $diff < 0 ? bcabs( $diff ) : 0;
 
@@ -249,9 +249,9 @@ class Trader
      * OPTIMIZALBLE IF USING ordersOpen() ENDPOINT INSTEAD => LESS API CALLS => BUT HAS A REQUEST RATE LIMITING WEIGHT OF 25 ..
      */
     $all_filled  = false;
-    $fill_checks = 60; // multiply by sleep() seconds ..
+    $fill_checks = 60; // multiplied by sleep(#) seconds ..
     while ( ! $simulate && ! $all_filled && $fill_checks > 0 ) {
-      sleep( 1 ); // multiply by $fill_checks ..
+      sleep( 1 ); // multiplied by $fill_checks ..
       $all_filled = true;
 
       /**
@@ -296,18 +296,19 @@ class Trader
     $balance      = ! $simulate ? \Trader\Balance::merge_balance( $balance, $exchange->get_balance()/*, $takeout = 0 */ ) : $balance;
     $to_buy_total = 0;
     foreach ( $balance->assets as $asset ) {
-      $amount_quote = bcmul( $balance->amount_quote_total, $asset->allocation_rebl[ $mode ] ?? 0 );
+      $amount_quote_balanced = bcmul( $balance->amount_quote_total, $asset->allocation_rebl[ $mode ] ?? 0 );
 
       /**
        * If is quote currency, then only add to total buy value.
+       * This is done to ensure sideline and takeout is taken care of.
        */
       if ( $asset->symbol === \Trader\Exchanges\Bitvavo::QUOTE_CURRENCY ) {
-        $to_buy_total = bcadd( $to_buy_total, $amount_quote );
+        $to_buy_total = bcadd( $to_buy_total, $amount_quote_balanced );
         continue;
       }
 
       $diff =
-        bcsub( $amount_quote, ! $simulate ? $asset->amount_quote : bcsub( $asset->amount_quote, $asset->rebl_sell_order->amountQuote ?? 0 ) );
+        bcsub( $amount_quote_balanced, ! $simulate ? $asset->amount_quote : bcsub( $asset->amount_quote, $asset->rebl_sell_order->amountQuote ?? 0 ) );
 
       /**
        * Only positive diffs can be buy orders.
@@ -320,7 +321,7 @@ class Trader
     }
 
     /**
-     * Dont over-buy. Take the largest total value to calculate the allocation of the available balance from.
+     * Over-buy prevention 1/2: take the largest total value to calculate the allocation of the available balance with.
      */
     $to_buy_total = trader_max( $to_buy_total, $balance->assets[0]->available );
 
@@ -342,7 +343,8 @@ class Trader
           }
 
           /**
-           * Scale to available balance, but don't over-buy.
+           * Determine final amount quote to buy value.
+           * Over-buy prevention 2/2: scale to available balance, where $to_buy_total >= $balance->assets[0]->available
            */
           $amount_quote_to_buy = ! $simulate
             ? trader_min( $asset->amount_quote_to_buy, bcmul( $balance->assets[0]->available, trader_get_allocation( $asset->amount_quote_to_buy, $to_buy_total ) ) )
