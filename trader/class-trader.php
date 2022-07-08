@@ -347,7 +347,7 @@ class Trader
            * Over-buy prevention 2/2: scale to available balance, where $to_buy_total >= $balance->assets[0]->available
            */
           $amount_quote_to_buy = ! $simulate
-            ? trader_min( $asset->amount_quote_to_buy, bcmul( $balance->assets[0]->available, trader_get_allocation( $asset->amount_quote_to_buy, $to_buy_total ) ) )
+            ? bcmul( $balance->assets[0]->available, trader_get_allocation( $asset->amount_quote_to_buy, $to_buy_total ) )
             : $asset->amount_quote_to_buy;
 
           /**
