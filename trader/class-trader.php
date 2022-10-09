@@ -428,29 +428,46 @@ class Trader
             /**
              * Check if rebalance threshold is reached.
              */
-            if ( ! array_some(
-              $balance->assets,
-              function ( \Trader\Asset $asset ) use ( $balance, $configuration )
-              {
-                $allocation_rebl    = reset( $asset->allocation_rebl ) ?? 0;
-                $amount_balanced    = bcmul( $allocation_rebl, $balance->amount_quote_total );
-                $alloc_perc_current = bcmul( 100, $asset->allocation_current );
-                $alloc_perc_rebl    = bcmul( 100, $allocation_rebl );
-                $diff               = bcsub( $alloc_perc_current, $alloc_perc_rebl );
-                $diff_quote         = bcsub( $asset->amount_quote, $amount_balanced );
+            $threshold_reached = false;
+            $diff_total        = '0';
+            foreach ( $balance->assets as $asset ) {
+              $allocation_rebl    = reset( $asset->allocation_rebl ) ?? 0;
+              $amount_balanced    = bcmul( $allocation_rebl, $balance->amount_quote_total );
+              $alloc_perc_current = bcmul( 100, $asset->allocation_current );
+              $alloc_perc_rebl    = bcmul( 100, $allocation_rebl );
+              $diff               = bcsub( $alloc_perc_current, $alloc_perc_rebl );
+              $diff_abs           = bcabs( $diff );
+              $diff_quote         = bcsub( $asset->amount_quote, $amount_balanced );
 
-                return // at least the minimum order amount should be reached
+              if ( ! $threshold_reached ) {
+                $threshold_reached =
+                  // at least the minimum order amount should be reached
                   (float) bcabs( $diff_quote ) >= \Trader\Exchanges\Bitvavo::MIN_QUOTE
                   && (
                   // if configured rebalance threshold is reached
-                  (float) bcabs( $diff ) >= (float) $configuration->rebalance_threshold
+                  (float) $diff_abs >= (float) $configuration->rebalance_threshold
                   ||
                   // or if the asset should not be allocated at all
                   // phpcs:ignore WordPress.PHP.StrictComparisons
-                  ( (float) $alloc_perc_current > (float) $alloc_perc_rebl && 0 == $alloc_perc_rebl )
-                );
+                  ( (float) $alloc_perc_current > (float) $alloc_perc_rebl && 0 == $alloc_perc_rebl ) );
               }
-            ) ) {
+
+              $diff_total = bcadd( $diff_total, $diff_abs );
+            }
+
+            /**
+             * Bail if rebalance threshold was not reached.
+             */
+            if ( ! $threshold_reached ) {
+              continue;
+            }
+
+            /**
+             * Bail if total diff is more than 2/3 of portfolio, in that case probably something is not right.
+             *
+             * NEED TO ADD EMAIL NOTIFICATION HERE !!
+             */
+            if ( (float) $diff_total > 66.67 ) {
               continue;
             }
 
