@@ -131,12 +131,11 @@ if ( ! function_exists( 'get_error_data' ) ) {
     $error_data = array();
 
     foreach ( $errors->get_error_codes() as $code ) {
-      $data_obj   = array(
+      $error_data[] = array(
         'code'     => $code,
         'messages' => $errors->get_error_messages( $code ),
         'data'     => $errors->get_all_error_data( $code ),
       );
-      $error_data = array_merge( $error_data, $data_obj );
     }
 
     return $error_data;
