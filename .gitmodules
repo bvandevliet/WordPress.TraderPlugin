@@ -1,0 +1,3 @@
+[submodule "exchanges/bitvavo"]
+	path = exchanges/bitvavo
+	url = https://github.com/bvandevliet/php-bitvavo-api.git

@@ -53,6 +53,7 @@ if ( file_exists( __DIR__ . '/config.php' ) ) {
  * Composer autoload.
  */
 require __DIR__ . '/vendor/autoload.php';
+require __DIR__ . '/exchanges/bitvavo/bitvavo.php';
 
 /**
  * Load standalone core classes.
