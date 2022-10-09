@@ -50,8 +50,14 @@ function trader_email_automation_triggered( int $user_id, DateTime $timestamp, \
     wp_mail(
       $admin_email,
       $subject,
-      '<pre>' . esc_html( wp_json_encode( array_intersect_key( (array) $user->data, $relevant ), JSON_PRETTY_PRINT ) ) . '</pre>' . PHP_EOL .
-      '<pre>' . esc_html( wp_json_encode( $error_data, JSON_PRETTY_PRINT ) ) . '</pre>',
+      '<p>User info:</p>' .
+      '<div><pre>' . esc_html( wp_json_encode( array_intersect_key( (array) $user->data, $relevant ), JSON_PRETTY_PRINT ) ) . '</pre></div>' .
+      '<p>Orders:</p>' .
+      // phpcs:ignore WordPress.Security.EscapeOutput
+      '<div><pre>' . implode( "</pre>\n<pre>", array_map( fn( $order ) => esc_html( wp_json_encode( $order, JSON_PRETTY_PRINT ) ), $trades ) ) . '</pre></div>' .
+      '<p>Errors:</p>' .
+      // phpcs:ignore WordPress.Security.EscapeOutput
+      '<div><pre>' . implode( "</pre>\n<pre>", array_map( fn( $error ) => esc_html( wp_json_encode( $error, JSON_PRETTY_PRINT ) ), $error_data ) ) . '</pre></div>',
       $email_headers
     );
   }
@@ -76,11 +82,11 @@ function trader_email_automation_triggered( int $user_id, DateTime $timestamp, \
       and executed successfully.
     </p>
     <p>
-      The below <?php echo count( $trades ); ?> trades were executed:
+      The below <?php echo count( $trades ); ?> orders were executed:
     </p>
     <div>
       <?php
-        $relevant = array_flip( array( 'market', 'side', 'orderType', 'amount', 'price', 'amountQuote', 'feeExpected' ) );
+        $relevant = array_flip( array( 'market', 'status', 'side', 'orderType', 'amount', 'price', 'amountQuote', 'feeExpected', 'feePaid' ) );
         echo '<pre>'
         . implode(
           "</pre>\n<pre>",
@@ -111,7 +117,7 @@ function trader_email_automation_triggered( int $user_id, DateTime $timestamp, \
       We will try again within an hour.
     </p>
     <p>
-      The below <?php echo count( $trades ); ?> trades were attempted:
+      The below <?php echo count( $trades ); ?> orders were attempted:
     </p>
     <div>
       <?php
