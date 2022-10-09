@@ -59,7 +59,7 @@ function trader_dynamic_block_rebalance_form_cb( $block_attributes, $content )
                   $order['errorCode'] . '-' . $index,
                   sprintf( __( 'Exchange error %1$s %2$s: ', 'trader' ), $order['side'], $order['market'] ) . ( $order['error'] ?? __( 'An unknown error occured.', 'trader' ) )
                 );
-              } elseif ( ! 'filled' === $order['status'] ) {
+              } elseif ( ! in_array( $order['status'], array( 'new', 'filled' ), true ) ) {
                 $errors->add(
                   'not_filled-' . $index,
                   sprintf( __( 'Order not filled %1$s %2$s: ', 'trader' ), $order['side'], $order['market'] ) . $order['status']

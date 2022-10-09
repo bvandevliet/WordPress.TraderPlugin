@@ -237,7 +237,8 @@ class Trader
           $amount_quote_to_sell = (float) $diff < 0 ? bcabs( $diff ) : 0;
 
           if ( (float) $amount_quote_to_sell >= \Trader\Exchanges\Bitvavo::MIN_QUOTE ) {
-            $result[] = $asset->rebl_sell_order = $exchange->sell_asset( $asset->symbol, $amount_quote_to_sell, $simulate );
+            $asset->rebl_sell_order = $exchange->sell_asset( $asset->symbol, $amount_quote_to_sell, $simulate );
+            $result[]               =& $asset->rebl_sell_order;
           }
         }
       );
@@ -279,7 +280,7 @@ class Trader
               $asset->rebl_sell_order['status'] = 'canceled';
             } else {
               // HANDLE ERRORS / API RATE LIMIT !!
-              $asset->rebl_sell_order = $exchange->get_order( $asset->rebl_sell_order['market'], $asset->rebl_sell_order['orderId'] );
+              $asset->rebl_sell_order = array_merge( $asset->rebl_sell_order, $exchange->get_order( $asset->rebl_sell_order['market'], $asset->rebl_sell_order['orderId'] ) );
             }
           }
         );
@@ -482,7 +483,7 @@ class Trader
                   sprintf( __( 'Exchange error %1$s %2$s: ', 'trader' ), $order['side'], $order['market'] ) . ( $order['error'] ?? __( 'An unknown error occured.', 'trader' ) ),
                   $order
                 );
-              } elseif ( ! 'filled' === $order['status'] ) {
+              } elseif ( ! in_array( $order['status'], array( 'new', 'filled' ), true ) ) {
                 $errors->add(
                   'not_filled-' . $index,
                   sprintf( __( 'Order not filled %1$s %2$s: ', 'trader' ), $order['side'], $order['market'] ) . $order['status'],

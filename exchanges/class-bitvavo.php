@@ -332,7 +332,7 @@ class Bitvavo extends Exchange
       );
     }
 
-    $response['status'] = 'new';
+    $response['status'] = 'new'; // "brandnew" !!
 
     // $market_info = $this->get_instance()->markets( ['market' => $market] );
     // $min_quote   = $market_info['minOrderInQuoteAsset'];
@@ -423,7 +423,7 @@ class Bitvavo extends Exchange
       );
     }
 
-    $response['status'] = 'new';
+    $response['status'] = 'brandnew';
 
     $price_response = $this->get_instance()->tickerPrice( array( 'market' => $market ) );
 
