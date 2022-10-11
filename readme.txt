@@ -5,7 +5,7 @@ Tags:
 Requires at least: 5.8
 Tested up to: 6.0
 Requires PHP: 8.1
-Stable tag: 2022.07.08
+Stable tag: 2022.10.11
 License: MIT
 
 Calculates and executes a crypto portfolio rebalance.
@@ -17,6 +17,12 @@ Connects to exchange API's, provides blocks for rendering exchange data and incl
 
 
 == Changelog ==
+
+= 2022.10.11 =
+* Added fork of the Bitvavo PHP SDK as git submodule since it was deprecated by Bitvavo.
+* Better return value for sell orders in rebalance method.
+* Automations with a total diff of >2/3 of total portfolio are skipped to protect against potential errors.
+* Improved automation error notification data.
 
 = 2022.07.08 =
 * Small performance optimization in rebalance logic.
