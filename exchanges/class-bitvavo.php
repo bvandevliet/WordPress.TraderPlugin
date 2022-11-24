@@ -365,7 +365,7 @@ class Bitvavo extends Exchange
   /**
    * {@inheritDoc}
    */
-  public function sell_asset( string $symbol, $amount_quote, bool $simulate = false ) : array
+  public function sell_asset( string $symbol, $amount_quote, bool $simulate = false, $amount_available = null, $price = null ) : array
   {
     $market = $symbol . '-' . self::QUOTE_CURRENCY;
 
@@ -400,20 +400,24 @@ class Bitvavo extends Exchange
       );
     }
 
-    $balance = $this->get_instance()->balance( array( 'symbol' => $symbol ) );
+    if ( null === $amount_available ) {
+      $balance = $this->get_instance()->balance( array( 'symbol' => $symbol ) );
 
-    if ( ! is_array( $balance ) || empty( $balance[0]['available'] ) || ! empty( $balance['errorCode'] ) ) {
-      return array_merge(
-        $response,
-        array(
-          'errorCode' => $balance['errorCode'] ?? 0,
-          'error'     => $balance['error'] ?? __( 'An unknown error occured at $balance.', 'trader' ),
-        )
-      );
+      if ( ! is_array( $balance ) || empty( $balance[0]['available'] ) || ! empty( $balance['errorCode'] ) ) {
+        return array_merge(
+          $response,
+          array(
+            'errorCode' => $balance['errorCode'] ?? 0,
+            'error'     => $balance['error'] ?? __( 'An unknown error occured at $balance.', 'trader' ),
+          )
+        );
+      }
+
+      $amount_available = $balance[0]['available'];
     }
 
     // phpcs:ignore WordPress.PHP.StrictComparisons
-    if ( $balance[0]['available'] == 0 ) {
+    if ( $amount_available == 0 ) {
       return array_merge(
         $response,
         array(
@@ -425,26 +429,28 @@ class Bitvavo extends Exchange
 
     $response['status'] = 'brandnew';
 
-    $price_response = $this->get_instance()->tickerPrice( array( 'market' => $market ) );
+    if ( null === $price ) {
+      $price_response = $this->get_instance()->tickerPrice( array( 'market' => $market ) );
 
-    if ( ! is_array( $price_response ) || empty( $price_response['price'] ) || ! empty( $price_response['errorCode'] ) ) {
-      return array_merge(
-        $response,
-        array(
-          'errorCode' => $price_response['errorCode'] ?? 0,
-          'error'     => $price_response['error'] ?? __( 'An unknown error occured at $price.', 'trader' ),
-        )
-      );
+      if ( ! is_array( $price_response ) || empty( $price_response['price'] ) || ! empty( $price_response['errorCode'] ) ) {
+        return array_merge(
+          $response,
+          array(
+            'errorCode' => $price_response['errorCode'] ?? 0,
+            'error'     => $price_response['error'] ?? __( 'An unknown error occured at $price.', 'trader' ),
+          )
+        );
+      }
+
+      $price = $price_response['price'];
     }
 
-    $price = $price_response['price'];
-
     $amount   = bcdiv( $amount_quote, $price );
-    $leftover = bcmul( bcsub( $balance[0]['available'], $amount ), $price );
+    $leftover = bcmul( bcsub( $amount_available, $amount ), $price );
 
     // Prevent dust.
     if ( $liquidate = (float) $leftover <= 2 ) {
-      $amount             = $balance[0]['available'];
+      $amount             = $amount_available;
       $response['amount'] = $amount;
       $amount_quote       = bcmul( $amount, $price );
     }

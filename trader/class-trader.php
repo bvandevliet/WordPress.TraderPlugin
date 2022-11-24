@@ -237,7 +237,7 @@ class Trader
           $amount_quote_to_sell = (float) $diff < 0 ? bcabs( $diff ) : 0;
 
           if ( (float) $amount_quote_to_sell >= \Trader\Exchanges\Bitvavo::MIN_QUOTE ) {
-            $asset->rebl_sell_order = $exchange->sell_asset( $asset->symbol, $amount_quote_to_sell, $simulate );
+            $asset->rebl_sell_order = $exchange->sell_asset( $asset->symbol, $amount_quote_to_sell, $simulate, $asset->available, $asset->price );
             $result[]               =& $asset->rebl_sell_order;
           }
         }

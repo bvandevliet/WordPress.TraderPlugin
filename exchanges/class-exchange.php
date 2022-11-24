@@ -217,13 +217,15 @@ abstract class Exchange
   /**
    * Sell asset.
    *
-   * @param string $symbol       Symbol of asset to sell.
-   * @param mixed  $amount_quote Amount to sell in quote currency.
-   * @param bool   $simulate     Perform a fake order, e.g. to determine expected fee amount.
+   * @param string $symbol           Symbol of asset to sell.
+   * @param mixed  $amount_quote     Amount to sell in quote currency.
+   * @param bool   $simulate         Perform a fake order, e.g. to determine expected fee amount.
+   * @param bool   $amount_available Amount of asset available to sell.
+   * @param bool   $price            Current price of asset.
    *
    * @return array List of order data.
    */
-  abstract public function sell_asset( string $symbol, $amount_quote, bool $simulate = false ) : array;
+  abstract public function sell_asset( string $symbol, $amount_quote, bool $simulate = false, $amount_available = null, $price = null ) : array;
 
   /**
    * Get order data.
