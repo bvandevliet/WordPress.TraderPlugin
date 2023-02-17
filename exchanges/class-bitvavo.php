@@ -181,7 +181,7 @@ class Bitvavo extends Exchange
       $asset->amount       = bcadd( $asset->available, $balance_exchange[ $i ]['inOrder'] );
       $asset->amount_quote = $asset->amount;
 
-      if ( $i > 0 ) { // $balance_exchange[$i]['symbol'] !== self::QUOTE_CURRENCY )
+      if ( $balance_exchange[ $i ]['symbol'] !== self::QUOTE_CURRENCY ) {
         $asset->symbol = $balance_exchange[ $i ]['symbol'];
         $market        = $asset->symbol . '-' . self::QUOTE_CURRENCY;
 
