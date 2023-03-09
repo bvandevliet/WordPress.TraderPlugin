@@ -15,6 +15,8 @@ Calculates and executes a crypto portfolio rebalance.
 
 Connects to exchange API's, provides blocks for rendering exchange data and includes logic to rebalance a portfolio. Still a work in progress and currently only supports the Bitvavo Exchange.
 
+TO BE DEPRECATED AND REPLACED BY https://github.com/bvandevliet/TraderPlatform.Core
+
 
 == Changelog ==
 
